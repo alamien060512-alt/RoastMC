@@ -655,10 +655,10 @@ task roastmcJar(type: Jar, dependsOn: [roastmcJar0, downloadMinecraftJar, projec
                 'Launcher-Agent-Class': 'com.roastmc.launcher.neoforge.util.JarLoader',
                 'Main-Class': 'com.roastmc.launcher.neoforge.Main',
                 'Specification-Title'   : 'RoastMC',
-                'Specification-Vendor'  : 'MohistMC',
+                'Specification-Vendor'  : 'RoastMC',
                 'Implementation-Title'  : 'RoastMC',
                 'Implementation-Version': archiveVersion,
-                'Implementation-Vendor' : 'MohistMC'
+                'Implementation-Vendor' : 'RoastMC'
         ])
     }
 

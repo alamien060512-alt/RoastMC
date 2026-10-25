@@ -37,8 +37,30 @@ Requires JDK 25.
 |----------|------------------------|--------------------------------------------|
 | NeoForge | `./gradlew roastmcJar` | `projects/roastmc/build/libs/*-server.jar` |
 | Fabric   | `./gradlew fabricJar`  | `fabric/build/libs/*-server.jar`           |
+| **Both** | `./gradlew roastmcAllJar` | `multiloader/build/libs/roastmc-*-all.jar` |
 
 The Fabric edition is a standalone Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) wired into the root build via `includeBuild`. It can also be built on its own with `cd fabric && ./gradlew jar`.
+
+## 🔀 Choosing the loader (`server.properties`)
+
+`roastmcAllJar` is a single jar that contains both editions. On first start it adds these keys to `server.properties`; edit them and restart to switch:
+
+```properties
+neoforge=true   # NeoForge mods + Paper/Purpur API
+fabric=false    # Fabric mods + Spigot API
+paper=true      # Paper/Purpur API (always on with the NeoForge edition)
+```
+
+| `neoforge` | `fabric` | Starts |
+|------------|----------|--------|
+| true       | false    | NeoForge edition (Paper/Purpur API) |
+| false      | true     | Fabric edition (Spigot API) |
+| true       | true     | NeoForge edition **plus [Sinytra Connector](https://github.com/Sinytra/Connector)**, so Fabric mods load too |
+| false      | false    | refuses to start |
+
+Fabric and NeoForge cannot be loaded into the same Minecraft at once, so "both" means Fabric mods translated onto NeoForge by Connector. On start, the launcher downloads Connector and the dependencies it requires (Forgified Fabric API, Launchpad) from Modrinth into `mods/`, verifies their checksums, and keeps them up to date. If Modrinth has no build for the running Minecraft version, the server starts without Fabric support and says so. A Connector jar you put in `mods/` yourself is left alone. `paper=false` is ignored with a warning, because the Paper API is part of the NeoForge edition.
+
+Connector is a third-party, still-beta project, and it has not been tested against RoastMC's patched NeoForge yet.
 
 ## 📊 Progress Status
 

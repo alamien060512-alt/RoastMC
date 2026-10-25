@@ -55,6 +55,9 @@ project(':neoforge').projectDir = file('projects/roastmc')
 
 include 'roastmclauncher'
 
+// Unified launcher that embeds the NeoForge and Fabric editions
+include ':multiloader'
+
 // Fabric loader support (standalone Loom build, kept separate because Loom and NeoGradle can't share a build)
 includeBuild 'fabric'
 

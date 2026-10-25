@@ -41,6 +41,9 @@ jobs:
     - name: Build RoastMC (Fabric)
       run: ./gradlew fabricJar
 
+    - name: Build unified RoastMC jar
+      run: ./gradlew roastmcAllJar
+
     - name: Upload NeoForge build
       uses: actions/upload-artifact@v6
       with:
@@ -52,3 +55,9 @@ jobs:
       with:
         name: RoastMC-Fabric-26.2-server
         path: fabric/build/libs/*-server.jar
+
+    - name: Upload unified build
+      uses: actions/upload-artifact@v6
+      with:
+        name: RoastMC-All-26.2-server
+        path: multiloader/build/libs/*-all.jar
