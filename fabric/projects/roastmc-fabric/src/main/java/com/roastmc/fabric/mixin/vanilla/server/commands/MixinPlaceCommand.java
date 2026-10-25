@@ -4,7 +4,7 @@ import net.minecraft.server.commands.PlaceCommand;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinPlaceCommand {
 
     @Inject(method = "placeStructure", at = @At("HEAD"))
-    private static void roastmc_placeStructure(CallbackInfoReturnable<Integer> cir) {
+    private void roastmc_placeStructure(CallbackInfo ci) {
         // CraftBukkit - set AsyncStructureGenerateEvent.Cause.COMMAND as generation cause
     }
 }

@@ -4,7 +4,7 @@ import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ExplosionCondition.class)
 public class MixinExplosionCondition {
 
-    @Inject(method = { "test(Lnet/minecraft/world/level/storage/loot/LootContext;)Z" }, at = @At("HEAD"))
-    private void roastmc_test(CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "test", at = @At("HEAD"))
+    private void roastmc_test(CallbackInfo ci) {
         // CraftBukkit
     }
 }

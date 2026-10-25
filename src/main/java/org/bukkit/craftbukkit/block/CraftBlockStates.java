@@ -47,51 +47,77 @@ public final class CraftBlockStates {
         // If the given block entity is not null, its position and block data are expected to match the given block position and block data.
         // In some situations, such as during chunk generation, the block entity's world may be null, even if the given world is not null.
         // If the block entity's world is not null, it is expected to match the given world.
-        public abstract B createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity, boolean useSnapshot);
-    }
-
-    @FunctionalInterface
-    private interface BlockEntityStateConstructor<T, B> {
-
-        B create(World world, T blockEntity, boolean useSnapshot);
+        public abstract B createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity);
     }
 
     private static class BlockEntityStateFactory<T extends BlockEntity, B extends CraftBlockEntityState<T>> extends BlockStateFactory<B> {
 
-        private final BlockEntityStateConstructor<T, B> blockStateConstructor;
+        private final BiFunction<World, T, B> blockStateConstructor;
         private final BlockEntityType<? extends T> blockEntityType;
 
-        protected BlockEntityStateFactory(Class<B> blockStateType, BlockEntityStateConstructor<T, B> blockStateConstructor, BlockEntityType<? extends T> blockEntityType) {
+        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BlockEntityType<? extends T> blockEntityType) {
             super(blockStateType);
             this.blockStateConstructor = blockStateConstructor;
             this.blockEntityType = blockEntityType;
         }
 
         @Override
-        public final B createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity, boolean useSnapshot) {
+        public final B createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity) {
             if (world != null) {
                 Preconditions.checkState(blockEntity != null, "Block entity is null, asynchronous access? %s", CraftBlock.at(((CraftWorld) world).getHandle(), pos));
             } else if (blockEntity == null) {
                 blockEntity = this.createBlockEntity(pos, state);
             }
-            return this.createBlockState(world, (T) blockEntity, useSnapshot);
+            return this.createBlockState(world, (T) blockEntity);
         }
 
         private T createBlockEntity(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
             return this.blockEntityType.create(pos, state);
         }
 
-        private B createBlockState(World world, T blockEntity, boolean useSnapshot) {
-            return this.blockStateConstructor.create(world, blockEntity, useSnapshot);
+        private B createBlockState(World world, T blockEntity) {
+            return this.blockStateConstructor.apply(world, blockEntity);
         }
     }
 
     private static final Map<Material, BlockStateFactory<?>> FACTORIES = new IdentityHashMap<>();
     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<>(CraftBlockState.class) {
         @Override
-        public CraftBlockState createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity, boolean useSnapshot) {
+        public CraftBlockState createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity) {
+            // Paper - revert upstream's revert of the block state changes. Block entities that have already had the block type set to AIR are still valid, upstream decided to ignore them
+            // RoastMC start
+            //Preconditions.checkState(blockEntity == null, "Unexpected BlockState for %s", CraftBlockType.minecraftToBukkit(state.getBlock()));
+            net.minecraft.world.level.block.Block block = state.getBlock();
+            if (block.defaultBlockState().is(BlockTags.SIGNS)) {
+                if (blockEntity instanceof SignBlockEntity signEntity) {
+                    return new CraftSign<>(world, signEntity);
+                }
+            } else if (block.defaultBlockState().is(BlockTags.ALL_HANGING_SIGNS)) {
+                if (blockEntity instanceof HangingSignBlockEntity hangingSignEntity) {
+                    return new CraftHangingSign(world, hangingSignEntity);
+                }
+            } else if (block instanceof SignBlock signBlock) {
+                BlockEntity signEntity = signBlock.newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
+                if (signEntity instanceof HangingSignBlockEntity hangingSignBlockEntity) {
+                    return new CraftHangingSign(world, hangingSignBlockEntity);
+                } else if (signEntity instanceof SignBlockEntity signBlockEntity) {
+                    return new CraftSign<>(world, signBlockEntity);
+                }
+            } else if (block instanceof ChestBlock chestBlock) {
+                BlockEntity chestEntity = chestBlock.newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
+                if (chestEntity instanceof TrappedChestBlockEntity trappedChestBlockEntity) {
+                    return new CraftChest(world, trappedChestBlockEntity);
+                } else if (chestEntity instanceof ChestBlockEntity chestBlockEntity) {
+                    return new CraftChest(world, chestBlockEntity);
+                }
+            } else if (block instanceof DecoratedPotBlock) {
+                if (blockEntity instanceof DecoratedPotBlockEntity decoratedPotEntity) {
+                    return new CraftDecoratedPot(world, decoratedPotEntity);
+                }
+            }
+            // RoastMC end
             if (blockEntity != null) {
-                return new RoastMCModsBlockEntityState(world, blockEntity, useSnapshot);
+                return new RoastMCModsBlockEntityState(world, blockEntity);
             }
             return new CraftBlockState(world, pos, state);
         }
@@ -163,7 +189,7 @@ public final class CraftBlockStates {
     private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
             net.minecraft.world.level.block.entity.BlockEntityType<? extends T> blockEntityType,
             Class<B> blockStateType,
-            BlockEntityStateConstructor<T, B> blockStateConstructor
+            BiFunction<World, T, B> blockStateConstructor
     ) {
         BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType);
         for (net.minecraft.world.level.block.Block block : blockEntityType.validBlocks) {
@@ -183,24 +209,6 @@ public final class CraftBlockStates {
             return getFactory(material);
         }
     }
-
-    // RoastMC start - use vanilla block state wrappers for modded block entities extending vanilla types
-    private static BlockStateFactory<?> getModdedBlockEntityFactory(BlockEntity blockEntity) {
-        if (blockEntity instanceof HangingSignBlockEntity) {
-            return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.get(BlockEntityTypes.HANGING_SIGN);
-        }
-        if (blockEntity instanceof SignBlockEntity) {
-            return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.get(BlockEntityTypes.SIGN);
-        }
-        if (blockEntity instanceof ChestBlockEntity) {
-            return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.get(BlockEntityTypes.CHEST);
-        }
-        if (blockEntity instanceof DecoratedPotBlockEntity) {
-            return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.get(BlockEntityTypes.DECORATED_POT);
-        }
-        return null;
-    }
-    // RoastMC end
 
     public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
         Preconditions.checkNotNull(material, "material is null");
@@ -233,9 +241,15 @@ public final class CraftBlockStates {
         BlockPos pos = craftBlock.getPosition();
         net.minecraft.world.level.block.state.BlockState state = craftBlock.getBlockState();
         BlockEntity blockEntity = craftBlock.getLevel().getBlockEntity(pos);
-        CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity, useSnapshot);
-        blockState.setWorldHandle(craftBlock.getLevel()); // Inject the block's level accessor
-        return blockState;
+        boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
+        CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
+        try {
+            CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
+            blockState.setWorldHandle(craftBlock.getLevel()); // Inject the block's level accessor
+            return blockState;
+        } finally {
+            CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
+        }
     }
 
     @Deprecated
@@ -269,12 +283,8 @@ public final class CraftBlockStates {
         return CraftBlockStates.getBlockState(null, pos, state, blockEntity);
     }
 
-    // See BlockStateFactory#createBlockState(World, BlockPos, BlockState, BlockEntity, boolean)
+    // See BlockStateFactory#createBlockState(World, BlockPos, BlockState, BlockEntity)
     public static CraftBlockState getBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity) {
-        return CraftBlockStates.getBlockState(world, pos, state, blockEntity, true);
-    }
-
-    public static CraftBlockState getBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity, boolean useSnapshot) {
         Material material = CraftBlockType.minecraftToBukkit(state.getBlock());
         BlockStateFactory<?> factory;
         // For some types of BlockEntity blocks (e.g. moving pistons), Minecraft may in some situations (e.g. when using Block#setType or the
@@ -283,14 +293,8 @@ public final class CraftBlockStates {
             factory = CraftBlockStates.DEFAULT_FACTORY;
         } else {
             factory = CraftBlockStates.getFactory(material, blockEntity != null ? blockEntity.getType() : null); // Paper
-            if (factory == CraftBlockStates.DEFAULT_FACTORY && blockEntity != null) {
-                BlockStateFactory<?> moddedFactory = CraftBlockStates.getModdedBlockEntityFactory(blockEntity); // RoastMC - modded block entities extending vanilla types
-                if (moddedFactory != null) {
-                    factory = moddedFactory;
-                }
-            }
         }
-        return factory.createBlockState(world, pos, state, blockEntity, useSnapshot);
+        return factory.createBlockState(world, pos, state, blockEntity);
     }
 
     public static boolean isBlockEntityOptional(Material material) {

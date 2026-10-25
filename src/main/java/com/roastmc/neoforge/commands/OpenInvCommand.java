@@ -12,11 +12,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/11/23 02:14
+ * @date 2025/11/23 02:14
  */
 public class OpenInvCommand extends BukkitCommand {
-
-    private final List<String> params = Arrays.asList("enderchest", "inventory");
 
     public OpenInvCommand(String name) {
         super(name);
@@ -24,6 +22,9 @@ public class OpenInvCommand extends BukkitCommand {
         this.usageMessage = "/openinv";
         this.setPermission("roastmc.command.openinv");
     }
+
+    private final List<String> params = Arrays.asList("enderchest", "inventory");
+
 
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String[] args) {
@@ -53,15 +54,15 @@ public class OpenInvCommand extends BukkitCommand {
 
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String[] args) {
-        if (sender instanceof final Player player) {
-            if (args.length == 2 && args[0].equalsIgnoreCase("enderchest") && player.isOp() && Bukkit.getServer().getPlayer(args[1]) != null) {
-                final Player tPlayer = Bukkit.getServer().getPlayer(args[1]);
+        if (sender instanceof Player player) {
+            Player tPlayer = Bukkit.getPlayer(args[1]);
+            if (args.length == 2 && args[0].equalsIgnoreCase("enderchest") && player.isOp() && tPlayer != null) {
                 player.openInventory(tPlayer.getEnderChest());
             }
-            if (args.length == 2 && args[0].equalsIgnoreCase("inventory") && player.isOp() && Bukkit.getServer().getPlayer(args[1]) != null) {
-                final Player tPlayer = Bukkit.getServer().getPlayer(args[1]);
+            if (args.length == 2 && args[0].equalsIgnoreCase("inventory") && player.isOp() && tPlayer != null) {
                 player.openInventory(tPlayer.getInventory());
             }
+            // TODO OfflinePlayer
             return true;
         }
         sender.sendMessage("§c?");

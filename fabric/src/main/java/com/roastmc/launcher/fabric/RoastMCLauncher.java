@@ -29,7 +29,7 @@ public class RoastMCLauncher {
                 """;
         System.out.printf("%n%s%n%s - %s, Java(%s) %s PID: %s%n",
                 logo,
-                "Welcome RoastMC (Fabric)",
+                "欢迎使用 RoastMC (Fabric)",
                 getVersion(),
                 System.getProperty("java.class.version"),
                 System.getProperty("java.version"),

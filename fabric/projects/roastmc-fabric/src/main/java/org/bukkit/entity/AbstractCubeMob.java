@@ -1,17 +1,27 @@
 package org.bukkit.entity;
 
 /**
- * Represents a Slime-like mob.
+ * Represents an abstract cube mob.
  */
-public interface AbstractCubeMob extends Ageable, Mob {
+public interface AbstractCubeMob extends Creature {
 
     /**
-     * @return The size of the slime
+     * @return the size of the slime
      */
-    public int getSize();
+    int getSize();
 
     /**
-     * @param sz The new size of the slime.
+     * Setting the size of the slime (regardless of previous size)
+     * will set the following attributes:
+     * <ul>
+     *     <li>{@link org.bukkit.attribute.Attribute#MAX_HEALTH}</li>
+     *     <li>{@link org.bukkit.attribute.Attribute#MOVEMENT_SPEED}</li>
+     *     <li>{@link org.bukkit.attribute.Attribute#ATTACK_DAMAGE}</li>
+     * </ul>
+     * to their per-size defaults and heal the
+     * slime to its max health (assuming it's alive).
+     *
+     * @param size the new size of the slime.
      */
-    public void setSize(int sz);
+    void setSize(int size);
 }

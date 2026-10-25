@@ -10,8 +10,6 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.RandomSequences;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -35,7 +33,6 @@ public abstract class MixinServerLevel implements ContextServerLevel {
 
     // @formatter:off
     @Shadow @Final private ServerChunkCache chunkSource;
-    @Shadow @Final private PersistentEntitySectionManager<Entity> entityManager;
     @Shadow @Final public ServerLevelData serverLevelData;
     @Shadow public abstract WeatherData getWeatherData();
     // @formatter:on
@@ -96,42 +93,5 @@ public abstract class MixinServerLevel implements ContextServerLevel {
     @Override
     public LevelStorageSource.LevelStorageAccess roastmc_storageSource() {
        return storageSource;
-    }
-
-    // CraftBukkit start
-    public org.bukkit.generator.ChunkGenerator generator;
-    public org.bukkit.generator.BiomeProvider biomeProvider;
-    public org.bukkit.World.Environment environment;
-
-    @Override
-    public org.bukkit.generator.ChunkGenerator roastmc$generator() {
-        return this.generator;
-    }
-
-    @Override
-    public org.bukkit.generator.BiomeProvider roastmc$biomeProvider() {
-        return this.biomeProvider;
-    }
-
-    @Override
-    public void roastmc$setGenerator(org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider provider) {
-        this.generator = gen;
-        this.biomeProvider = provider;
-    }
-
-    @Override
-    public org.bukkit.World.Environment roastmc$environment() {
-        return this.environment == null ? org.bukkit.World.Environment.NORMAL : this.environment;
-    }
-
-    @Override
-    public void roastmc$setEnvironment(org.bukkit.World.Environment env) {
-        this.environment = env;
-    }
-    // CraftBukkit end
-
-    @Override
-    public void roastmc_tickEntityManager() {
-        this.entityManager.tick(); // SPIGOT-6526
     }
 }

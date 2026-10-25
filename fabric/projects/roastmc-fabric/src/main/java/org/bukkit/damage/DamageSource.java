@@ -94,10 +94,10 @@ public interface DamageSource {
     public boolean scalesWithDifficulty();
 
     /**
-     * Create a new {@link DamageSource.Builder}.
+     * Create a new {@link Builder}.
      *
      * @param damageType the {@link DamageType} to use
-     * @return a {@link DamageSource.Builder}
+     * @return a {@link Builder}
      */
     @NotNull
     @SuppressWarnings("deprecation")

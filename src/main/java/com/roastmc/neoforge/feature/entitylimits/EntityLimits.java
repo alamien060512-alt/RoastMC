@@ -2,7 +2,7 @@ package com.roastmc.neoforge.feature.entitylimits;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/10/2 21:22
+ * @date 2025/10/2 21:22
  */
 public class EntityLimits {
 

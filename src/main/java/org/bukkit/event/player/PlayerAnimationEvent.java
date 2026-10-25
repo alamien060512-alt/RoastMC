@@ -1,6 +1,5 @@
 package org.bukkit.event.player;
 
-import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -9,11 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player animation event
- *
- * @deprecated use {@link io.papermc.paper.event.player.PlayerArmSwingEvent}
  */
-@Deprecated(since = "26.3")
-@Warning(propagate = false)
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

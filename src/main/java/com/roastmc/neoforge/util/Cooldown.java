@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/11/23 01:40
+ * @date 2025/11/23 01:40
  */
 public class Cooldown {
     private static Map<String, Cooldown> cooldowns = new ConcurrentHashMap<>();
@@ -45,10 +45,15 @@ public class Cooldown {
             final long now = System.currentTimeMillis();
             final long cooldownTime = cooldown.start;
             final int totalTime = cooldown.timeInSeconds;
-            final int r = (int) (now - cooldownTime) / 1000;
+            final int r = (int)(now - cooldownTime) / 1000;
             f = (r - totalTime) * -1;
         }
         return f;
+    }
+
+    public void start() {
+        this.start = System.currentTimeMillis();
+        Cooldown.cooldowns.put(this.id.toString() + this.cooldownName, this);
     }
 
     /**
@@ -66,10 +71,5 @@ public class Cooldown {
                 it.remove();
             }
         }
-    }
-
-    public void start() {
-        this.start = System.currentTimeMillis();
-        Cooldown.cooldowns.put(this.id.toString() + this.cooldownName, this);
     }
 }

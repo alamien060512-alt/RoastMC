@@ -9,9 +9,9 @@ name: Build
 
 on:
   push:
-    branches: [ "26.3" ]
+    branches: [ "26.2" ]
   pull_request:
-    branches: [ "26.3" ]
+    branches: [ "26.2" ]
 
 jobs:
   build:
@@ -44,11 +44,11 @@ jobs:
     - name: Upload NeoForge build
       uses: actions/upload-artifact@v6
       with:
-        name: RoastMC-NeoForge-26.3-server
+        name: RoastMC-NeoForge-26.2-server
         path: projects/roastmc/build/libs/*-server.jar
 
     - name: Upload Fabric build
       uses: actions/upload-artifact@v6
       with:
-        name: RoastMC-Fabric-26.3-server
+        name: RoastMC-Fabric-26.2-server
         path: fabric/build/libs/*-server.jar

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/WitherSkullBlock.java
 +++ b/net/minecraft/world/level/block/WitherSkullBlock.java
-@@ -20,6 +_,7 @@
+@@ -21,6 +_,7 @@
  import net.minecraft.world.level.block.state.pattern.BlockPattern;
  import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
  import net.minecraft.world.level.block.state.predicate.BlockStatePredicate;
@@ -8,16 +8,16 @@
  import org.jspecify.annotations.Nullable;
  
  public class WitherSkullBlock extends SkullBlock {
-@@ -36,7 +_,7 @@
+@@ -43,7 +_,7 @@
      }
  
      public static void checkSpawn(Level level, BlockPos pos) {
 -        if (level.getBlockEntity(pos) instanceof SkullBlockEntity placedSkull) {
-+        if (!level.captureBlockStates && !level.captureBlockSnapshots && level.getBlockEntity(pos) instanceof SkullBlockEntity placedSkull) { // CraftBukkit // RoastMC - defer when NeoForge captures the placement
++        if (!level.captureBlockStates && level.getBlockEntity(pos) instanceof SkullBlockEntity placedSkull) { // CraftBukkit
              checkSpawn(level, pos, placedSkull);
          }
      }
-@@ -50,7 +_,7 @@
+@@ -57,7 +_,7 @@
                  if (match != null) {
                      WitherBoss witherBoss = EntityTypes.WITHER.create(level, EntitySpawnReason.TRIGGERED);
                      if (witherBoss != null) {
@@ -26,16 +26,16 @@
                          BlockPos spawnPos = match.getBlock(1, 2, 0).getPos();
                          witherBoss.snapTo(
                              spawnPos.getX() + 0.5,
-@@ -61,12 +_,24 @@
+@@ -68,12 +_,24 @@
                          );
                          witherBoss.yBodyRot = match.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F;
                          witherBoss.makeInvulnerable();
-+                        witherBoss.setSummoner(blockState.getBlock().placer == null ? null : blockState.getBlock().placer.getUUID()); // Purpur - Summoner API
 +                        // Paper start
 +                        if (!new io.papermc.paper.event.entity.EntityConstructEvent(witherBoss.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.getMatchingBlocks(level, match)).callEvent()) {
 +                            return;
 +                        }
 +                        // Paper end
++                        witherBoss.setSummoner(blockState.getBlock().placer == null ? null : blockState.getBlock().placer.getUUID()); // Purpur - Summoner API
 +                        // CraftBukkit start
 +                        if (!level.addFreshEntity(witherBoss, CreatureSpawnEvent.SpawnReason.BUILD_WITHER)) {
 +                            return;

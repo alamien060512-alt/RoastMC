@@ -9,26 +9,22 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemUtil;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryHolder;
-import org.jspecify.annotations.NonNull;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/11/30 01:30
+ * @date 2025/11/30 01:30
  */
 public class RoastMCIItemHandlerInventory implements Container {
 
     @Nonnull
-    private final ResourceHandler<ItemResource> delegate;
+    private final IItemHandler delegate;
 
     @Nullable
     private final Container original;
@@ -38,24 +34,24 @@ public class RoastMCIItemHandlerInventory implements Container {
 
     private final List<HumanEntity> transaction = new ArrayList<>();
 
-    public RoastMCIItemHandlerInventory(@Nonnull ResourceHandler<ItemResource> delegate, @Nullable Object nmsOwner) {
+    public RoastMCIItemHandlerInventory(@Nonnull IItemHandler delegate, @Nullable Object nmsOwner) {
         this.nmsOwner = nmsOwner;
         this.delegate = delegate;
         this.original = InventoryOwner.getContainer(delegate);
     }
 
-    public RoastMCIItemHandlerInventory(@Nonnull Pair<ResourceHandler<ItemResource>, Object> input) {
+    public RoastMCIItemHandlerInventory(@Nonnull Pair<IItemHandler, Object> input) {
         this(input.getLeft(), input.getRight());
     }
     @Override
     public int getContainerSize() {
-        return delegate.size();
+        return delegate.getSlots();
     }
 
     @Override
     public boolean isEmpty() {
-        for (int i = 0; i < delegate.size(); i++) {
-            if (!ItemUtil.getStack(delegate, i).isEmpty()) {
+        for (int i = 0; i < delegate.getSlots(); i++) {
+            if (!delegate.getStackInSlot(i).isEmpty()) {
                 return false;
             }
         }
@@ -63,74 +59,48 @@ public class RoastMCIItemHandlerInventory implements Container {
     }
 
     @Override
-    public @NonNull ItemStack getItem(int p_18941_) {
-        return ItemUtil.getStack(delegate, p_18941_).copy();
+    public ItemStack getItem(int p_18941_) {
+        return delegate.getStackInSlot(p_18941_).copy();
     }
 
     @Override
-    public @NonNull ItemStack removeItem(int p_18942_, int p_18943_) {
-        return extract(p_18942_, p_18943_);
+    public ItemStack removeItem(int p_18942_, int p_18943_) {
+        return delegate.extractItem(p_18942_, p_18943_, false);
     }
 
     @Override
-    public @NonNull ItemStack removeItemNoUpdate(int p_18951_) {
-        return extract(p_18951_, Integer.MAX_VALUE);
-    }
-
-    private ItemStack extract(int slot, int amount) {
-        var resource = delegate.getResource(slot);
-        if (resource.isEmpty() || amount <= 0) {
-            return ItemStack.EMPTY;
-        }
-        amount = Math.min(amount, resource.getMaxStackSize());
-        try (var tx = Transaction.openRoot()) {
-            int extracted = delegate.extract(slot, resource, amount, tx);
-            tx.commit();
-            return resource.toStack(extracted);
-        }
+    public ItemStack removeItemNoUpdate(int p_18951_) {
+        return delegate.extractItem(p_18951_, Integer.MAX_VALUE, false);
     }
 
     @Override
     public void setItem(int p_18944_, ItemStack p_18945_) {
-        if (!p_18945_.isEmpty() && !delegate.isValid(p_18944_, ItemResource.of(p_18945_))) {
+        if (!delegate.isItemValid(p_18944_, p_18945_)) {
             return;
         }
-        try (var tx = Transaction.openRoot()) {
-            // Clear the slot contents.
-            var current = ItemUtil.getStack(delegate, p_18944_);
-            if (!current.isEmpty()) {
-                var currentResource = ItemResource.of(current);
-                if (delegate.extract(p_18944_, currentResource, current.getCount(), tx) != current.getCount()) {
-                    return; // The slot could not be fully cleared; abort.
-                }
-            }
-            if (p_18945_.isEmpty()) {
-                tx.commit();
-                return;
-            }
-            // Try to insert the new stack into the cleared slot.
-            if (delegate.insert(p_18944_, ItemResource.of(p_18945_), p_18945_.getCount(), tx) == p_18945_.getCount()) {
-                tx.commit();
-            }
-            // If the insert did not fully succeed, the transaction rolls back, restoring the original contents.
+        final var content = getItem(p_18944_);
+        final var take = delegate.extractItem(p_18944_, Integer.MAX_VALUE, true);
+        if (take.getCount() != content.getCount()) {
+            return;
         }
+        final var raw = delegate.extractItem(p_18944_, Integer.MAX_VALUE, false);
+        if (delegate.insertItem(p_18944_, p_18945_, true).isEmpty()) {
+            delegate.insertItem(p_18944_, p_18945_, false);
+            return;
+        }
+        delegate.insertItem(p_18944_, raw, false);
     }
 
     @Override
     public int getMaxStackSize() {
         int maxStack = 0;
-        for (int i = 0; i < delegate.size(); i++) {
-            final int limit = delegate.getCapacityAsInt(i, ItemResource.EMPTY);
+        for (int i = 0; i < delegate.getSlots(); i++) {
+            final int limit = delegate.getSlotLimit(i);
             if (limit > maxStack) {
                 maxStack = limit;
             }
         }
         return maxStack;
-    }
-
-    @Override
-    public void setMaxStackSize(int size) {
-        Container.super.setMaxStackSize(size);
     }
 
     @Override
@@ -160,39 +130,33 @@ public class RoastMCIItemHandlerInventory implements Container {
 
     @Override
     public boolean canPlaceItem(int i, ItemStack arg) {
-        return arg.isEmpty() || delegate.isValid(i, ItemResource.of(arg));
+        return delegate.isItemValid(i, arg);
     }
 
     @Override
     public void clearContent() {
-        try (var tx = Transaction.openRoot()) {
-            for (int i = 0; i < delegate.size(); i++) {
-                var resource = delegate.getResource(i);
-                if (!resource.isEmpty()) {
-                    delegate.extract(i, resource, Integer.MAX_VALUE, tx);
-                }
-            }
-            tx.commit();
+        for (int i = 0; i < delegate.getSlots(); i++) {
+            delegate.extractItem(i, Integer.MAX_VALUE, false);
         }
     }
 
     @Override
-    public void onOpen(@NonNull CraftHumanEntity who) {
+    public void onOpen(CraftHumanEntity who) {
         transaction.add(who);
     }
 
     @Override
-    public void onClose(@NonNull CraftHumanEntity who) {
+    public void onClose(CraftHumanEntity who) {
         transaction.remove(who);
     }
 
     @Override
-    public @NonNull List<HumanEntity> getViewers() {
+    public List<HumanEntity> getViewers() {
         return transaction;
     }
 
     @Override
-    public @NonNull InventoryHolder getOwner() {
+    public InventoryHolder getOwner() {
         if (original != null) {
             return original.getOwner();
         } else if (nmsOwner != null) {
@@ -203,6 +167,10 @@ public class RoastMCIItemHandlerInventory implements Container {
             }
         }
         return null;
+    }
+
+    @Override
+    public void setMaxStackSize(int size) {
     }
 
     @Override

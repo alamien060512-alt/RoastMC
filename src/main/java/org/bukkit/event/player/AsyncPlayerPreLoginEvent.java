@@ -2,8 +2,6 @@ package org.bukkit.event.player;
 
 import com.roastmc.neoforge.api.ColorAPI;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.UUID;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
@@ -34,7 +32,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final InetAddress ipAddress;
-    private final SocketAddress rawAddress;
+    private final InetAddress rawAddress;
     private final String hostname;
     private final boolean transferred;
     private Result result;
@@ -68,11 +66,11 @@ public class AsyncPlayerPreLoginEvent extends Event {
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
-        this(name, ipAddress, new InetSocketAddress(rawAddress, 0), uniqueId, transferred, profile, "", null);
+        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "", null);
     }
 
     @ApiStatus.Internal
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final SocketAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname, final PlayerLoginConnection playerLoginConnection) {
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname, final PlayerLoginConnection playerLoginConnection) {
         super(true);
         this.result = Result.ALLOWED;
         this.message = Component.empty();
@@ -167,7 +165,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @param message Kick message to display to the user
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
-     * @see #disallow(Result, Component)
+     * @see #disallow(Result, String)
      */
     @Deprecated
     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final net.kyori.adventure.text.Component message) {
@@ -224,7 +222,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @param result New result for disallowing the player
      * @param message Kick message to display to the user
-     * @see #disallow(Result, Component)
+     * @see #disallow(Result, String)
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
      */
@@ -282,23 +280,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
     }
 
     /**
-     * Gets the raw socket address of the player logging in
-     * @return The socket address
-     */
-    @NotNull
-    public SocketAddress getRawSocketAddress() {
-        return this.rawAddress;
-    }
-
-    /**
      * Gets the raw address of the player logging in
-     * @return The address, or the loopback address if the player is connecting
-     * through a Unix domain socket
+     * @return The address
      */
     @NotNull
     public InetAddress getRawAddress() {
-        if (this.rawAddress instanceof InetSocketAddress inet) return inet.getAddress();
-        return InetAddress.getLoopbackAddress();
+        return this.rawAddress;
     }
 
     /**
@@ -325,6 +312,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the connection for the player logging in.
      * @return connection
      */
+    @ApiStatus.Experimental
     @NotNull
     public PlayerLoginConnection getConnection() {
         return playerLoginConnection;

@@ -24,19 +24,19 @@ public class MenuSettings {
         this.rows = rows;
     }
 
-    public List<String> getOpenActions() {
-        return openActions;
-    }
-
-    public void setOpenActions(List<String> openActions) {
-        this.openActions = openActions;
-    }
-
     public String getOpenWithItem() {
         return openWithItem;
     }
 
     public void setOpenWithItem(String openWithItem) {
         this.openWithItem = openWithItem;
+    }
+
+    public List<String> getOpenActions() {
+        return openActions;
+    }
+
+    public void setOpenActions(List<String> openActions) {
+        this.openActions = openActions;
     }
 }

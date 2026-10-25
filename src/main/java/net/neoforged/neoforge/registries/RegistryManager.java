@@ -76,15 +76,15 @@ public class RegistryManager {
     }
 
     public static void postNewRegistryEvent() {
-        NewRegistryEvent staticEvent = new NewRegistryEvent();
-        NewDatapackRegistryEvent datapackEvent = new NewDatapackRegistryEvent();
+        NewRegistryEvent event = new NewRegistryEvent();
+        DataPackRegistryEvent.NewRegistry dataPackEvent = new DataPackRegistryEvent.NewRegistry();
         vanillaRegistryKeys = Set.copyOf(BuiltInRegistries.REGISTRY.keySet());
 
-        ModLoader.postEventWrapContainerInModOrder(staticEvent);
-        ModLoader.postEventWrapContainerInModOrder(datapackEvent);
+        ModLoader.postEventWrapContainerInModOrder(event);
+        ModLoader.postEventWrapContainerInModOrder(dataPackEvent);
 
-        staticEvent.fill();
-        datapackEvent.process();
+        event.fill();
+        dataPackEvent.process();
 
         ModLoader.postEvent(new ModifyRegistriesEvent());
 

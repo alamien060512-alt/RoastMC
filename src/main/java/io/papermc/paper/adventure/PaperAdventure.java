@@ -1,8 +1,5 @@
 package io.papermc.paper.adventure;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JavaOps;
 import io.netty.util.AttributeKey;
@@ -13,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +36,6 @@ import net.kyori.adventure.util.Codec;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.Removed;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
@@ -223,18 +220,16 @@ public final class PaperAdventure {
             .anyMatch(t -> t.hasAnyTranslations().toBooleanOrElse(true));
     }
 
-    private static final LoadingCache<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = CacheBuilder.newBuilder()
-        .maximumSize(256)
-        .build(CacheLoader.from(locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
-            component -> component, // decode
-            component -> translated(component, locale) // encode
-        )));
+    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
 
     public static com.mojang.serialization.Codec<Component> localizedCodec(final @Nullable Locale l) {
         if (l == null) {
             return AdventureCodecs.COMPONENT_CODEC;
         }
-        return LOCALIZED_CODECS.getUnchecked(l);
+        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
+            component -> component, // decode
+            component -> translated(component, locale) // encode
+        ));
     }
 
     public static String asPlain(final Component component, final Locale locale) {
@@ -366,14 +361,13 @@ public final class PaperAdventure {
             return Collections.emptyMap();
         }
         final Map<Key, DataComponentValue> map = new HashMap<>();
-        for (final Map.Entry<DataComponentType<?>, Object> entry : patch.map.entrySet()) {
+        for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
             if (entry.getKey().isTransient()) continue;
             @Subst("key:value") final String typeKey = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(entry.getKey())).toString();
-            final Object patchedValue = entry.getValue();
-            if (Removed.isRemoved(patchedValue)) {
-                map.put(Key.key(typeKey), DataComponentValue.removed());
+            if (entry.getValue().isEmpty()) {
+                   map.put(Key.key(typeKey), DataComponentValue.removed());
             } else {
-                map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), patchedValue));
+                map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), entry.getValue().get()));
             }
         }
         return map;

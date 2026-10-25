@@ -9,10 +9,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ChangeOverTimeBlock.class)
-public interface MixinChangeOverTimeBlock {
+public class MixinChangeOverTimeBlock {
 
-    @Redirect(method = "lambda$changeOverTime$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"))
-    private static boolean roastmc$handleBlockFormEvent(ServerLevel level, BlockPos pos, BlockState state) {
+    @Redirect(method = "randomTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"))
+    private boolean roastmc_handleBlockFormEvent(ServerLevel level, BlockPos pos, BlockState state) {
         return org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, state);
     }
 }

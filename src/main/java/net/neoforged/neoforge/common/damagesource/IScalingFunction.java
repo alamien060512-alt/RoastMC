@@ -22,9 +22,9 @@ public interface IScalingFunction {
      * @implNote Values are based on the code found in {@link Player#hurt(DamageSource, float)}.
      */
     @SuppressWarnings("deprecation")
-    IScalingFunction DEFAULT = (source, _, amount, difficulty) -> {
+    IScalingFunction DEFAULT = (source, target, amount, difficulty) -> {
         if (source.scalesWithDifficulty()) {
-            return switch (difficulty) {
+            return switch (target.level().getDifficulty()) {
                 case PEACEFUL -> 0.0F;
                 case EASY -> Math.min(amount / 2.0F + 1.0F, amount);
                 case NORMAL -> amount;

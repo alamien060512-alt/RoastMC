@@ -6,7 +6,6 @@
 package net.neoforged.neoforge.internal;
 
 import net.minecraft.core.cauldron.CauldronInteractions;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.neoforge.capabilities.CapabilityHooks;
 import net.neoforged.neoforge.common.world.chunk.ForcedChunkManager;
 import net.neoforged.neoforge.common.world.poi.PoiTypeExtender;
@@ -22,6 +21,5 @@ public class RegistrationEvents {
         RegistryManager.initDataMaps();
         DataComponentModifiers.init();
         PoiTypeExtender.extendPoiTypes();
-        ((AllParamsKeySet) LootContextParamSets.ALL_PARAMS).init();
     }
 }

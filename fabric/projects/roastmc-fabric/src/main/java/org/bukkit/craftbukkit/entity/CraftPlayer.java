@@ -107,7 +107,6 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
-import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.border.BorderChangeListener;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -830,13 +829,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         Component[] components = CraftSign.sanitizeLines(lines);
         SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
-        SignText.Mutable text = sign.getText(SignTextSlot.FRONT).asMutable();
+        SignText text = sign.getFrontText();
         text = text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
-        text = text.setTextGlowing(hasGlowingText);
+        text = text.setHasGlowingText(hasGlowingText);
         for (int i = 0; i < components.length; i++) {
-            text = text.setLine(i, components[i]);
+            text = text.setMessage(i, components[i]);
         }
-        sign.setText(text.asImmutable(), SignTextSlot.FRONT);
+        sign.setText(text, true);
 
         getHandle().connection.send(new ClientboundBlockEntityDataPacket(sign.getBlockPos(), sign.getType(), sign.getUpdateTag(getHandle().registryAccess())));
     }
@@ -1176,7 +1175,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         BlockPos bed = respawnConfig.respawnData().pos();
 
         if (world != null && bed != null) {
-            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, false);
+            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, true);
             if (spawnLoc.isPresent()) {
                 ServerPlayer.RespawnPosAngle vec = spawnLoc.get();
                 return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), vec.pitch());
@@ -1332,12 +1331,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setPlayerTime(long time, boolean relative) {
-		ServerPlayer player = getHandle();
         getHandle().roastmc$timeOffset(time);
         getHandle().roastmc$relativeTime(relative);
-		if (player.connection != null) {
-            player.connection.send(player.level().clockManager().createFullSyncPacket()); // TODO
-        }
     }
 
     @Override
@@ -2326,7 +2321,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void updateCommands() {
         if (getHandle().connection == null) return;
 
-        getHandle().server.getPlayerList().sendPlayerPermissionLevel(getHandle());
+        getHandle().server.getCommands().sendCommands(getHandle());
     }
 
     @Override

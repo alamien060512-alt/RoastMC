@@ -1,8 +1,6 @@
 package com.destroystokyo.paper.event.player;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.UUID;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -43,10 +41,10 @@ public class PlayerConnectionCloseEvent extends Event {
 
     private final UUID playerUniqueId;
     private final String playerName;
-    private final SocketAddress ipAddress;
+    private final InetAddress ipAddress;
 
     @ApiStatus.Internal
-    public PlayerConnectionCloseEvent(final UUID playerUniqueId, final String playerName, final SocketAddress ipAddress, final boolean async) {
+    public PlayerConnectionCloseEvent(final UUID playerUniqueId, final String playerName, final InetAddress ipAddress, final boolean async) {
         super(async);
         this.playerUniqueId = playerUniqueId;
         this.playerName = playerName;
@@ -68,20 +66,10 @@ public class PlayerConnectionCloseEvent extends Event {
     }
 
     /**
-     * Returns the player's socket address.
-     */
-    public SocketAddress getSocketAddress() {
-        return this.ipAddress;
-    }
-
-    /**
-     * Returns the player's IP address, or the loopback address if the player
-     * is connecting through a Unix domain socket and the proxy has not
-     * forwarded the player's IP address yet.
+     * Returns the player's IP address.
      */
     public InetAddress getIpAddress() {
-        if (this.ipAddress instanceof InetSocketAddress inet) return inet.getAddress();
-        return InetAddress.getLoopbackAddress();
+        return this.ipAddress;
     }
 
     @Override

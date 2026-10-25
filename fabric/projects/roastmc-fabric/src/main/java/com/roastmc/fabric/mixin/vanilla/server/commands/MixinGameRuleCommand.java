@@ -3,6 +3,8 @@ package com.roastmc.fabric.mixin.vanilla.server.commands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.commands.GameRuleCommand;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * @author Mgazul
@@ -10,5 +12,9 @@ import org.spongepowered.asm.mixin.Mixin;
  */
 @Mixin(GameRuleCommand.class)
 public class MixinGameRuleCommand {
-    // CraftBukkit - per-world game rules: pending per-world GameRules wiring
+
+    @Redirect(method = "setGameRule", at = @At(value = "INVOKE", target = "Lnet/minecraft/commands/CommandSourceStack;getServer()Lnet/minecraft/server/MinecraftServer;"))
+    private static CommandSourceStack roastmc_getLevel(CommandSourceStack stack) {
+        return stack; // CraftBukkit - pass level instead of server
+    }
 }

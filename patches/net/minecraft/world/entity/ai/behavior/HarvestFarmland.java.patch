@@ -34,7 +34,7 @@
 -            return false;
 -        }
 -
-+        if (!org.purpurmc.purpur.PurpurWorldConfig.canEntityGrief(level, body, level.purpurConfig.villagerMobGriefingOverride)) { // Purpur - Add mobGriefing override to everything affected
++        if (!net.neoforged.neoforge.event.EventHooks.canEntityGrief(level, body)) {
 +            return false;
 +        }
 +

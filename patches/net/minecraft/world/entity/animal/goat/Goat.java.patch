@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/goat/Goat.java
 +++ b/net/minecraft/world/entity/animal/goat/Goat.java
-@@ -53,6 +_,9 @@
+@@ -52,6 +_,9 @@
  import net.minecraft.world.level.storage.ValueInput;
  import net.minecraft.world.level.storage.ValueOutput;
  import net.minecraft.world.phys.Vec3;
@@ -10,7 +10,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class Goat extends Animal {
-@@ -88,6 +_,54 @@
+@@ -87,6 +_,37 @@
      private boolean isLoweringHead;
      private int lowerHeadTick;
  
@@ -34,23 +34,6 @@
 +        return (this.level().purpurConfig.goatBreedingChance > 0.0D) && (this.level().purpurConfig.goatBreedingChance >= this.random.nextDouble());
 +    }
 +
-+    // Purpur start - Ridables
-+    @Override
-+    public boolean isRidable() {
-+        return level().purpurConfig.goatRidable;
-+    }
-+
-+    @Override
-+    public boolean dismountsUnderwater() {
-+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.goatRidableInWater;
-+    }
-+
-+    @Override
-+    public boolean isControllable() {
-+        return level().purpurConfig.goatControllable;
-+    }
-+    // Purpur end - Ridables
-+
 +    @Override
 +    protected int getBreedingMinOffspring() {
 +        return this.level().purpurConfig.goatBreedingMinOffspring;
@@ -65,7 +48,7 @@
      public Goat(EntityType<? extends Goat> type, Level level) {
          super(type, level);
          this.getNavigation().setCanFloat(true);
-@@ -95,6 +_,13 @@
+@@ -94,6 +_,13 @@
          this.setPathfindingMalus(PathType.ON_TOP_OF_POWDER_SNOW, -1.0F);
      }
  
@@ -79,15 +62,7 @@
      public ItemStack createHorn() {
          RandomSource random = RandomSource.createThreadLocalInstance(this.getUUID().hashCode());
          TagKey<Instrument> key = this.isScreamingGoat() ? InstrumentTags.SCREAMING_GOAT_HORNS : InstrumentTags.REGULAR_GOAT_HORNS;
-@@ -175,6 +_,7 @@
-     protected void customServerAiStep(ServerLevel level) {
-         ProfilerFiller profiler = Profiler.get();
-         profiler.push("goatBrain");
-+        if (getRider() == null || !this.isControllable()) // Purpur - only use brain if no rider
-         this.getBrain().tick(level, this);
-         profiler.pop();
-         profiler.push("goatActivityUpdate");
-@@ -218,8 +_,15 @@
+@@ -217,18 +_,25 @@
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
          ItemStack heldItem = player.getItemInHand(hand);
          if (heldItem.is(Items.BUCKET) && !this.isBaby()) {
@@ -103,8 +78,26 @@
 +            ItemStack bucketOrMilkBucket = ItemUtils.createFilledResult(heldItem, player, CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
              player.setItemInHand(hand, bucketOrMilkBucket);
              return InteractionResult.SUCCESS;
-         }
-@@ -358,4 +_,16 @@
+-        }
+-
+-        InteractionResult interactionResult = super.mobInteract(player, hand);
+-        if (interactionResult.consumesAction() && this.isFood(heldItem)) {
+-            this.playEatingSound();
+-        }
+-
+-        return interactionResult;
++        } else {
++            InteractionResult interactionResult = super.mobInteract(player, hand);
++            if (interactionResult.consumesAction() && this.isFood(heldItem)) {
++                this.playEatingSound();
++            }
++
++            return interactionResult;
++        }
+     }
+ 
+     @Override
+@@ -357,4 +_,16 @@
      ) {
          return level.getBlockState(pos.below()).is(BlockTags.GOATS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, pos);
      }

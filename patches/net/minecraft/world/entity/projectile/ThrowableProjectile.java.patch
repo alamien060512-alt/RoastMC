@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 +++ b/net/minecraft/world/entity/projectile/ThrowableProjectile.java
-@@ -47,7 +_,7 @@
+@@ -49,7 +_,7 @@
          this.applyInertia();
          HitResult result = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
          Vec3 newPosition;
@@ -9,7 +9,7 @@
              newPosition = result.getLocation();
          } else {
              newPosition = this.position().add(this.getDeltaMovement());
-@@ -58,7 +_,7 @@
+@@ -60,7 +_,7 @@
          this.applyEffectsFromBlocks();
          super.tick();
          if (result.getType() != HitResult.Type.MISS && this.isAlive()) {
@@ -18,21 +18,3 @@
          }
      }
  
-@@ -90,7 +_,7 @@
-     }
- 
-     @Override
--    protected float getAirDrag() {
-+    public float getAirDrag() {
-         return 0.99F;
-     }
- 
-@@ -104,7 +_,7 @@
-     }
- 
-     @Override
--    protected double getDefaultGravity() {
-+    public double getDefaultGravity() {
-         return 0.03;
-     }
- }

@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinBellBlockEntity {
 
     @Inject(method = "tick", at = @At("HEAD"))
-    private static void roastmc_tick(CallbackInfo ci) {
+    private void roastmc_tick(CallbackInfo ci) {
         // CraftBukkit
     }
 }

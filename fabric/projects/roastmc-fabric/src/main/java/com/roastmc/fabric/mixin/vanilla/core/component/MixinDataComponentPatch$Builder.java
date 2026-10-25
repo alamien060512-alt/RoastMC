@@ -2,6 +2,7 @@ package com.roastmc.fabric.mixin.vanilla.core.component;
 
 import com.roastmc.fabric.injected.core.component.ContextDataComponentPatchBuilder;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import java.util.Optional;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import org.spongepowered.asm.mixin.Final;
@@ -17,7 +18,7 @@ public class MixinDataComponentPatch$Builder implements ContextDataComponentPatc
 
     @Shadow
     @Final
-    public Reference2ObjectMap<DataComponentType<?>, Object> map;
+    public Reference2ObjectMap<DataComponentType<?>, Optional<?>> map;
 
     // CraftBukkit start
     @Override

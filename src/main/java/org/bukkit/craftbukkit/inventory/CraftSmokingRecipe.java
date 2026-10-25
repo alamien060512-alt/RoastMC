@@ -25,14 +25,15 @@ public class CraftSmokingRecipe extends SmokingRecipe implements CraftRecipe {
     }
 
     @Override
-    public RecipeHolder<?> toMinecraftRecipe() {
-        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.SmokingRecipe(
+    public void addToRecipeManager() {
+        net.minecraft.world.item.crafting.SmokingRecipe recipe = new net.minecraft.world.item.crafting.SmokingRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.AbstractCookingRecipe.CookingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftRecipe.toIngredient(this.getInputChoice(), true),
             CraftItemStack.asTemplate(this.getResult()),
             this.getExperience(),
             this.getCookingTime()
-        ));
+        );
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 }

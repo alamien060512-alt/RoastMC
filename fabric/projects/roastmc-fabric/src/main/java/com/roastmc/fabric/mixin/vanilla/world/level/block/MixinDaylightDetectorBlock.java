@@ -1,11 +1,10 @@
 package com.roastmc.fabric.mixin.vanilla.world.level.block;
 
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.DaylightDetectorBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -15,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinDaylightDetectorBlock {
 
     @Inject(method = "useWithoutItem", at = @At("HEAD"))
-    private void roastmc_useWithoutItem(CallbackInfoReturnable<InteractionResult> cir) {
+    private void roastmc_useWithoutItem(CallbackInfo ci) {
         // CraftBukkit
     }
 }

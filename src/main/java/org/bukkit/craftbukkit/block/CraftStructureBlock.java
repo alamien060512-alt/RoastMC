@@ -20,8 +20,8 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
 
     private static final int MAX_SIZE = 48;
 
-    public CraftStructureBlock(World world, StructureBlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftStructureBlock(World world, StructureBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftStructureBlock(CraftStructureBlock state, Location location) {

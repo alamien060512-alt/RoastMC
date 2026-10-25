@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -8,14 +_,38 @@
+@@ -9,14 +_,38 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.material.FluidState;
  
@@ -12,9 +12,8 @@
      private short fluidCount;
      private short tickingBlockCount;
      private short tickingFluidCount;
--    private final PalettedContainer<BlockState> states;
+     public final PalettedContainer<BlockState> states;
 -    private PalettedContainerRO<Holder<Biome>> biomes;
-+    public final PalettedContainer<BlockState> states;
 +    private PalettedContainer<Holder<Biome>> biomes; // CraftBukkit - read/write
 +
 +    // Paper start - block counting
@@ -43,7 +42,7 @@
  
      private LevelChunkSection(LevelChunkSection source) {
          this.nonEmptyBlockCount = source.nonEmptyBlockCount;
-@@ -26,14 +_,20 @@
+@@ -27,14 +_,20 @@
          this.biomes = source.biomes.copy();
      }
  
@@ -66,7 +65,7 @@
          this.biomes = containerFactory.createForBiomes();
      }
  
-@@ -57,6 +_,45 @@
+@@ -58,6 +_,45 @@
          return this.setBlockState(sectionX, sectionY, sectionZ, state, true);
      }
  
@@ -112,7 +111,7 @@
      public BlockState setBlockState(int sectionX, int sectionY, int sectionZ, BlockState state, boolean checkThreading) {
          BlockState previous;
          if (checkThreading) {
-@@ -65,7 +_,7 @@
+@@ -66,7 +_,7 @@
              previous = this.states.getAndSetUnchecked(sectionX, sectionY, sectionZ, state);
          }
  
@@ -121,7 +120,7 @@
              this.nonEmptyBlockCount--;
              if (previous.isRandomlyTicking()) {
                  this.tickingBlockCount--;
-@@ -80,7 +_,7 @@
+@@ -81,7 +_,7 @@
              }
          }
  
@@ -130,7 +129,7 @@
              this.nonEmptyBlockCount++;
              if (state.isRandomlyTicking()) {
                  this.tickingBlockCount++;
-@@ -95,6 +_,8 @@
+@@ -96,6 +_,8 @@
              }
          }
  
@@ -139,7 +138,7 @@
          return previous;
      }
  
-@@ -119,36 +_,69 @@
+@@ -120,36 +_,71 @@
      }
  
      public void recalcBlockCounts() {
@@ -154,7 +153,7 @@
 -                    this.nonEmptyBlockCount += count;
 -                    if (state.isRandomlyTicking()) {
 -                        this.tickingBlockCount += count;
-+// Paper start - block counting
++        // Paper start - block counting
 +        // reset, then recalculate
 +        this.nonEmptyBlockCount = (short)0;
 +        this.fluidCount = (short)0;
@@ -169,18 +168,21 @@
 +            final int paletteSize = palette.getSize();
 +            final net.minecraft.util.BitStorage storage = data.storage();
 +
-+            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> counts;
++            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> counts;
 +            if (paletteSize == 1) {
-+                counts = new java.util.ArrayList<>(1);
-+                counts.add(new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(FULL_LIST.size(), palette.valueFor(0), FULL_LIST));
++                counts = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1);
++                counts.put(0, FULL_LIST);
 +            } else {
-+                counts = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingBitStorage)storage).moonrise$countBlocks(palette);
++                counts = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingBitStorage)storage).moonrise$countEntries();
 +            }
 +
-+            for (int i = 0, len = counts.size(); i < len; ++i) {
-+                final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry blockCountingEntry = counts.get(i);
-+                final int paletteCount = blockCountingEntry.count;
-+                final BlockState state = blockCountingEntry.state;
++            for (final java.util.Iterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList>> iterator = counts.int2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++                final it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList> entry = iterator.next();
++                final int paletteIdx = entry.getIntKey();
++                final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = entry.getValue();
++                final int paletteCount = coordinates.size();
++
++                final BlockState state = palette.valueFor(paletteIdx);
 +
 +                if (state.isAir()) {
 +                    continue;
@@ -191,7 +193,6 @@
 +                }
 +                this.nonEmptyBlockCount += (short)paletteCount;
 +                if (state.isRandomlyTicking()) {
-+                    final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = blockCountingEntry.coords;
 +                    this.tickingBlockCount += (short) paletteCount;
 +                    final short[] raw = coordinates.elements();
 +                    final int rawLen = raw.length;
@@ -201,8 +202,8 @@
 +                    tickingBlocks.setMinCapacity(Math.min((rawLen + tickingBlocks.size()) * 3 / 2, 16 * 16 * 16));
 +
 +                    java.util.Objects.checkFromToIndex(0, paletteCount, raw.length);
-+                    for (int k = 0; k < paletteCount; ++k) {
-+                        tickingBlocks.add(raw[k]);
++                    for (int i = 0; i < paletteCount; ++i) {
++                        tickingBlocks.add(raw[i]);
                      }
 -
 -                    FluidState fluid = state.getFluidState();
@@ -234,7 +235,7 @@
      }
  
      public PalettedContainer<BlockState> getStates() {
-@@ -166,6 +_,11 @@
+@@ -167,6 +_,11 @@
          PalettedContainer<Holder<Biome>> biomes = this.biomes.recreate();
          biomes.read(buffer);
          this.biomes = biomes;
@@ -246,7 +247,7 @@
      }
  
      public void readBiomes(FriendlyByteBuf buffer) {
-@@ -175,10 +_,15 @@
+@@ -176,10 +_,15 @@
      }
  
      public void write(FriendlyByteBuf buffer) {
@@ -264,47 +265,16 @@
      }
  
      public int getSerializedSize() {
-@@ -193,19 +_,37 @@
+@@ -193,6 +_,12 @@
+     public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ) {
          return this.biomes.get(quartX, quartY, quartZ);
      }
- 
++
 +    // CraftBukkit start
 +    public void setNoiseBiome(int quartX, int quartY, int quartZ, Holder<Biome> biome) {
 +        this.biomes.set(quartX, quartY, quartZ, biome);
 +    }
 +    // CraftBukkit end
-+
-     public void fillBiomesFromNoise(BiomeResolver biomeResolver, int quartMinX, int quartMinY, int quartMinZ) {
--        PalettedContainer<Holder<Biome>> newBiomes = this.biomes.recreate();
--        int size = 4;
-+        // Paper start - optimise chunk generation
-+        // Seed the palette with the biome at (0, 0, 0) and fill every other position once, so that
-+        // every palette entry is present in the generated section. This also keeps uniform sections
-+        // in a single-value palette instead of retaining an unused default biome.
-+        // Sampling order must match Vanilla, as the RTree caches the last result (MC-241546).
-+        final Holder<Biome> first = biomeResolver.getNoiseBiome(quartMinX, quartMinY, quartMinZ);
-+        final PalettedContainer<Holder<Biome>> newBiomes = new PalettedContainer<>(first, this.biomes.strategy, null); // Paper - Anti-Xray
  
--        for (int x = 0; x < 4; x++) {
--            for (int y = 0; y < 4; y++) {
--                for (int z = 0; z < 4; z++) {
--                    newBiomes.getAndSetUnchecked(x, y, z, biomeResolver.getNoiseBiome(quartMinX + x, quartMinY + y, quartMinZ + z));
-+        for (int x = 0; x < 4; ++x) {
-+            for (int y = 0; y < 4; ++y) {
-+                // Skip (0, 0, 0): the initial value already fills it, so do not sample it again.
-+                final int startZ = x == 0 && y == 0 ? 1 : 0;
-+                for (int z = startZ; z < 4; ++z) {
-+                    // Avoid reading the old value.
-+                    newBiomes.set(
-+                        (y << 4) | (z << 2) | x,
-+                        biomeResolver.getNoiseBiome(quartMinX + x, quartMinY + y, quartMinZ + z)
-+                    );
-                 }
-             }
-         }
- 
-         this.biomes = newBiomes;
-+        // Paper end - optimise chunk generation
-     }
- 
-     public LevelChunkSection copy() {
+     public void fillBiomesFromNoise(BiomeResolver biomeResolver, Climate.Sampler sampler, int quartMinX, int quartMinY, int quartMinZ) {
+         PalettedContainer<Holder<Biome>> newBiomes = this.biomes.recreate();

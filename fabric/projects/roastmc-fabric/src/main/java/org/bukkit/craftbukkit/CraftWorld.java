@@ -66,7 +66,6 @@ import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.gamerules.GameRuleTypeVisitor;
 import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelResource;
@@ -1294,7 +1293,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isBedWorks() {
-        return !world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).destroyOnUse();
+        return !world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).explodes();
     }
 
     @Override
@@ -1826,7 +1825,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        getHandle().sendParticles(
+        getHandle().sendParticlesSource(
+                null, // Sender
                 CraftParticle.createParticleParam(particle, data), // Particle
                 force, // force
                 false, // override limiter for render - TODO: Expose this?
@@ -1932,9 +1932,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             holders.add(CraftBiome.bukkitToMinecraftHolder(biome));
         }
 
-        RandomState randomState = getHandle().getChunkSource().randomState();
+        Climate.Sampler sampler = getHandle().getChunkSource().randomState().sampler();
         // The given predicate is evaluated once at the start of the search, so performance isn't a large concern.
-        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, randomState, getHandle());
+        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, sampler, getHandle());
         if (found == null) {
             return null;
         }
@@ -1980,7 +1980,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
         List<GeneratedStructure> structures = new ArrayList<>();
-        for (StructureStart start : getHandle().structureManager().startsForStructure(x, z, predicate)) {
+        for (StructureStart start : getHandle().structureManager().startsForStructure(new ChunkPos(x, z), predicate)) {
             structures.add(new CraftGeneratedStructure(start));
         }
 

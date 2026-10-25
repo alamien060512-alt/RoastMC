@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(AbstractNautilus.class)
 public class MixinAbstractNautilus {
 
-    @Redirect(method = "createInventory", at = @At(value = "NEW", target = "Lnet/minecraft/world/SimpleContainer;"))
+    @Redirect(method = "createInventory", at = @At(value = "NEW", target = "(I)V"))
     private SimpleContainer roastmc_createInventory(int size) {
         // CraftBukkit - store entity
         return new SimpleContainer(size);

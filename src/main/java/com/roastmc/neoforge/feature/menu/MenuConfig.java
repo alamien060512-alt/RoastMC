@@ -21,5 +21,4 @@ public class MenuConfig {
     public void setIcons(Map<String, Icon> icons) {
         this.icons = icons;
     }
-
 }

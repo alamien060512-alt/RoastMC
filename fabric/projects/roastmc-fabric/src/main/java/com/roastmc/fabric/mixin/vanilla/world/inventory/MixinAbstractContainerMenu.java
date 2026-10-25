@@ -78,7 +78,7 @@ public abstract class MixinAbstractContainerMenu implements ContextAbstractConta
 
     // CraftBukkit start
     public boolean checkReachable = true;
-    // RoastMC start
+    // Youer start
     public InventoryView bukkitView;
     public Player containerOwner = null;
 
@@ -207,17 +207,17 @@ public abstract class MixinAbstractContainerMenu implements ContextAbstractConta
     /**
      * SPIGOT-4556: Move setCarried(EMPTY) before drop when clicking outside inventory (-999)
      */
-    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;drop(Lnet/minecraft/world/item/ItemStack;ZLnet/minecraft/util/Prediction;)Lnet/minecraft/world/entity/item/ItemEntity;", ordinal = 0))
-    private net.minecraft.world.entity.item.ItemEntity roastmc$doClick$drop999(Player player, ItemStack stack, boolean b, net.minecraft.util.Prediction prediction) {
+    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;drop(Lnet/minecraft/world/item/ItemStack;Z)Lnet/minecraft/world/entity/item/ItemEntity;", ordinal = 0))
+    private net.minecraft.world.entity.item.ItemEntity roastmc$doClick$drop999(Player player, ItemStack stack, boolean b) {
         // CraftBukkit - SPIGOT-4556: set carried empty before dropping
         this.setCarried(ItemStack.EMPTY);
-        return player.drop(stack, b, prediction);
+        return player.drop(stack, b);
     }
 
     /**
      * Redirect the original setCarried(EMPTY) after drop(-999) - it's already done above
      */
-    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 2))
+    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 2))
     private void roastmc$doClick$setCarried999(AbstractContainerMenu menu, ItemStack stack) {
         // Already handled in drop redirect above - skip
     }
@@ -225,16 +225,16 @@ public abstract class MixinAbstractContainerMenu implements ContextAbstractConta
     /**
      * SPIGOT-8010: Creative mode loop break - check drop return value
      */
-    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;drop(Lnet/minecraft/world/item/ItemStack;ZLnet/minecraft/util/Prediction;)Lnet/minecraft/world/entity/item/ItemEntity;", ordinal = 3))
-    private net.minecraft.world.entity.item.ItemEntity roastmc$doClick$dropCreative(Player player, ItemStack stack, boolean b, net.minecraft.util.Prediction prediction) {
+    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;drop(Lnet/minecraft/world/item/ItemStack;Z)Lnet/minecraft/world/entity/item/ItemEntity;", ordinal = 3))
+    private net.minecraft.world.entity.item.ItemEntity roastmc$doClick$dropCreative(Player player, ItemStack stack, boolean b) {
         // CraftBukkit - SPIGOT-8010: break loop if drop returns null
-        return player.drop(stack, b, prediction);
+        return player.drop(stack, b);
     }
 
     /**
      * SPIGOT-4556: Move setCarried before dropOrPlaceInInventory (removed slot)
      */
-    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 4))
+    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 4))
     private void roastmc$doClick$setCarriedRemoved(AbstractContainerMenu menu, ItemStack stack) {
         // Already set carried empty earlier - skip this duplicate
     }
@@ -256,7 +256,7 @@ public abstract class MixinAbstractContainerMenu implements ContextAbstractConta
      * Intercept the setCarried call right after the quickcraft slot iteration
      * to replace it with full drag event logic
      */
-    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 3))
+    @Redirect(method = "doClick", at = @At(value = "INVOKE", target = "setCarried(Lnet/minecraft/world/item/ItemStack;)V", ordinal = 3))
     private void roastmc$doClick$setCarriedDrag(AbstractContainerMenu menu, ItemStack carriedStack) {
         if (!roastmc$draggedSlots.isEmpty()) {
             // CraftBukkit start - InventoryDragEvent

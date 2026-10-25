@@ -1,14 +1,6 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -26,6 +_,7 @@
- import java.nio.channels.ClosedChannelException;
- import java.util.Objects;
- import java.util.Queue;
-+import java.util.UUID;
- import java.util.concurrent.RejectedExecutionException;
- import java.util.function.Consumer;
- import javax.crypto.Cipher;
-@@ -64,9 +_,14 @@
+@@ -65,9 +_,14 @@
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
      private volatile boolean sendLoginDisconnect = true;
@@ -24,11 +16,10 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -79,6 +_,51 @@
-     private boolean handlingFault;
+@@ -81,6 +_,50 @@
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
-+    private @Nullable UUID intendedProfileId;
+     private @Nullable UUID intendedProfileId;
 +    @Nullable
 +    private ProtocolInfo<?> inboundProtocol;
 +    public String hostname = ""; // CraftBukkit - add field
@@ -76,7 +67,7 @@
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -89,30 +_,70 @@
+@@ -91,30 +_,57 @@
          super.channelActive(ctx);
          this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
@@ -111,19 +102,6 @@
 +        }
 +        // Paper end - Handle large packets disconnecting client
          if (cause instanceof SkipPacketException) {
-+            // Paper start - packet limiter
-+            if (cause instanceof SkipPacketDecoderException && !this.stopReadingPackets) {
-+                this.receivedPackets++;
-+                if (this.allPacketCounts != null) {
-+                    synchronized (this.PACKET_LIMIT_LOCK) {
-+                        this.allPacketCounts.updateAndAdd(1, System.nanoTime());
-+                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
-+                            this.killForPacketSpam();
-+                        }
-+                    }
-+                }
-+            }
-+            // Paper end - packet limiter
              LOGGER.debug("Skipping packet due to errors", cause.getCause());
          } else {
              boolean isFirstFault = !this.handlingFault;
@@ -147,7 +125,7 @@
                      DisconnectionDetails details;
                      if (listener != null) {
                          details = listener.createDisconnectionInfo(reason, cause);
-@@ -120,9 +_,11 @@
+@@ -122,9 +_,11 @@
                          details = new DisconnectionDetails(reason);
                      }
  
@@ -160,7 +138,7 @@
                              Packet<?> packet = this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(reason)
                                  : new ClientboundDisconnectPacket(reason);
-@@ -139,6 +_,7 @@
+@@ -141,6 +_,7 @@
                  }
              }
          }
@@ -168,7 +146,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext ctx, Packet<?> packet) {
-@@ -147,11 +_,60 @@
+@@ -149,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              }
@@ -230,7 +208,7 @@
                  } catch (RejectedExecutionException ignored) {
                      this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                  } catch (ClassCastException exception) {
-@@ -199,6 +_,7 @@
+@@ -201,6 +_,7 @@
              throw new IllegalStateException("Invalid inbound protocol: " + protocol.id());
          }
  
@@ -238,7 +216,7 @@
          this.packetListener = packetListener;
          this.disconnectListener = null;
          UnconfiguredPipelineHandler.InboundConfigurationTask configMessage = UnconfiguredPipelineHandler.setupInboundProtocol(protocol);
-@@ -220,7 +_,12 @@
+@@ -222,7 +_,12 @@
          BundlerInfo bundlerInfo = protocol.bundlerInfo();
          if (bundlerInfo != null) {
              PacketBundleUnpacker newUnbundler = new PacketBundleUnpacker(bundlerInfo);
@@ -252,7 +230,7 @@
          }
  
          boolean isLoginProtocol = protocol.id() == ConnectionProtocol.LOGIN;
-@@ -277,11 +_,38 @@
+@@ -279,11 +_,38 @@
      }
  
      public void send(Packet<?> packet, @Nullable ChannelFutureListener listener, boolean flush) {
@@ -294,7 +272,7 @@
          }
      }
  
-@@ -290,9 +_,50 @@
+@@ -292,9 +_,50 @@
              this.flushQueue();
              action.accept(this);
          } else {
@@ -314,7 +292,7 @@
 +     *
 +     * @see <a href="https://mojira.dev/MC-308621">MC-308621</a>
 +     */
-+    private void scheduleNettyTask(final Runnable task) {
++    public void scheduleNettyTask(final Runnable task) {
 +        final boolean connected = this.isConnected();
 +        if (!connected && !this.preparing) {
 +            return;
@@ -348,7 +326,7 @@
  
      private void sendPacket(Packet<?> packet, @Nullable ChannelFutureListener listener, boolean flush) {
          this.sentPackets++;
-@@ -304,21 +_,42 @@
+@@ -306,21 +_,42 @@
      }
  
      private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener listener, boolean flush) {
@@ -400,7 +378,7 @@
          }
      }
  
-@@ -330,21 +_,92 @@
+@@ -332,21 +_,92 @@
          }
      }
  
@@ -499,7 +477,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -352,7 +_,7 @@
+@@ -354,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -508,7 +486,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -379,7 +_,7 @@
+@@ -381,7 +_,7 @@
          if (this.address == null) {
              return "local";
          } else {
@@ -517,7 +495,7 @@
          }
      }
  
-@@ -388,6 +_,8 @@
+@@ -390,6 +_,8 @@
      }
  
      public void disconnect(DisconnectionDetails details) {
@@ -526,7 +504,7 @@
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -422,6 +_,7 @@
+@@ -424,6 +_,7 @@
      }
  
      public static ChannelFuture connect(InetSocketAddress address, EventLoopGroupHolder eventLoopGroupHolder, Connection connection) {
@@ -534,7 +512,7 @@
          return new Bootstrap().group(eventLoopGroupHolder.eventLoopGroup()).handler(new ChannelInitializer<Channel>() {
              @Override
              protected void initChannel(Channel channel) {
-@@ -509,10 +_,24 @@
+@@ -511,10 +_,24 @@
          return connection;
      }
  
@@ -562,7 +540,7 @@
  
      public boolean isConnected() {
          return this.channel != null && this.channel.isOpen();
-@@ -536,44 +_,75 @@
+@@ -538,44 +_,75 @@
          }
      }
  
@@ -632,7 +610,7 @@
 +                    /* Player was logged in, either game listener or configuration listener */
 +                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
 +                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(),
-+                            profile.name(), this.address, false).callEvent();
++                            profile.name(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
 +                    /* Player is login stage */
 +                    switch (loginListener.state) {
@@ -642,16 +620,16 @@
 +                        case ACCEPTED:
 +                            final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(), profile.name(),
-+                                this.address, false).callEvent();
++                                    ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                    }
 +                }
 +                // Paper end - Add PlayerConnectionCloseEvent
              }
          }
      }
-@@ -589,4 +_,108 @@
-     public void setBandwidthLogger(LocalSampleLogger bandwidthLogger) {
-         this.bandwidthDebugMonitor = new BandwidthDebugMonitor(bandwidthLogger);
+@@ -599,4 +_,108 @@
+     public @Nullable UUID getIntendedProfileId() {
+         return this.intendedProfileId;
      }
 +
 +    public Channel channel() {
@@ -705,24 +683,24 @@
 +
 +        private static boolean canSendImmediate(final Connection connection, final net.minecraft.network.protocol.Packet<?> packet) {
 +            return connection.isPending || connection.packetListener.protocol() != ConnectionProtocol.PLAY ||
-+                packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundClearTitlesPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSoundPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundSoundEntityPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundStopSoundPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundBossEventPacket ||
-+                packet instanceof net.minecraft.network.protocol.ping.ClientboundPongResponsePacket;
++                    packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundClearTitlesPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSoundPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundSoundEntityPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundStopSoundPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket ||
++                    packet instanceof net.minecraft.network.protocol.game.ClientboundBossEventPacket ||
++                    packet instanceof net.minecraft.network.protocol.ping.ClientboundPongResponsePacket;
 +        }
 +    }
 +

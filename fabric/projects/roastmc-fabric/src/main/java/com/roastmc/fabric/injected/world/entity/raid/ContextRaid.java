@@ -12,9 +12,4 @@ public interface ContextRaid {
     default java.util.Collection<Raider> getRaiders() {
         throw new ContextStateException("Not implemented");
     }
-
-    default void setTotalWaves(int waves) {
-        throw new ContextStateException("Not implemented");
-    }
-
 }

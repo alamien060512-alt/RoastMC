@@ -1,12 +1,10 @@
 package com.roastmc.fabric.mixin.vanilla.world.level.chunk.status;
 
-import java.util.concurrent.CompletableFuture;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatusTasks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -15,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ChunkStatusTasks.class)
 public class MixinChunkStatusTasks {
 
-    @Inject(method = "generateStructureStarts", at = @At("HEAD"))
-    private static void roastmc_generate(CallbackInfoReturnable<CompletableFuture<ChunkAccess>> cir) {
+    @Inject(method = "generate", at = @At("HEAD"))
+    private void roastmc_generate(CallbackInfo ci) {
         // CraftBukkit
     }
 }

@@ -4,7 +4,7 @@ import net.minecraft.world.level.levelgen.structure.structures.ShipwreckPieces;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ShipwreckPieces.class)
 public class MixinShipwreckPieces {
 
-    // CraftBukkit - setCraftLootTable 的调用点在嵌套 ShipwreckPiece 内，外层类无 addPiece
-    @Inject(method = "addRandomPiece", at = @At("HEAD"), require = 0)
-    private static void roastmc_addPiece(CallbackInfoReturnable<ShipwreckPieces.ShipwreckPiece> cir) {
+    @Inject(method = "addPiece", at = @At("HEAD"))
+    private void roastmc_addPiece(CallbackInfo ci) {
+        // CraftBukkit
     }
 }

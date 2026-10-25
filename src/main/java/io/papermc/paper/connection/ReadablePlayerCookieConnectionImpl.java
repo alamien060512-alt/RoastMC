@@ -1,9 +1,7 @@
 package io.papermc.paper.connection;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayDeque;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.network.Connection;
@@ -18,8 +16,7 @@ import org.jspecify.annotations.NullMarked;
 public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlayerCookieConnection {
 
     // Because we support async cookies, order is not promised.
-    // Requests for the same key are queued, the client answers them in the order they were sent.
-    private final Map<Identifier, Queue<CookieFuture>> requestedCookies = new ConcurrentHashMap<>();
+    private final Map<Identifier, CookieFuture> requestedCookies = new ConcurrentHashMap<>();
     private final Connection connection;
 
     public ReadablePlayerCookieConnectionImpl(final Connection connection) {
@@ -32,13 +29,7 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
 
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         Identifier id = CraftNamespacedKey.toMinecraft(key);
-        this.requestedCookies.compute(id, (ignored, queue) -> {
-            if (queue == null) {
-                queue = new ArrayDeque<>();
-            }
-            queue.add(new CookieFuture(id, future));
-            return queue;
-        });
+        this.requestedCookies.put(id, new CookieFuture(id, future));
 
         this.connection.send(new ClientboundCookieRequestPacket(id));
 
@@ -46,19 +37,14 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
     }
 
     public boolean handleCookieResponse(ServerboundCookieResponsePacket packet) {
-        final CookieFuture[] next = new CookieFuture[1];
-        this.requestedCookies.computeIfPresent(packet.key(), (ignored, queue) -> {
-            next[0] = queue.poll();
-            return queue.isEmpty() ? null : queue;
-        });
-
-        if (next[0] == null) {
-            return false;
+        CookieFuture future = this.requestedCookies.get(packet.key());
+        if (future != null) {
+            future.future().complete(packet.payload());
+            this.requestedCookies.remove(packet.key());
+            return true;
         }
 
-        // Complete outside of the map operation, a callback may request the same cookie again
-        next[0].future().complete(packet.payload());
-        return true;
+        return false;
     }
 
     public boolean isAwaitingCookies() {

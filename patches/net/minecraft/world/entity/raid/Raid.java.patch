@@ -22,17 +22,6 @@
              )
              .apply(i, Raid::new)
      );
-@@ -112,8 +_,8 @@
-     public long ticksActive;
-     private BlockPos center;
-     private boolean started;
--    private float totalHealth;
--    private int raidOmenLevel;
-+    public float totalHealth;
-+    public int raidOmenLevel;
-     private boolean active;
-     private int groupsSpawned;
-     private int postRaidTicks;
 @@ -134,6 +_,7 @@
          this.center = center;
          this.numGroups = this.getNumGroups(difficulty);
@@ -179,6 +168,15 @@
              }
          }
      }
+@@ -745,7 +_,7 @@
+     }
+ 
+     private int getDefaultNumSpawns(Raid.RaiderType type, int wav, boolean isBonusWave) {
+-        return isBonusWave ? type.spawnsPerWaveBeforeBonus[this.numGroups] : type.spawnsPerWaveBeforeBonus[wav];
++        return type.getDefaultSpawnsForWave(isBonusWave ? this.numGroups : wav); // CraftBukkit
+     }
+ 
+     private int getPotentialBonusSpawns(Raid.RaiderType type, RandomSource random, int wav, DifficultyInstance difficultyInstance, boolean isBonusWave) {
 @@ -755,6 +_,7 @@
          int bonusSpawns;
          switch (type) {
@@ -258,8 +256,8 @@
 +            return switch (this) {
 +                case PILLAGER -> extraWaves / 2;
 +                case VINDICATOR -> extraWaves / 3;
-+                case ILLUSIONER -> extraWaves / 3; // Purpur - Ability for Illusioners to spawn during raids
 +                case EVOKER -> extraWaves / 4;
++                case ILLUSIONER -> extraWaves / 4; // Purpur - Ability for Illusioners to spawn during raids
 +                case WITCH -> extraWaves / 5;
 +                case RAVAGER -> extraWaves / 6;
 +            };

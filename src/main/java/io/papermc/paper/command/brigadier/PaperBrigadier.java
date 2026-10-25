@@ -24,7 +24,9 @@ public final class PaperBrigadier {
         Vec2.ZERO,
         null,
         LevelBasedPermissionSet.OWNER,
+        "",
         CommonComponents.EMPTY,
+        null,
         null
     );
 

@@ -6,10 +6,10 @@
  
 +import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 +
- public class LeavesBlock extends Block implements SimpleWaterloggedBlock, IShearable {
+ public abstract class LeavesBlock extends Block implements SimpleWaterloggedBlock, IShearable {
      public static final int DECAY_DISTANCE = 7;
      public static final IntegerProperty DISTANCE = BlockStateProperties.DISTANCE;
-@@ -64,7 +_,21 @@
+@@ -67,7 +_,21 @@
  
      @Override
      protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
@@ -31,10 +31,10 @@
              dropResources(state, level, pos);
              level.removeBlock(pos, false);
          }
-@@ -77,6 +_,7 @@
+@@ -80,6 +_,7 @@
      @Override
      protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-         level.setBlockAndUpdate(pos, updateDistance(state, level, pos));
+         level.setBlock(pos, updateDistance(state, level, pos), 3);
 +        if (level.purpurConfig.leavesInstantDecay) checkDecay(state, level, pos, random); // Purpur - Instant leaves decay
      }
  

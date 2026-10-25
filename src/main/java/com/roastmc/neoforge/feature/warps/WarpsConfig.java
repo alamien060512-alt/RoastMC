@@ -5,9 +5,9 @@ import java.util.Set;
 import org.bukkit.Location;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/9/12 16:39:15
- * <p>
+ * @author Mgazul by MohistMC
+ * @date 2023/9/12 16:39:15
+ *
  * Warp storage backed by database.
  */
 public class WarpsConfig {

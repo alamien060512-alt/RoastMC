@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/packs/repository/ServerPacksSource.java
 +++ b/net/minecraft/server/packs/repository/ServerPacksSource.java
-@@ -47,7 +_,7 @@
+@@ -48,7 +_,7 @@
      public static VanillaPackResources createVanillaPackSource() {
          return new VanillaPackResourcesBuilder()
              .setMetadata(BUILT_IN_METADATA)
@@ -9,7 +9,7 @@
              .applyDevelopmentConfig()
              .pushJarResources()
              .build(VANILLA_PACK_INFO);
-@@ -65,15 +_,30 @@
+@@ -66,15 +_,30 @@
  
      @Override
      protected @Nullable Pack createBuiltinPack(String id, Pack.ResourcesSupplier resources, Component name) {
@@ -30,14 +30,14 @@
  
      public static PackRepository createPackRepository(Path datapackDir, DirectoryValidator validator) {
 -        return new PackRepository(new ServerPacksSource(validator), new FolderRepositorySource(datapackDir, PackType.SERVER_DATA, PackSource.WORLD, validator));
-+        final PackRepository packRepository = new PackRepository(new ServerPacksSource(validator), new FolderRepositorySource(datapackDir, PackType.SERVER_DATA, PackSource.WORLD, validator));
++        final PackRepository packRepository = new PackRepository(new ServerPacksSource(validator), new FolderRepositorySource(datapackDir, PackType.SERVER_DATA, PackSource.WORLD, validator)).validate(validator);
 +        net.neoforged.neoforge.resource.ResourcePackLoader.populatePackRepository(packRepository, PackType.SERVER_DATA, false);
 +        return packRepository;
      }
  
      public static PackRepository createVanillaTrustedRepository() {
 -        return new PackRepository(new ServerPacksSource(new DirectoryValidator(path -> true)));
-+        final PackRepository packRepository = new PackRepository(new ServerPacksSource(new DirectoryValidator(path -> true)));
++        final PackRepository packRepository = new PackRepository(new DirectoryValidator(path -> true), new ServerPacksSource(new DirectoryValidator(path -> true)));
 +        net.neoforged.neoforge.resource.ResourcePackLoader.populatePackRepository(packRepository, PackType.SERVER_DATA, true);
 +        return packRepository;
      }

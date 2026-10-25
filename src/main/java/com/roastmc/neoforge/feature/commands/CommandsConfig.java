@@ -4,7 +4,7 @@ import com.roastmc.neoforge.feature.config.RoastMCPluginConfig;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/11/23 01:28
+ * @date 2025/11/23 01:28
  */
 public class CommandsConfig extends RoastMCPluginConfig {
 

@@ -64,6 +64,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
+@SuppressWarnings("removal")
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static PermissibleBase perm;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
@@ -135,7 +136,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(velocity != null, "velocity");
         velocity.checkFinite();
         entity.setDeltaMovement(CraftVector.toNMS(velocity));
-        entity.syncVelocity = true;
+        entity.hurtMarked = true;
     }
 
     @Override
@@ -702,7 +703,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setInvulnerable(boolean flag) {
-        getHandle().setPermanentlyInvulnerable(flag);
+        getHandle().setInvulnerable(flag);
     }
 
     @Override

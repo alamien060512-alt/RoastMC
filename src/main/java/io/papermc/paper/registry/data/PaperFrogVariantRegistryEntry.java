@@ -23,7 +23,7 @@ public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
         final @Nullable FrogVariant internal
     ) {
         if (internal == null) {
-            this.spawnConditions = SpawnPrioritySelectors.EMPTY;
+            spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
         }
 

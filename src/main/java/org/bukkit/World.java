@@ -4,7 +4,6 @@ import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import io.papermc.paper.world.chunk.ChunkGenerationState;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.bukkit.block.Biome;
@@ -395,58 +393,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return true if the chunk is generated, otherwise false
      */
     public boolean isChunkGenerated(int x, int z);
-
-    /**
-     * Checks the generation state of the {@link Chunk} at the specified coordinates
-     * without loading it, blocking until the state is known.
-     *
-     * <p>
-     * This may read chunk data from disk, which blocks the calling thread. Prefer
-     * {@link #getChunkGenerationStateAsync(int, int)} where possible.
-     * </p>
-     *
-     * <p>
-     * The result is a snapshot: the chunk may be generated, loaded, or saved
-     * concurrently, so the state may be stale by the time it is observed.
-     * </p>
-     *
-     * @param x X-coordinate of the chunk
-     * @param z Z-coordinate of the chunk
-     * @return the generation state of the chunk
-     * @throws RuntimeException if the chunk data cannot be read, or if it was saved
-     *     by a newer version of the game
-     */
-    @NotNull ChunkGenerationState getChunkGenerationState(int x, int z);
-
-    /**
-     * Checks the generation state of the {@link Chunk} at the specified coordinates
-     * without loading it.
-     *
-     * <p>
-     * The result is a snapshot: the chunk may be generated, loaded, or saved
-     * concurrently, so the state may be stale by the time it is observed.
-     * </p>
-     *
-     * <p>
-     * The returned future is completed on an unspecified thread. Callers that need to
-     * interact with the world should move to the appropriate thread themselves.
-     * </p>
-     *
-     * <p>
-     * If the main thread will block on the result, use {@link #getChunkGenerationState(int, int)}
-     * instead, which reads the chunk data at a priority suitable for blocking.
-     * </p>
-     *
-     * <p>
-     * The future is completed exceptionally if the chunk data cannot be read, or if
-     * it was saved by a newer version of the game.
-     * </p>
-     *
-     * @param x X-coordinate of the chunk
-     * @param z Z-coordinate of the chunk
-     * @return a future completed with the generation state of the chunk
-     */
-    @NotNull CompletableFuture<@NotNull ChunkGenerationState> getChunkGenerationStateAsync(int x, int z);
 
     /**
      * Checks if the {@link Chunk} at the specified coordinates is loaded and
@@ -2609,10 +2555,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     BlockData} are null
-     * @apiNote Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
+     * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
-    @ApiStatus.Obsolete(since = "1.20.2")
+    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2") // Paper
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
 
     /**
@@ -2853,13 +2799,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets if beds work in this world.
-     * This doesn't check for straw beds.
      * <p>
      * A non-working bed can blow up when trying to sleep, but that may
      * not always be the case.
      *
      * @return true if beds work in this world
-     * @apiNote due to 1.21.11 beds changes, a boolean no longer
+     * @deprecated due to 1.21.11 beds changes, a boolean no longer
      * represents if they work. There is no replacement API yet
      */
     @ApiStatus.Obsolete(since = "1.21.11")
@@ -4072,10 +4017,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      */
-    default void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double speed) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed);
+    default void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
     }
 
     /**
@@ -4092,10 +4038,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      */
-    default void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, null);
+    default void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
     }
 
     /**
@@ -4111,12 +4058,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    default <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed, data);
+    default <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
     }
 
     /**
@@ -4134,12 +4082,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, false);
+    default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
+        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); // todo this is never called actually
     }
 
     // Paper start - Expand Particle API
@@ -4149,7 +4098,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
-     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param receivers List of players to receive the particles, or null for all in world
      * @param source Source of the particles to be used in visibility checks, or null if no player source
@@ -4160,21 +4108,19 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
+     * @param <T> Type
      */
-    public default <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @NotNull Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
-        this.spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, true);
-    }
-
+    public default <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @NotNull Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }
     /**
      * Spawns the particle (the number of times specified by count)
      * at the target location. The position of each particle will be
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
-     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param receivers List of players to receive the particles, or null for all in world
      * @param source Source of the particles to be used in visibility checks, or null if no player source
@@ -4185,43 +4131,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
+     * @param <T> Type
      * @param force allows the particle to be seen further away from the player
      *              and shows to players using any vanilla client particle settings
      */
-    default <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data, boolean force) {
-        this.spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, speed, speed, speed, data, force, Particle.RandomizationType.DEFAULT);
-    }
-
-    /**
-     * Spawns the particle (the number of times specified by count)
-     * at the target location. The position of each particle will be
-     * randomized according to {@link org.bukkit.Particle.RandomizationType} by the offset parameters
-     * on each axis.
-     *
-     * @param <T> type of particle data (see {@link Particle#getDataType()}
-     * @param particle the particle to spawn
-     * @param receivers List of players to receive the particles, or null for all in world
-     * @param source Source of the particles to be used in visibility checks, or null if no player source
-     * @param x the position on the x axis to spawn at
-     * @param y the position on the y axis to spawn at
-     * @param z the position on the z axis to spawn at
-     * @param count the number of particles
-     * @param offsetX the maximum random offset on the X axis
-     * @param offsetY the maximum random offset on the Y axis
-     * @param offsetZ the maximum random offset on the Z axis
-     * @param speedX the speed of the particle on the X axis
-     * @param speedY the speed of the particle on the Y axis
-     * @param speedZ the speed of the particle on the Z axis
-     * @param data the data to use for the particle or null,
-     *             the type of this depends on {@link Particle#getDataType()}
-     * @param force allows the particle to be seen further away from the player
-     *              and shows to players using any vanilla client particle settings
-     * @param randomizationType the type of randomization to use for the particle offsets
-     */
-    <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, @Nullable T data, boolean force, Particle.@NotNull RandomizationType randomizationType);
+    public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
     // Paper end
 
     /**
@@ -4237,15 +4155,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      * @param force whether to send the particle to players within an extended
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    default <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data, boolean force) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed, data, force);
+    default <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data, force);
     }
 
     /**
@@ -4263,15 +4182,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param speed the speed of the particle on both axes
+     * @param extra the extra data for this particle, depends on the
+     *              particle used (normally speed)
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      * @param force whether to send the particle to players within an extended
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data, boolean force) {
-        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, force);
+    default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force) {
+        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
     }
 
     /**
@@ -4869,7 +4789,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return dimension ID
          * @apiNote Internal Use Only
          */
-        @ApiStatus.Internal
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         public int getId() {
             return id;
         }
@@ -4881,7 +4801,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return The environment
          * @apiNote Internal Use Only
          */
-        @ApiStatus.Internal
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         @Nullable
         public static Environment getEnvironment(int id) {
             return lookup.get(id);

@@ -1,9 +1,11 @@
 package com.roastmc.fabric.mixin.vanilla.world.level.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.SculkBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,9 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(SculkBlock.class)
 public class MixinSculkBlock {
 
-    // CraftBukkit - BlockSpreadEvent guard before the growth block is placed; vanilla playSound only runs when the spread is allowed
-    @Inject(method = "attemptUseCharge", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/LevelAccessor;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"), cancellable = true)
-    private void roastmc$attemptUseCharge(net.minecraft.world.level.block.SculkSpreader.ChargeCursor cursor, LevelAccessor level, BlockPos originPos, RandomSource random, net.minecraft.world.level.block.SculkSpreader spreader, boolean isBelowBlock, CallbackInfoReturnable<Integer> cir) {
-        // TODO 26.3: 锚点已从 attemptReplaceSculk 修正为 attemptUseCharge；BlockSpreadEvent 语义待按 attemptUseCharge 实参重写
+    @Inject(method = "attemptReplaceSculk", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z"), cancellable = true)
+    private void roastmc$attemptReplaceSculk(ServerLevel level, BlockPos originPos, RandomSource random, CallbackInfoReturnable<Integer> cir) {
+        // The injection point is tricky; we handle it differently
     }
 }

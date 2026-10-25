@@ -1,7 +1,6 @@
 package com.roastmc.fabric;
 
 import io.izzel.arclight.mixin.MixinTools;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.objectweb.asm.tree.ClassNode;
@@ -13,29 +12,20 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
  * @date 2026/3/28 22:30
  */
 public class RoastMCMixinPlugin implements IMixinConfigPlugin {
-
-    private static final List<String> DISABLED_MIXINS = List.of(
-            // 在这里按类名后缀禁用与其它模组冲突的 mixin，例如：
-            // "vanilla.world.level.MixinSomeClass"
-    );
-
     @Override
     public void onLoad(String mixinPackage) {
         MixinTools.setup();
+        System.out.println("RoastMCMixinPlugin loaded");
     }
 
     @Override
     public String getRefMapperConfig() {
-        // 官方映射运行环境，无需 refmap
-        return null;
+        return "";
     }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        String relative = mixinClassName.startsWith("com.roastmc.fabric.mixin.")
-                ? mixinClassName.substring("com.roastmc.fabric.mixin.".length())
-                : mixinClassName;
-        return !DISABLED_MIXINS.contains(relative);
+        return false;
     }
 
     @Override
@@ -45,7 +35,7 @@ public class RoastMCMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public List<String> getMixins() {
-        return new ArrayList<>();
+        return List.of();
     }
 
     @Override

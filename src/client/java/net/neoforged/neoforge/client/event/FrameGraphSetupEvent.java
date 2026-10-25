@@ -6,7 +6,9 @@
 package net.neoforged.neoforge.client.event;
 
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
+import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -30,23 +32,29 @@ import org.joml.Matrix4fc;
 public final class FrameGraphSetupEvent extends Event {
     private final FrameGraphBuilder builder;
     private final LevelTargetBundle targets;
+    private final RenderTargetDescriptor renderTargetDescriptor;
     private final Frustum frustum;
     private final CameraRenderState cameraState;
     private final Matrix4fc modelViewMatrix;
+    private final DeltaTracker deltaTracker;
     private final ProfilerFiller profiler;
 
     @ApiStatus.Internal
     public FrameGraphSetupEvent(
             FrameGraphBuilder builder,
             LevelTargetBundle targets,
+            RenderTargetDescriptor renderTargetDescriptor,
             CameraRenderState cameraState,
             Matrix4fc modelViewMatrix,
+            DeltaTracker deltaTracker,
             ProfilerFiller profiler) {
         this.builder = builder;
         this.targets = targets;
+        this.renderTargetDescriptor = renderTargetDescriptor;
         this.frustum = cameraState.cullFrustum;
         this.cameraState = cameraState;
         this.modelViewMatrix = modelViewMatrix;
+        this.deltaTracker = deltaTracker;
         this.profiler = profiler;
     }
 
@@ -62,6 +70,13 @@ public final class FrameGraphSetupEvent extends Event {
      */
     public LevelTargetBundle getTargetBundle() {
         return targets;
+    }
+
+    /**
+     * {@return the render target descriptor to use for creating full-screen render targets}
+     */
+    public RenderTargetDescriptor getRenderTargetDescriptor() {
+        return renderTargetDescriptor;
     }
 
     /**
@@ -83,6 +98,13 @@ public final class FrameGraphSetupEvent extends Event {
      */
     public Matrix4fc getModelViewMatrix() {
         return modelViewMatrix;
+    }
+
+    /**
+     * {@return the {@link DeltaTracker}}
+     */
+    public DeltaTracker getDeltaTracker() {
+        return deltaTracker;
     }
 
     /**

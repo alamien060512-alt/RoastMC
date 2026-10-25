@@ -155,7 +155,7 @@ public interface InventoryView {
     public HumanEntity getPlayer();
 
     /**
-     * RoastMC Add
+     * Youer Add
      * Get the player viewing.
      *
      * @return the player

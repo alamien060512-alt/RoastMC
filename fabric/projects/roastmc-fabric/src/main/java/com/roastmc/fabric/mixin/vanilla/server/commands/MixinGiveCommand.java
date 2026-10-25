@@ -15,9 +15,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(GiveCommand.class)
 public class MixinGiveCommand {
 
-    // CraftBukkit - SPIGOT-2942: redirect the item drop so Player#drop fires the event with extra flags
-    @Redirect(method = "giveItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;createItemStackToDrop(Lnet/minecraft/world/item/ItemStack;ZZ)Lnet/minecraft/world/entity/item/ItemEntity;"))
-    private static ItemEntity roastmc$createItemStackToDrop(ServerPlayer player, ItemStack stack, boolean dropAround, boolean includeThrower) {
+    @Redirect(method = "run", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;drop(Lnet/minecraft/world/item/ItemStack;Z)Lnet/minecraft/world/entity/item/ItemEntity;"))
+    private static ItemEntity roastmc_drop(ServerPlayer player, ItemStack stack, boolean dropAround) {
         return player.drop(stack, dropAround, false, false); // CraftBukkit - SPIGOT-2942: Add boolean to call event
     }
 }

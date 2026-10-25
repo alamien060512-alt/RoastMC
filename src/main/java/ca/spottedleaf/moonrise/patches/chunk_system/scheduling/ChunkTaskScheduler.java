@@ -123,7 +123,9 @@ public final class ChunkTaskScheduler {
         ((ChunkSystemChunkStatus)ChunkStatus.STRUCTURE_STARTS).moonrise$setWriteRadius(0);
         ((ChunkSystemChunkStatus)ChunkStatus.STRUCTURE_REFERENCES).moonrise$setWriteRadius(0);
         ((ChunkSystemChunkStatus)ChunkStatus.BIOMES).moonrise$setWriteRadius(0);
-        ((ChunkSystemChunkStatus)ChunkStatus.TERRAIN).moonrise$setWriteRadius(0);
+        ((ChunkSystemChunkStatus)ChunkStatus.NOISE).moonrise$setWriteRadius(0);
+        ((ChunkSystemChunkStatus)ChunkStatus.SURFACE).moonrise$setWriteRadius(0);
+        ((ChunkSystemChunkStatus)ChunkStatus.CARVERS).moonrise$setWriteRadius(0);
         ((ChunkSystemChunkStatus)ChunkStatus.FEATURES).moonrise$setWriteRadius(1);
         ((ChunkSystemChunkStatus)ChunkStatus.INITIALIZE_LIGHT).moonrise$setWriteRadius(0);
         ((ChunkSystemChunkStatus)ChunkStatus.LIGHT).moonrise$setWriteRadius(2);
@@ -133,7 +135,9 @@ public final class ChunkTaskScheduler {
         ((ChunkSystemChunkStatus)ChunkStatus.EMPTY).moonrise$setEmptyLoadStatus(true);
         ((ChunkSystemChunkStatus)ChunkStatus.STRUCTURE_REFERENCES).moonrise$setEmptyLoadStatus(true);
         ((ChunkSystemChunkStatus)ChunkStatus.BIOMES).moonrise$setEmptyLoadStatus(true);
-        ((ChunkSystemChunkStatus)ChunkStatus.TERRAIN).moonrise$setEmptyLoadStatus(true);
+        ((ChunkSystemChunkStatus)ChunkStatus.NOISE).moonrise$setEmptyLoadStatus(true);
+        ((ChunkSystemChunkStatus)ChunkStatus.SURFACE).moonrise$setEmptyLoadStatus(true);
+        ((ChunkSystemChunkStatus)ChunkStatus.CARVERS).moonrise$setEmptyLoadStatus(true);
         ((ChunkSystemChunkStatus)ChunkStatus.FEATURES).moonrise$setEmptyLoadStatus(true);
         ((ChunkSystemChunkStatus)ChunkStatus.SPAWN).moonrise$setEmptyLoadStatus(true);
 
@@ -146,7 +150,7 @@ public final class ChunkTaskScheduler {
                 // No-op executor.
                 ChunkStatus.EMPTY,
 
-                // This is parallel capable, as we fix the concurrency issues with stronghold and nether fortress starts.
+                // This is parallel capable, as CB has fixed the concurrency issue with stronghold generations.
                 // Does not touch neighbour chunks.
                 ChunkStatus.STRUCTURE_STARTS,
 
@@ -158,10 +162,15 @@ public final class ChunkTaskScheduler {
                 // Safe. Mojang runs it in parallel as well.
                 ChunkStatus.BIOMES,
 
-                // Safe. Mojang runs it in parallel as well. Only modifies the target chunk: the noise fill and
-                // carving mask are applied to the target chunk, and surface building only reads the biome data
-                // of its neighbours, which is stable at the required BIOMES/STRUCTURE_STARTS statuses.
-                ChunkStatus.TERRAIN,
+                // Safe. Mojang runs it in parallel as well.
+                ChunkStatus.NOISE,
+
+                // Parallel safe. Only touches the target chunk. Biome retrieval is now noise based, which is
+                // completely thread-safe.
+                ChunkStatus.SURFACE,
+
+                // No global state is modified in the carvers. It only touches the specified chunk. So it is parallel safe.
+                ChunkStatus.CARVERS,
 
                 // FEATURES is not parallel safe. It writes to neighbours.
 
@@ -375,7 +384,7 @@ public final class ChunkTaskScheduler {
             throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
         }
 
-        final int minLevel = ChunkLevel.byStatus(toStatus);
+        final int minLevel = 33 - (toStatus.ordinal() - 1);
         final Long chunkReference = addTicket ? getNextChunkLoadId() : null;
         final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 

@@ -18,18 +18,14 @@ public interface BiomeParameterPoint {
      * Gets the maximum temperature that is possible.
      *
      * @return The maximum temperature
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxTemperature();
 
     /**
      * Gets the minimum temperature that is possible.
      *
      * @return The minimum temperature
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinTemperature();
 
     /**
@@ -44,18 +40,14 @@ public interface BiomeParameterPoint {
      * Gets the maximum humidity that is possible.
      *
      * @return The maximum humidity
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxHumidity();
 
     /**
      * Gets the minimum humidity that is possible.
      *
      * @return The minimum humidity
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinHumidity();
 
     /**
@@ -70,18 +62,14 @@ public interface BiomeParameterPoint {
      * Gets the maximum continentalness that is possible.
      *
      * @return The maximum continentalness
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxContinentalness();
 
     /**
      * Gets the minimum continentalness that is possible.
      *
      * @return The minimum continentalness
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinContinentalness();
 
     /**
@@ -96,18 +84,14 @@ public interface BiomeParameterPoint {
      * Gets the maximum erosion that is possible.
      *
      * @return The maximum erosion
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxErosion();
 
     /**
      * Gets the minimum erosion that is possible.
      *
      * @return The minimum erosion
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinErosion();
 
     /**
@@ -122,18 +106,14 @@ public interface BiomeParameterPoint {
      * Gets the maximum depth that is possible.
      *
      * @return The maximum depth
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxDepth();
 
     /**
      * Gets the minimum depth that is possible.
      *
      * @return The minimum depth
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinDepth();
 
     /**
@@ -148,17 +128,13 @@ public interface BiomeParameterPoint {
      * Gets the maximum weirdness that is possible.
      *
      * @return The maximum weirdness
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMaxWeirdness();
 
     /**
      * Gets the minimum weirdness that is possible.
      *
      * @return The minimum weirdness
-     * @deprecated no longer supported
      */
-    @Deprecated(since = "26.3")
     double getMinWeirdness();
 }

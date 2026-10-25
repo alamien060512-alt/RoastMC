@@ -11,7 +11,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.extract.LevelExtractor;
-import net.minecraft.client.renderer.state.OptionsRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.util.context.ContextKey;
 import net.neoforged.bus.api.Event;
@@ -35,7 +34,6 @@ import org.jetbrains.annotations.ApiStatus;
 public final class ExtractLevelRenderStateEvent extends Event {
     private final LevelExtractor levelExtractor;
     private final LevelRenderState renderState;
-    private final OptionsRenderState optionsRenderState;
     private final ClientLevel level;
     private final Camera camera;
     private final Frustum frustum;
@@ -45,14 +43,12 @@ public final class ExtractLevelRenderStateEvent extends Event {
     public ExtractLevelRenderStateEvent(
             LevelExtractor levelExtractor,
             LevelRenderState renderState,
-            OptionsRenderState optionsRenderState,
             ClientLevel level,
             Camera camera,
             Frustum frustum,
             DeltaTracker deltaTracker) {
         this.levelExtractor = levelExtractor;
         this.renderState = renderState;
-        this.optionsRenderState = optionsRenderState;
         this.level = level;
         this.camera = camera;
         this.frustum = frustum;
@@ -71,11 +67,6 @@ public final class ExtractLevelRenderStateEvent extends Event {
      */
     public LevelRenderState getRenderState() {
         return renderState;
-    }
-
-    /// {@return the options render state}
-    public OptionsRenderState getOptionsRenderState() {
-        return optionsRenderState;
     }
 
     /**

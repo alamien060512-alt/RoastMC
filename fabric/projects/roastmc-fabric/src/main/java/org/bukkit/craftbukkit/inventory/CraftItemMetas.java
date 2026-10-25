@@ -7,11 +7,11 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SignItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShelfBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.minecraft.world.level.block.SignBlock;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
@@ -204,23 +204,7 @@ public final class CraftItemMetas {
                 || itemType == ItemType.LINGERING_POTION || itemType == ItemType.TIPPED_ARROW) {
             return asType(POTION_META_DATA);
         }
-        if (itemType == ItemType.FILLED_MAP
-                || itemType == ItemType.OCEAN_MONUMENT_MAP
-                || itemType == ItemType.WOODLAND_MANSION_MAP
-                || itemType == ItemType.BURIED_TRIAL_CHAMBERS_MAP
-                || itemType == ItemType.JUNGLE_PYRAMID_MAP
-                || itemType == ItemType.SWAMP_HUT_MAP
-                || itemType == ItemType.DESERT_VILLAGE_MAP
-                || itemType == ItemType.PLAINS_VILLAGE_MAP
-                || itemType == ItemType.SAVANNA_VILLAGE_MAP
-                || itemType == ItemType.SNOWY_VILLAGE_MAP
-                || itemType == ItemType.TAIGA_VILLAGE_MAP
-                || itemType == ItemType.BURIED_TREASURE_MAP
-                || itemType == ItemType.BURIED_ANCIENT_CITY_MAP
-                || itemType == ItemType.BURIED_MINESHAFT_MAP
-                || itemType == ItemType.DESERT_PYRAMID_MAP
-                || itemType == ItemType.ABANDONED_CAMP_MAP
-                || itemType == ItemType.WARM_OCEAN_RUINS_MAP) {
+        if (itemType == ItemType.FILLED_MAP) {
             return asType(MAP_META_DATA);
         }
         if (itemType == ItemType.FIREWORK_ROCKET) {
@@ -247,7 +231,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.FURNACE || itemType == ItemType.CHEST
                 || itemType == ItemType.TRAPPED_CHEST || itemType == ItemType.JUKEBOX
                 || itemType == ItemType.DISPENSER || itemType == ItemType.DROPPER
-                || blockHandle instanceof SignBlock || itemType == ItemType.SPAWNER
+                || itemHandle instanceof SignItem || itemType == ItemType.SPAWNER
                 || itemType == ItemType.BREWING_STAND || itemType == ItemType.ENCHANTING_TABLE
                 || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
                 || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
@@ -265,7 +249,7 @@ public final class CraftItemMetas {
                 || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
                 || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
                 || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT
-                || itemType == ItemType.CREAKING_HEART || itemType == ItemType.TEST_BLOCK || itemType == ItemType.TEST_INSTANCE_BLOCK || itemType == ItemType.POTENT_SULFUR
+                || itemType == ItemType.CREAKING_HEART || itemType == ItemType.TEST_BLOCK || itemType == ItemType.TEST_INSTANCE_BLOCK
                 || blockHandle instanceof ShelfBlock) {
             return asType(BLOCK_STATE_META_DATA);
         }

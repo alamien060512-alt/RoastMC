@@ -20,7 +20,7 @@ public record PaperCombatTrackerWrapper(
 
     @Override
     public LivingEntity getEntity() {
-        return this.handle.mob.getBukkitEntity();
+        return this.handle.mob.getBukkitLivingEntity();
     }
 
     @Override

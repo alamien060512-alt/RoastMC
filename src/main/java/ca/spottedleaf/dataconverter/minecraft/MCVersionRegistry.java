@@ -10,10 +10,10 @@ import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongComparator;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
-import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Locale;
+import org.slf4j.Logger;
 
 public final class MCVersionRegistry {
 
@@ -28,10 +28,6 @@ public final class MCVersionRegistry {
     private static final LongLinkedOpenHashSet DATACONVERTER_VERSIONS = new LongLinkedOpenHashSet();
     private static final Int2ObjectLinkedOpenHashMap<IntArrayList> SUBVERSIONS = new Int2ObjectLinkedOpenHashMap<>();
     private static final LongArrayList BREAKPOINTS = new LongArrayList();
-
-    // Anything above this version will pass conversion through Vanilla fixers instead
-    private static final int MAX_IMPLEMENTED_VERSION = MCVersions.V26_3;
-
     static {
         // Note: Some of these are nameless.
         // Unless a data version is specified here, it will NOT have converters ran for it. Please add them on update!
@@ -249,6 +245,7 @@ public final class MCVersionRegistry {
             3945,
             4054,
             4055,
+            4057,
             4059,
             4061,
             4064,
@@ -301,18 +298,7 @@ public final class MCVersionRegistry {
             4885,
             4888,
             4892,
-            4996,
-            4997,
-            5002,
-            5006,
-            5007,
-            5008,
-            5009,
-            5012,
-            5013,
-            5014,
-            5016,
-            // All up to 26.3
+            // All up to 26.2
         };
         Arrays.sort(converterVersions);
 
@@ -340,8 +326,6 @@ public final class MCVersionRegistry {
         registerSubVersion(MCVersions.V24W07A + 1, 6);
 
         registerSubVersion(V4290.VERSION, 1);
-
-        registerSubVersion(MCVersions.V26_2 + 93, 1);
 
         // register breakpoints here
         // for all major releases after 1.16, add them. this reduces the work required to determine if a breakpoint
@@ -373,11 +357,6 @@ public final class MCVersionRegistry {
 
         // final release of major version
         registerBreakpointAfter(MCVersions.V1_21_11, Integer.MAX_VALUE);
-
-        // final releases of major versions
-        registerBreakpointAfter(MCVersions.V26_1_2, Integer.MAX_VALUE);
-        // V4996 creates item stacks from item names. Finish converting the old item data first.
-        registerBreakpointAfter(MCVersions.V26_2, Integer.MAX_VALUE);
     }
 
     static {
@@ -521,10 +500,6 @@ public final class MCVersionRegistry {
 
     public static int getMaxVersion() {
         return VERSION_LIST.getInt(VERSION_LIST.size() - 1);
-    }
-
-    public static int getMaxImplementedVersion() {
-        return MAX_IMPLEMENTED_VERSION;
     }
 
     public static LongArrayList getBreakpoints() {

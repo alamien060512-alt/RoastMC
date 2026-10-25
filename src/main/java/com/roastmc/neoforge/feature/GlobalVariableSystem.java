@@ -153,11 +153,11 @@ public class GlobalVariableSystem {
      * @param value  变量值
      */
     public static void setPlayerVariable(@NotNull Player player, @NotNull String key,
-                                         @Nullable String value) {
+                                          @Nullable String value) {
         if (value != null) {
             INSTANCE.playerVariables
-                .computeIfAbsent(player.getUniqueId(), k -> new ConcurrentHashMap<>())
-                .put(normalize(key), value);
+                    .computeIfAbsent(player.getUniqueId(), k -> new ConcurrentHashMap<>())
+                    .put(normalize(key), value);
         } else {
             Map<String, String> pVars = INSTANCE.playerVariables.get(player.getUniqueId());
             if (pVars != null) {
@@ -195,14 +195,6 @@ public class GlobalVariableSystem {
     //  Internal Initialization
     // ════════════════════════════════════════════════════════════
 
-    /**
-     * Normalize variable name: lowercase and trim.
-     */
-    @NotNull
-    private static String normalize(@NotNull String key) {
-        return key.trim().toLowerCase(Locale.ROOT);
-    }
-
     private void initialize() {
         if (initialized) return;
         initialized = true;
@@ -231,17 +223,13 @@ public class GlobalVariableSystem {
         registerVariable("player_ip", p -> {
             try {
                 return p.getAddress() != null
-                    ? p.getAddress().getAddress().getHostAddress()
-                    : "unknown";
+                        ? p.getAddress().getAddress().getHostAddress()
+                        : "unknown";
             } catch (Exception ignored) {
                 return "unknown";
             }
         });
     }
-
-    // ════════════════════════════════════════════════════════════
-    //  Replacement Engine — inspired by PlaceholderAPI CharsReplacer
-    // ════════════════════════════════════════════════════════════
 
     /**
      * 初始化全局变量（同步执行，因为 register() 调用时服务器已就绪）。
@@ -255,6 +243,10 @@ public class GlobalVariableSystem {
             globalVariables.put("server_version", "Unknown");
         }
     }
+
+    // ════════════════════════════════════════════════════════════
+    //  Replacement Engine — inspired by PlaceholderAPI CharsReplacer
+    // ════════════════════════════════════════════════════════════
 
     /**
      * 使用字符扫描方式替换文本中的所有变量占位符。
@@ -376,10 +368,6 @@ public class GlobalVariableSystem {
         return result.toString();
     }
 
-    // ════════════════════════════════════════════════════════════
-    //  Variable Lookup Engine
-    // ════════════════════════════════════════════════════════════
-
     /**
      * 批量解析。
      */
@@ -393,7 +381,7 @@ public class GlobalVariableSystem {
     }
 
     // ════════════════════════════════════════════════════════════
-    //  Utility Methods
+    //  Variable Lookup Engine
     // ════════════════════════════════════════════════════════════
 
     /**
@@ -441,5 +429,17 @@ public class GlobalVariableSystem {
         }
 
         return null;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  Utility Methods
+    // ════════════════════════════════════════════════════════════
+
+    /**
+     * Normalize variable name: lowercase and trim.
+     */
+    @NotNull
+    private static String normalize(@NotNull String key) {
+        return key.trim().toLowerCase(Locale.ROOT);
     }
 }

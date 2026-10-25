@@ -1,30 +1,20 @@
 --- a/net/minecraft/world/level/block/SpawnerBlock.java
 +++ b/net/minecraft/world/level/block/SpawnerBlock.java
-@@ -2,7 +_,7 @@
- 
- import net.minecraft.core.BlockPos;
- import net.minecraft.server.level.ServerLevel;
--import net.minecraft.util.RandomSource;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.entity.BlockEntity;
-@@ -15,6 +_,8 @@
+@@ -16,6 +_,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class SpawnerBlock extends BaseEntityBlock {
 +    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
-+
-     public SpawnerBlock(BlockBehaviour.Properties properties) {
-         super(properties);
-     }
-@@ -29,13 +_,74 @@
+     public static final MapCodec<SpawnerBlock> CODEC = simpleCodec(SpawnerBlock::new);
+ 
+     @Override
+@@ -37,13 +_,73 @@
          return createTickerHelper(type, BlockEntityTypes.MOB_SPAWNER, level.isClientSide() ? SpawnerBlockEntity::clientTick : SpawnerBlockEntity::serverTick);
      }
  
 +    // Purpur start - Silk touch spawners
 +    @Override
-+    public void playerDestroy(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack, boolean includeDrops, boolean dropExp) {
++    public void playerDestroy(Level level, net.minecraft.world.entity.player.Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack, boolean includeDrops, boolean dropExp) {
 +        if (level.purpurConfig.silkTouchEnabled && player.getBukkitEntity().hasPermission("purpur.drop.spawners") && isSilkTouch(level, stack)) {
 +            ItemStack item = new ItemStack(Blocks.SPAWNER.asItem());
 +
@@ -94,7 +84,6 @@
 +    public int getExpDrop(BlockState state, net.minecraft.world.level.LevelAccessor level, BlockPos pos,
 +                          net.minecraft.world.level.block.entity.@Nullable BlockEntity blockEntity,
 +                          net.minecraft.world.entity.@Nullable Entity breaker, ItemStack tool) {
-+        if (level instanceof ServerLevel serverLevel && serverLevel.purpurConfig.silkTouchEnabled && isSilkTouch(serverLevel, tool)) return 0; // Purpur - Silk touch spawners
 +        return 15 + level.getRandom().nextInt(15) + level.getRandom().nextInt(15);
      }
  }

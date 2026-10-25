@@ -18,13 +18,13 @@ public class CompostItemEvent extends BlockEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final ItemStack item;
-    private int raisedLevels;
+    private boolean willRaiseLevel;
 
     @ApiStatus.Internal
-    public CompostItemEvent(final Block composter, final ItemStack item, final int raisedLevels) {
+    public CompostItemEvent(final Block composter, final ItemStack item, final boolean willRaiseLevel) {
         super(composter);
         this.item = item;
-        this.raisedLevels = raisedLevels;
+        this.willRaiseLevel = willRaiseLevel;
     }
 
     /**
@@ -42,34 +42,16 @@ public class CompostItemEvent extends BlockEvent {
      * @return {@code true} if successful
      */
     public boolean willRaiseLevel() {
-        return this.raisedLevels > 0;
+        return this.willRaiseLevel;
     }
 
     /**
      * Sets whether the composter will rise a level.
      *
      * @param willRaiseLevel {@code true} if the composter should rise a level
-     * @deprecated items can now control how many layers they add on click. Use {@link #setLevelsToRaise(int)}.
      */
-    @Deprecated(since = "26.3", forRemoval = true)
     public void setWillRaiseLevel(final boolean willRaiseLevel) {
-        this.raisedLevels = willRaiseLevel ? Math.max(1, this.raisedLevels) : 0;
-    }
-
-    /**
-     * {@return the levels the composter will be raised by}
-     */
-    public int getLevelsToRaise() {
-        return this.raisedLevels;
-    }
-
-    /**
-     * Configures the levels the composter will be raised by.
-     *
-     * @param raisedLevels the levels to raise the composter by
-     */
-    public void setLevelsToRaise(final int raisedLevels) {
-        this.raisedLevels = raisedLevels;
+        this.willRaiseLevel = willRaiseLevel;
     }
 
     @Override

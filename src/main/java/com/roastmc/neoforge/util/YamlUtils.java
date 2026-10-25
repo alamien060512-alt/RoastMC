@@ -7,8 +7,8 @@ import org.apache.logging.log4j.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/8/2 18:28:15
+ * @author Mgazul by MohistMC
+ * @date 2023/8/2 18:28:15
  */
 public class YamlUtils {
 

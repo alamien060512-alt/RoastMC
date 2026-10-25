@@ -30,7 +30,7 @@ public class CraftSignSide implements SignSide {
     public String[] getLines() {
         if (lines == null) {
             // Lazy initialization:
-            Component[] messages = signText.getMessages(false).toArray(Component[]::new);
+            Component[] messages = signText.getMessages(false);
             lines = new String[messages.length];
             System.arraycopy(CraftSign.revertComponents(messages), 0, lines, 0, lines.length);
             originalLines = new String[lines.length];
@@ -57,7 +57,7 @@ public class CraftSignSide implements SignSide {
 
     @Override
     public void setGlowingText(boolean glowing) {
-        signText = signText.withGlowingText(glowing);
+        signText = signText.setHasGlowingText(glowing);
     }
 
     @Nullable
@@ -68,21 +68,19 @@ public class CraftSignSide implements SignSide {
 
     @Override
     public void setColor(@NotNull DyeColor color) {
-        signText = signText.withColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
+        signText = signText.setColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
     }
 
     public SignText applyLegacyStringToSignSide() {
-        SignText.Mutable mutable = signText.asMutable();
         if (lines != null) {
             for (int i = 0; i < lines.length; i++) {
                 String line = (lines[i] == null) ? "" : lines[i];
                 if (line.equals(originalLines[i])) {
                     continue; // The line contents are still the same, skip.
                 }
-                mutable = mutable.setLine(i, CraftChatMessage.fromString(line)[0]);
+                signText = signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
             }
         }
-        signText = mutable.asImmutable();
 
         return signText;
     }

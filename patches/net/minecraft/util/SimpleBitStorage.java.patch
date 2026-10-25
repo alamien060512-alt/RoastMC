@@ -1,6 +1,6 @@
 --- a/net/minecraft/util/SimpleBitStorage.java
 +++ b/net/minecraft/util/SimpleBitStorage.java
-@@ -205,10 +_,24 @@
+@@ -204,10 +_,24 @@
      private final long mask;
      private final int size;
      private final int valuesPerLong;
@@ -27,7 +27,7 @@
      public SimpleBitStorage(int bits, int size, int[] values) {
          this(bits, size);
          int outputIndex = 0;
-@@ -249,8 +_,8 @@
+@@ -248,8 +_,8 @@
          this.mask = (1L << bits) - 1L;
          this.valuesPerLong = (char)(64 / bits);
          int row = 3 * (this.valuesPerLong - 1);
@@ -38,7 +38,7 @@
          this.divideShift = MAGIC[row + 2];
          int requiredLength = (size + this.valuesPerLong - 1) / this.valuesPerLong;
          if (data != null) {
-@@ -262,38 +_,59 @@
+@@ -261,43 +_,66 @@
          } else {
              this.data = new long[requiredLength];
          }
@@ -80,7 +80,12 @@
 -    }
 -
 -    @Override
--    public void fill(int value) {
+-    public int get(int index) {
+-        Validate.inclusiveBetween(0L, this.size - 1, index);
+-        int cellIndex = this.cellIndex(index);
+-        long cellValue = this.data[cellIndex];
+-        int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
+-        return (int)(cellValue >> bitIndex & this.mask);
 +        return (int)(bitIndex * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
 +    }
 +
@@ -123,20 +128,6 @@
 +    }
 +
 +    @Override
-+    public final void fill(final int value) { // Paper - Perf: Optimize SimpleBitStorage
-         Validate.inclusiveBetween(0L, this.mask, value);
-         long cellValue = value & this.mask;
-         int offset = this.bits;
-@@ -307,12 +_,14 @@
-     }
- 
-     @Override
--    public int get(int index) {
--        Validate.inclusiveBetween(0L, this.size - 1, index);
--        int cellIndex = this.cellIndex(index);
--        long cellValue = this.data[cellIndex];
--        int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
--        return (int)(cellValue >> bitIndex & this.mask);
 +    public final int get(final int index) { // Paper - Perf: Optimize SimpleBitStorage
 +        // Paper start - optimise bitstorage read/write operations
 +        final int full = this.magic * index; // 20 bits of magic + 12 bits of index = barely int
@@ -148,22 +139,22 @@
      }
  
      @Override
-@@ -376,6 +_,96 @@
+@@ -361,6 +_,67 @@
      public BitStorage copy() {
          return new SimpleBitStorage(this.bits, this.size, (long[])this.data.clone());
      }
 +
 +    // Paper start - block counting
 +    @Override
-+    public final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> moonrise$countBlocks(final net.minecraft.world.level.chunk.Palette<net.minecraft.world.level.block.state.BlockState> palette) {
++    public final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> moonrise$countEntries() {
 +        final int valuesPerLong = this.valuesPerLong;
 +        final int bits = this.bits;
 +        final long mask = (1L << bits) - 1L;
 +        final int size = this.size;
 +
 +        if (bits <= 6) {
-+            final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry[] byPaletteId = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry[1 << bits];
-+            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>(1 << 6);
++            final it.unimi.dsi.fastutil.shorts.ShortArrayList[] byId = new it.unimi.dsi.fastutil.shorts.ShortArrayList[1 << bits];
++            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1 << bits);
 +
 +            int index = 0;
 +
@@ -174,35 +165,24 @@
 +                    value >>= bits;
 +                    ++li;
 +
-+                    final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry ifPresent = byPaletteId[paletteIdx];
-+                    if (ifPresent != null) {
-+                        ++ifPresent.count;
-+                        if (ifPresent.coords != null) {
-+                            ifPresent.coords.add((short)index);
-+                        }
++                    final it.unimi.dsi.fastutil.shorts.ShortArrayList coords = byId[paletteIdx];
++                    if (coords != null) {
++                        coords.add((short)index++);
++                        continue;
 +                    } else {
-+                        final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(paletteIdx);
-+                        final it.unimi.dsi.fastutil.shorts.ShortArrayList coords;
-+                        if (state.isRandomlyTicking()) {
-+                            coords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
-+                            coords.add((short)index);
-+                        } else {
-+                            coords = null;
-+                        }
-+
-+                        final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry entry = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(1, state, coords);
-+                        byPaletteId[paletteIdx] = entry;
-+                        ret.add(entry);
++                        final it.unimi.dsi.fastutil.shorts.ShortArrayList newCoords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
++                        byId[paletteIdx] = newCoords;
++                        newCoords.add((short)index++);
++                        ret.put(paletteIdx, newCoords);
++                        continue;
 +                    }
-+                    ++index;
 +                } while (li < valuesPerLong && index < size);
 +            }
 +
 +            return ret;
 +        } else {
-+            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>(1 << 6);
-+            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> byPaletteId = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(
-+                1 << 6
++            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(
++                    1 << 6
 +            );
 +
 +            int index = 0;
@@ -214,27 +194,9 @@
 +                    value >>= bits;
 +                    ++li;
 +
-+                    final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry ifPresent = byPaletteId.get(paletteIdx);
-+                    if (ifPresent != null) {
-+                        ++ifPresent.count;
-+                        if (ifPresent.coords != null) {
-+                            ifPresent.coords.add((short)index);
-+                        }
-+                    } else {
-+                        final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(paletteIdx);
-+                        final it.unimi.dsi.fastutil.shorts.ShortArrayList coords;
-+                        if (state.isRandomlyTicking()) {
-+                            coords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
-+                            coords.add((short)index);
-+                        } else {
-+                            coords = null;
-+                        }
-+
-+                        final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry entry = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(1, state, coords);
-+                        byPaletteId.put(paletteIdx, entry);
-+                        ret.add(entry);
-+                    }
-+                    ++index;
++                    ret.computeIfAbsent(paletteIdx, (final int key) -> {
++                        return new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
++                    }).add((short)index++);
 +                } while (li < valuesPerLong && index < size);
 +            }
 +

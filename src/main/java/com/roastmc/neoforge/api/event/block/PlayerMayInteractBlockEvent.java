@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Mgazul
- * {@code @date} 2025/11/6 14:30
+ * @date 2025/11/6 14:30
  */
 public class PlayerMayInteractBlockEvent extends BlockEvent implements Cancellable {
 

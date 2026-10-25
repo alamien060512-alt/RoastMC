@@ -290,8 +290,8 @@ accessible method net/minecraft/world/entity/monster/Creeper explodeCreeper ()V
 accessible field net/minecraft/world/entity/monster/Creeper explosionRadius I
 accessible field net/minecraft/world/entity/monster/Creeper maxSwell I
 accessible field net/minecraft/world/entity/monster/Creeper swell I
-accessible method net/minecraft/world/entity/monster/Enderman teleport ()Z
-accessible method net/minecraft/world/entity/monster/Enderman teleportTowards (Lnet/minecraft/world/entity/Entity;)Z
+accessible method net/minecraft/world/entity/monster/EnderMan teleport ()Z
+accessible method net/minecraft/world/entity/monster/EnderMan teleportTowards (Lnet/minecraft/world/entity/Entity;)Z
 accessible field net/minecraft/world/entity/monster/Guardian$GuardianAttackGoal attackTime I
 accessible field net/minecraft/world/entity/monster/Guardian randomStrollGoal Lnet/minecraft/world/entity/ai/goal/RandomStrollGoal;
 accessible method net/minecraft/world/entity/monster/Guardian setActiveAttackTarget (I)V
@@ -323,10 +323,10 @@ accessible method net/minecraft/world/level/block/DecoratedPotBlock getFluidStat
 accessible field net/minecraft/world/level/block/DropExperienceBlock xpRange Lnet/minecraft/util/valueproviders/IntProvider;
 accessible field net/minecraft/world/level/block/EyeblossomBlock type Lnet/minecraft/world/level/block/EyeblossomBlock$Type;
 accessible field net/minecraft/world/level/block/SculkCatalystBlock xpRange Lnet/minecraft/util/valueproviders/IntProvider;
+accessible field net/minecraft/world/entity/monster/skeleton/Skeleton conversionTime I
 accessible field net/minecraft/world/entity/monster/zombie/Zombie DATA_DROWNED_CONVERSION_ID Lnet/minecraft/network/syncher/EntityDataAccessor;
-accessible field net/minecraft/world/entity/monster/zombie/Zombie drowningTracker Lnet/minecraft/world/entity/ConversionTracker;
-accessible field net/minecraft/world/entity/monster/skeleton/Skeleton freezingTracker Lnet/minecraft/world/entity/ConversionTracker;
-accessible field net/minecraft/world/entity/ConversionTracker conversionTime I
+accessible field net/minecraft/world/entity/monster/zombie/Zombie conversionTime I
+accessible method net/minecraft/world/entity/monster/zombie/Zombie startUnderWaterConversion (I)V
 accessible field net/minecraft/world/entity/monster/zombie/ZombieVillager DATA_CONVERTING_ID Lnet/minecraft/network/syncher/EntityDataAccessor;
 accessible field net/minecraft/world/entity/monster/zombie/ZombieVillager conversionStarter Ljava/util/UUID;
 accessible method net/minecraft/world/entity/monster/zombie/ZombieVillager startConverting (Ljava/util/UUID;I)V
@@ -534,6 +534,11 @@ accessible method net/minecraft/world/level/dimension/end/EnderDragonFight spawn
 accessible method net/minecraft/world/level/entity/PersistentEntitySectionManager ensureChunkQueuedForLoad (J)V
 accessible field net/minecraft/world/level/entity/PersistentEntitySectionManager permanentStorage Lnet/minecraft/world/level/entity/EntityPersistentStorage;
 accessible field net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator settings Lnet/minecraft/core/Holder;
+accessible field net/minecraft/world/level/levelgen/structure/placement/StructurePlacement exclusionZone Ljava/util/Optional;
+accessible field net/minecraft/world/level/levelgen/structure/placement/StructurePlacement frequency F
+accessible field net/minecraft/world/level/levelgen/structure/placement/StructurePlacement frequencyReductionMethod Lnet/minecraft/world/level/levelgen/structure/placement/StructurePlacement$FrequencyReductionMethod;
+accessible field net/minecraft/world/level/levelgen/structure/placement/StructurePlacement locateOffset Lnet/minecraft/core/Vec3i;
+accessible field net/minecraft/world/level/levelgen/structure/placement/StructurePlacement salt I
 accessible field net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate entityInfoList Ljava/util/List;
 accessible field net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate palettes Ljava/util/List;
 accessible field net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager resourceManagerSource Lnet/minecraft/world/level/levelgen/structure/templatesystem/loader/ResourceManagerTemplateSource;
@@ -553,22 +558,17 @@ accessible field net/minecraft/world/level/storage/TagValueInput input Lnet/mine
 accessible field net/minecraft/world/scores/Objective displayName Lnet/minecraft/network/chat/Component;
 accessible field net/minecraft/world/scores/criteria/ObjectiveCriteria CRITERIA_CACHE Ljava/util/Map;
 accessible method net/minecraft/server/level/TicketType register (Ljava/lang/String;JI)Lnet/minecraft/server/level/TicketType;
-accessible class net/minecraft/core/component/Removed
 accessible field net/minecraft/core/component/DataComponentPatch map Lit/unimi/dsi/fastutil/objects/Reference2ObjectMap;
 accessible field net/minecraft/core/component/DataComponentPatch$Builder map Lit/unimi/dsi/fastutil/objects/Reference2ObjectMap;
 accessible method net/minecraft/server/commands/ReloadCommand discoverNewPacks (Lnet/minecraft/server/packs/repository/PackRepository;Lnet/minecraft/world/level/storage/WorldData;Ljava/util/Collection;)Ljava/util/Collection;
 accessible field net/minecraft/world/level/levelgen/structure/templatesystem/StructurePlaceSettings palette I
 accessible field net/minecraft/server/players/PlayerList LOGGER Lorg/slf4j/Logger;
-accessible field net/minecraft/server/players/PlayerList BAN_DATE_FORMAT Ljava/text/SimpleDateFormat;
-accessible method net/minecraft/server/players/PlayerList save (Lnet/minecraft/server/level/ServerPlayer;)V
-accessible method net/minecraft/server/players/PlayerList updateEntireScoreboard (Lnet/minecraft/server/ServerScoreboard;Lnet/minecraft/server/level/ServerPlayer;)V
 accessible method net/minecraft/world/level/block/entity/ConduitBlockEntity updateAndAttackTarget (Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/ConduitBlockEntity;Z)V
 accessible method net/minecraft/world/level/block/entity/ConduitBlockEntity updateDestroyTarget (Lnet/minecraft/world/entity/EntityReference;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Z)Lnet/minecraft/world/entity/EntityReference;
 accessible field net/minecraft/world/level/levelgen/structure/StructurePiece SHAPE_CHECK_BLOCKS Ljava/util/Set;
 accessible method net/minecraft/world/level/block/entity/LecternBlockEntity onBookItemRemove ()V
 accessible class net/minecraft/world/entity/ai/gossip/GossipContainer$EntityGossips
 accessible method net/minecraft/world/entity/item/FallingBlockEntity <init> (Lnet/minecraft/world/level/Level;DDDLnet/minecraft/world/level/block/state/BlockState;)V
-accessible field net/minecraft/world/entity/Entity invulnerableTime I
 
 accessible field net/minecraft/network/protocol/handshake/ClientIntentionPacket hostName Ljava/lang/String;
 mutable field net/minecraft/network/protocol/handshake/ClientIntentionPacket hostName Ljava/lang/String;
@@ -770,4 +770,3 @@ transitive-inject-interface	net/minecraft/server/level/Ticket	com/roastmc/fabric
 transitive-inject-interface net/minecraft/world/level/gamerules/GameRules com/roastmc/fabric/injected/world/level/gamerules/ContextGameRules
 
 transitive-extend-enum net/minecraft/world/level/Level$ExplosionInteraction STANDARD
-transitive-inject-interface	net/minecraft/server/dedicated/DedicatedServer	com/roastmc/fabric/injected/server/ContextDedicatedServer

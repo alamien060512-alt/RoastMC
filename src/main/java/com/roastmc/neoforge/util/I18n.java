@@ -3,8 +3,8 @@ package com.roastmc.neoforge.util;
 import com.roastmc.neoforge.RoastMC;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/9/23 6:15:26
+ * @author Mgazul by MohistMC
+ * @date 2023/9/23 6:15:26
  */
 public class I18n {
 

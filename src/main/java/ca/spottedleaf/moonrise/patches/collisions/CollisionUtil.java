@@ -51,7 +51,7 @@ public final class CollisionUtil {
     public static final DoubleArrayList ZERO_ONE = DoubleArrayList.wrap(new double[] { 0.0, 1.0 });
 
     public static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
-        return ((CollisionBlockState)block).moonrise$isSpecialCollidingBlock();
+        return block.hasLargeCollisionShape() || block.getBlock() == Blocks.MOVING_PISTON;
     }
 
     public static boolean isEmpty(final AABB aabb) {
@@ -2046,7 +2046,6 @@ public final class CollisionUtil {
                                         continue;
                                     }
 
-                                    // TODO perform intersection check using moved aabb instead of moved blockCollision so we can avoid the call?
                                     final VoxelShape blockCollisionOffset = blockCollision.move((double)blockX, (double)blockY, (double)blockZ);
 
                                     if (!voxelShapeIntersectNoEmpty(blockCollisionOffset, aabb)) {

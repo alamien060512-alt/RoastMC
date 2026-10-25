@@ -54,16 +54,16 @@
                  entity.setDefaultPickUpDelay();
                  l.addFreshEntity(entity);
              });
-@@ -306,7 +_,7 @@
-                 }
- 
+@@ -308,7 +_,7 @@
                  if (this.tickCount % 10 == 0) {
--                    this.level().playLocalSound(this, stateBelow.getSoundType().getHitSound(), this.getSoundSource(), 0.5F, 0.5F);
-+                    this.level().playLocalSound(this, stateBelow.getSoundType(level(), head.below(), this).getHitSound(), this.getSoundSource(), 0.5F, 0.5F);
+                     this.level()
+                         .playLocalSound(
+-                            this.getX(), this.getY(), this.getZ(), stateBelow.getSoundType().getHitSound(), this.getSoundSource(), 0.5F, 0.5F, false
++                            this.getX(), this.getY(), this.getZ(), stateBelow.getSoundType(level(), head.below(), this).getHitSound(), this.getSoundSource(), 0.5F, 0.5F, false
+                         );
                  }
              }
-         }
-@@ -343,12 +_,17 @@
+@@ -346,12 +_,17 @@
  
      @Override
      public void spawnChildFromBreeding(ServerLevel level, Animal partner) {
@@ -83,11 +83,3 @@
      }
  
      @Override
-@@ -452,6 +_,7 @@
-     protected void customServerAiStep(ServerLevel level) {
-         ProfilerFiller profiler = Profiler.get();
-         profiler.push("snifferBrain");
-+        if (getRider() == null || !this.isControllable()) // Purpur - only use brain if no rider
-         this.getBrain().tick(level, this);
-         profiler.popPush("snifferActivityUpdate");
-         SnifferAi.updateActivity(this);

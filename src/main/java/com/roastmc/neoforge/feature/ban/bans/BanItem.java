@@ -8,11 +8,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/7/27 2:54:23
+ * @author Mgazul by MohistMC
+ * @date 2023/7/27 2:54:23
  */
 public class BanItem {
 
@@ -41,14 +40,14 @@ public class BanItem {
         ItemStack off = player.getOffhandItem();
         if (player.getBukkitEntity().isOp()) return false;
         if (checkMoShou(main)) {
-            if (player.getBukkitEntity().hasPermission(moshou_permission + CraftItemStack.asBukkitCopy(main).getType().name())) {
+            if (player.getBukkitEntity().hasPermission(moshou_permission + main.asBukkitCopy().getType().name())) {
                 return false;
             }
             player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             return true;
         }
         if (checkMoShou(off)) {
-            if (player.getBukkitEntity().hasPermission(moshou_permission + CraftItemStack.asBukkitCopy(off).getType().name())) {
+            if (player.getBukkitEntity().hasPermission(moshou_permission + off.asBukkitCopy().getType().name())) {
                 return false;
             }
             player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
@@ -61,7 +60,7 @@ public class BanItem {
     }
 
     public static boolean check(ItemStack itemStack) {
-        return check(CraftItemStack.asBukkitCopy(itemStack));
+        return check(itemStack.getBukkitStack());
     }
 
     public static boolean check(org.bukkit.inventory.ItemStack itemStack) {
@@ -78,14 +77,14 @@ public class BanItem {
     }
 
     public static boolean checkMoShou(ItemStack itemStack) {
-        return checkMoShou(CraftItemStack.asBukkitCopy(itemStack));
+        return checkMoShou(itemStack.getBukkitStack());
     }
 
     public static boolean checkMoShou(net.minecraft.world.entity.player.Player player, ItemStack itemStack) {
         if (itemStack == null) return false;
         CraftHumanEntity bukkitPlayer = player.getBukkitEntity();
         if (bukkitPlayer.isOp()) return false;
-        String permission = moshou_permission + CraftItemStack.asBukkitCopy(itemStack).getType().name().toLowerCase();
+        String permission = moshou_permission + itemStack.getBukkitStack().getType().name().toLowerCase();
         return checkMoShou(itemStack) && !bukkitPlayer.hasPermission(permission);
     }
 }

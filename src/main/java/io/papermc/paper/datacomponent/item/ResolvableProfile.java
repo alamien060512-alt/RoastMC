@@ -14,6 +14,7 @@ import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -21,6 +22,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#PROFILE
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
 

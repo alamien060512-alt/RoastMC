@@ -3,7 +3,6 @@ package org.bukkit.block;
 import java.util.Map;
 import org.bukkit.inventory.CookingRecipe;
 import org.bukkit.inventory.FurnaceInventory;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -82,7 +81,7 @@ public interface Furnace extends Container {
      *
      * @return the multiplier, a value between 0 and 200
      */
-    double getCookSpeedMultiplier();
+    public double getCookSpeedMultiplier();
 
     /**
      * Sets the speed multiplier that this {@link Furnace} will cook
@@ -92,7 +91,7 @@ public interface Furnace extends Container {
      * @throws IllegalArgumentException if value is less than 0
      * @throws IllegalArgumentException if value is more than 200
      */
-    void setCookSpeedMultiplier(double multiplier);
+    public void setCookSpeedMultiplier(double multiplier);
 
     /**
      * Gets the number of times a recipe has been used since the

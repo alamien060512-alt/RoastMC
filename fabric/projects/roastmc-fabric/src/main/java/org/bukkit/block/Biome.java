@@ -81,7 +81,6 @@ public interface Biome extends OldEnum<Biome>, Keyed, RegistryAware {
     Biome DRIPSTONE_CAVES = getBiome("dripstone_caves");
     Biome LUSH_CAVES = getBiome("lush_caves");
     Biome DEEP_DARK = getBiome("deep_dark");
-    Biome SULFUR_CAVES = getBiome("sulfur_caves");
     Biome MEADOW = getBiome("meadow");
     Biome GROVE = getBiome("grove");
     Biome SNOWY_SLOPES = getBiome("snowy_slopes");
@@ -89,7 +88,6 @@ public interface Biome extends OldEnum<Biome>, Keyed, RegistryAware {
     Biome JAGGED_PEAKS = getBiome("jagged_peaks");
     Biome STONY_PEAKS = getBiome("stony_peaks");
     Biome CHERRY_GROVE = getBiome("cherry_grove");
-    Biome DAPPLED_FOREST = getBiome("dappled_forest");
 
     /**
      * Represents a custom Biome

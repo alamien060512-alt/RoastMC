@@ -20,7 +20,6 @@ package com.roastmc.neoforge.eventhandler;
 import com.roastmc.neoforge.RoastMC;
 import com.roastmc.neoforge.eventhandler.dispatcher.BlockEventDispatcher;
 import com.roastmc.neoforge.eventhandler.dispatcher.EntityEventDispatcher;
-import com.roastmc.neoforge.eventhandler.dispatcher.ItemEventDispatcher;
 import com.roastmc.neoforge.eventhandler.dispatcher.PlayerEventDispatcher;
 import com.roastmc.neoforge.eventhandler.dispatcher.WorldEventDispatcher;
 import net.neoforged.neoforge.common.NeoForge;
@@ -30,7 +29,7 @@ public class EventDispatcherRegistry {
     public static void init() {
         NeoForge.EVENT_BUS.register(new PlayerEventDispatcher());
         NeoForge.EVENT_BUS.register(new WorldEventDispatcher());
-        NeoForge.EVENT_BUS.register(new ItemEventDispatcher());
+        // NeoForge.EVENT_BUS.register(new ItemEventDispatcher());
         NeoForge.EVENT_BUS.register(new EntityEventDispatcher());
         NeoForge.EVENT_BUS.register(new BlockEventDispatcher());
         RoastMC.LOGGER.info("EventDispatcherRegistry initialized");

@@ -5,12 +5,11 @@ import com.roastmc.neoforge.feature.ban.BanConfig;
 import com.roastmc.neoforge.feature.ban.BanType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * @author Mgazul
- * {@code @date} 2025/11/1 19:00:23
+ * @author Mgazul by MohistMC
+ * @date 2025/11/1 19:00:23
  */
 public class BanBlock {
 
@@ -20,7 +19,7 @@ public class BanBlock {
         var list = BanConfig.getListByType(BanType.BLOCK);
         if (list.isEmpty()) return false;
         Block block = p_46606_.getBlock();
-        ItemStack bukkitBlock = CraftItemStack.asBukkitCopy(block.asItem().getDefaultInstance());
+        ItemStack bukkitBlock = block.asItem().getDefaultInstance().getBukkitStack();
         return list.contains(bukkitBlock.getType().key().asString());
     }
 }

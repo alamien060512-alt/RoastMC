@@ -1,8 +1,8 @@
 package com.roastmc.neoforge.feature.ban;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/7/27 15:10:13
+ * @author Mgazul by MohistMC
+ * @date 2023/7/27 15:10:13
  */
 public enum BanType {
     ITEM("ITEMS", "bans.add.item", "bans.remove.item"),
@@ -11,7 +11,9 @@ public enum BanType {
     ENCHANTMENT("ENCHANTMENTS", "bans.add.enchantment", "bans.remove.enchantment"),
     RECIPE("RECIPES", "bans.add.recipe", "bans.remove.recipe"),
     BLOCK("BLOCKS", "bans.add.block", "bans.remove.block"),
-    WORLD("WORLDS", "bans.add.world", "bans.remove.world");
+    WORLD("WORLDS", "bans.add.world", "bans.remove.world"),
+    STRUCTURE("STRUCTURE", "bans.add.structure", "bans.remove.structure"),
+    EFFECT("EFFECTS", "bans.add.effect", "bans.remove.effect");
 
     public final String key;
     public final String i18n_key_add;

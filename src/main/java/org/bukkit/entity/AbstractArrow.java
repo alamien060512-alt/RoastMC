@@ -173,8 +173,8 @@ public interface AbstractArrow extends Projectile {
      *
      * @return The firing ItemStack
      */
-    @Override
-    @Nullable ItemStack getWeapon();
+    @Nullable // Paper
+    public ItemStack getWeapon();
 
     /**
      * Sets the ItemStack which fired this arrow.

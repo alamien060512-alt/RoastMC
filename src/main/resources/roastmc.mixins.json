@@ -1,7 +1,10 @@
 {
   "required": true,
   "package": "com.roastmc.neoforge.mixins",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.roastmc.neoforge.RoastMCMixinPlugin",
   "mixins": [
+    "compat.spark.MixinNeoForgeWorldInfoProvider",
     "minecraft.network.codec.MixinIdDispatchCodec",
     "minecraft.server.MixinMinecraftServer",
     "minecraft.server.dedicated.MixinDedicatedServer"
@@ -9,6 +12,5 @@
   "client": [],
   "injectors": {
     "defaultRequire": 1
-  },
-  "minVersion": "0.8"
+  }
 }

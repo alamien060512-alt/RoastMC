@@ -11,8 +11,8 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import org.bukkit.NamespacedKey;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/7/27 13:35:20
+ * @author Mgazul by MohistMC
+ * @date 2023/7/27 13:35:20
  */
 public class BanEntity {
 
@@ -27,7 +27,12 @@ public class BanEntity {
     }
 
     /**
-     * Checks if a vanilla entity should be banned
+     * Checks if a vanilla entity should be banned.
+     *
+     * <p>Semantics: when {@code no_vanilla_entity_enable} is on, ALL vanilla
+     * (minecraft-namespaced) entities are banned by default. {@code no_vanilla_entity_whitelist}
+     * acts as an allow-list of exceptions: entities whose registry key is listed there are
+     * spared. An empty whitelist means no exceptions, i.e. every vanilla entity is banned.</p>
      *
      * @param entity The entity to check
      * @return true if the entity should be banned, false otherwise
@@ -35,7 +40,7 @@ public class BanEntity {
     public static boolean banVanilla(Entity entity) {
         if (!RoastMCConfig.no_vanilla_entity_enable) return false;
         var list = RoastMCConfig.no_vanilla_entity_whitelist;
-        if (list.isEmpty()) return false;
+        if (list.isEmpty()) return true;
         var key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         return key.getNamespace().equals(NamespacedKey.MINECRAFT) && !list.contains(key.toString());
     }

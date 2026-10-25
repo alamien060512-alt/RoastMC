@@ -42,6 +42,17 @@
 +        return (this.level().purpurConfig.traderLlamaBreedingChance > 0.0D) && (this.level().purpurConfig.traderLlamaBreedingChance >= this.random.nextDouble());
 +    }
 +
++    @Override
++    protected int getBreedingMinOffspring() {
++        return this.level().purpurConfig.traderLlamaBreedingMinOffspring;
++    }
++
++    @Override
++    protected int getBreedingMaxOffspring() {
++        return this.level().purpurConfig.traderLlamaBreedingMaxOffspring;
++    }
++    // Purpur end - Breedable mobs can have multiple babies
++
 +    // Purpur start - Ridables
 +    @Override
 +    public boolean isRidable() {
@@ -63,17 +74,6 @@
 +        return super.isSaddled() || isTamed();
 +    }
 +    // Purpur end - Ridables
-+
-+    @Override
-+    protected int getBreedingMinOffspring() {
-+        return this.level().purpurConfig.traderLlamaBreedingMinOffspring;
-+    }
-+
-+    @Override
-+    protected int getBreedingMaxOffspring() {
-+        return this.level().purpurConfig.traderLlamaBreedingMaxOffspring;
-+    }
-+    // Purpur end - Breedable mobs can have multiple babies
 +
 +    // Purpur start - Configurable entity base attributes
 +    @Override
@@ -104,12 +104,17 @@
              }
          }
      }
-@@ -156,7 +_,7 @@
+@@ -156,9 +_,10 @@
  
          @Override
          public void start() {
 -            this.mob.setTarget(this.ownerLastHurtBy);
+-            if (this.llama.getLeashHolder() instanceof WanderingTrader wanderingTrader) {
+-                this.timestamp = wanderingTrader.getLastHurtByMobTimestamp();
 +            this.mob.setTarget(this.ownerLastHurtBy, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER); // CraftBukkit
-             if (this.llama.getLeashHolder() instanceof WanderingTrader wanderingTrader) {
-                 this.timestamp = wanderingTrader.getLastHurtByMobTimestamp();
++            Entity leashHolder = this.llama.getLeashHolder();
++            if (leashHolder instanceof WanderingTrader) {
++                this.timestamp = ((WanderingTrader)leashHolder).getLastHurtByMobTimestamp();
              }
+ 
+             super.start();

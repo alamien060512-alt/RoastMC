@@ -3,6 +3,8 @@ package ca.spottedleaf.moonrise.paper;
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import ca.spottedleaf.moonrise.paper.util.BaseChunkSystemHooks;
+import com.roastmc.neoforge.api.ServerAPI;
+import com.roastmc.neoforge.compat.architectury.MixinChunkMap;
 import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
@@ -30,6 +32,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import java.util.List;
 import java.util.function.Predicate;
+import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.entity.PartEntity;
@@ -226,12 +229,17 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
 
     @Override
     public int configMinChunkUnloadCount(final ServerLevel world) {
-        return world.paperConfig().chunks.minChunkUnloadCount;
+        return 50;
     }
 
     @Override
     public double configMinChunkUnloadFraction(final ServerLevel world) {
-        return world.paperConfig().chunks.minChunkUnloadFraction;
+        return 0.05;
+    }
+
+    @Override
+    public boolean configFixMC159283() {
+        return io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixFarEndTerrainGeneration;
     }
 
     @Override
@@ -259,7 +267,11 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
 
     @Override
     public void mainChunkLoad(final ChunkAccess chunk, final SerializableChunkData chunkData) {
-        NeoForge.EVENT_BUS.post(new ChunkDataEvent.Load(chunk, chunkData));
+        Event event = new ChunkDataEvent.Load(chunk, chunkData);
+        if (ServerAPI.hasMod("architectury")) {
+            event = MixinChunkMap.modifyProtoChunkLevel(event, chunk.getLevel());
+        }
+        NeoForge.EVENT_BUS.post(event);
     }
 
     @Override

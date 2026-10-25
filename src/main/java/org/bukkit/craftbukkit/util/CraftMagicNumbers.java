@@ -28,10 +28,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
@@ -39,7 +41,9 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementNode;
 import net.minecraft.advancements.AdvancementTree;
+import net.minecraft.advancements.TreeNodePosition;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -132,8 +136,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     // ========================================================================
-    public static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
-    public static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
+    public static final Map<Block, Material> BLOCK_MATERIAL = new IdentityHashMap<>();
+    public static final Map<Item, Material> ITEM_MATERIAL = new IdentityHashMap<>();
+    // Use HashMap instead of EnumMap: RoastMC dynamically adds enum constants via Material.addMaterial at runtime,
+    // EnumMap's internal array is sized at construction time and will throw ArrayIndexOutOfBoundsException on new enums
     public static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
     public static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
 
@@ -327,15 +333,25 @@ public final class CraftMagicNumbers implements UnsafeValues {
             allAdvancements.put(id, holder);
             newEntries.add(new AdvancementEntry(holder, element));
         }
-        if (newEntries.isEmpty()) return List.of();
-
         manager.advancements = allAdvancements.build();
 
         final AdvancementTree tree = manager.tree();
         tree.addAll(newEntries.stream().map(AdvancementEntry::advancement).toList());
-        tree.repositionNodes();
 
-        boolean shouldSave = persist;
+        // recalculate advancement position
+        final Set<AdvancementNode> roots = new HashSet<>();
+        for (final AdvancementEntry entry : newEntries) {
+            final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
+            roots.add(node.root());
+        }
+
+        for (final AdvancementNode root : roots) {
+            if (root.holder().value().display().isPresent()) {
+                TreeNodePosition.run(root);
+            }
+        }
+
+        boolean shouldSave = persist && !newEntries.isEmpty();
         if (shouldSave) {
             shouldSave = DynamicBuiltinPacks.BUKKIT.createIfNeeded(DynamicBuiltinPack.LevelPathAccess.SERVER);
         }
@@ -355,7 +371,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
             deserializedAdvancements.add(entry.advancement().toBukkit());
         }
 
-        MinecraftServer.getServer().getPlayerList().reloadAdvancementData();
+        if (!deserializedAdvancements.isEmpty()) {
+            MinecraftServer.getServer().getPlayerList().reloadAdvancementData();
+        }
         return deserializedAdvancements;
     }
 
@@ -527,7 +545,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final int currentVersion = this.getDataVersion();
         data = (com.google.gson.JsonObject) MinecraftServer.getServer().getFixerUpper().update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
         com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
-        return CraftItemStack.asBukkitMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
     }
 
     @Override

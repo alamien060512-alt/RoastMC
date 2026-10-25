@@ -73,19 +73,11 @@ public interface ContextMinecraftServer {
         throw new ContextStateException("Not implemented");
     }
 
-    default void roastmc$setTerminal(Terminal terminal) {
-        throw new ContextStateException("Not implemented");
-    }
-
     default Terminal terminal() {
         throw new ContextStateException("Not implemented");
     }
 
     default void roastmc$setRemoteConsole(RemoteConsoleCommandSender remoteConsole) {
-        throw new ContextStateException("Not implemented");
-    }
-
-    default void roastmc$forceTicks(boolean forceTicks) {
         throw new ContextStateException("Not implemented");
     }
 

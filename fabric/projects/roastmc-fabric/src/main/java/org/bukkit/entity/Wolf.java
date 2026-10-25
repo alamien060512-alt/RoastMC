@@ -25,7 +25,7 @@ public interface Wolf extends Tameable, Sittable {
      * An angry wolf can not be fed or tamed.
      *
      * @param angry true if angry
-     * @see #setTarget(org.bukkit.entity.LivingEntity)
+     * @see #setTarget(LivingEntity)
      */
     public void setAngry(boolean angry);
 

@@ -11,10 +11,10 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Mgazul
+ * @author Mgazul by MohistMC
  * <p>
  * This is useful when no permission management plugin is installed
- * {@code @date} 2023/7/20 15:19:28
+ * @date 2023/7/20 15:19:28
  */
 public class PermissionCommand extends Command {
 

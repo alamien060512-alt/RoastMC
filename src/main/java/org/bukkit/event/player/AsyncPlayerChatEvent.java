@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
  */
 @Deprecated
-@Warning(propagate = false)
+@Warning(reason = "Don't nag on old event yet") // Paper
 public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

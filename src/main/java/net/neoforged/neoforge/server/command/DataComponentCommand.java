@@ -11,6 +11,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -35,6 +36,7 @@ class DataComponentCommand {
                         .executes(DataComponentCommand::listComponents));
     }
 
+    @SuppressWarnings("OptionalAssignedToNull")
     private static int listComponents(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         ItemStack stack = player.getMainHandItem();
@@ -49,14 +51,13 @@ class DataComponentCommand {
             DataComponentMap prototype = stack.getPrototype();
             DataComponentPatch patch = stack.getComponentsPatch();
             prototype.forEach(component -> {
-                if (!patch.isPatched(component.type())) { // Component is default
+                Optional<?> optData = patch.getPatch(component.type());
+                if (optData == null) { // Component is default
                     Component tooltip = CommandUtils.makeTranslatableWithFallback(
                             "commands.neoforge.data_components.list.tooltip.default",
                             getTypeId(component.type()));
                     text.append(print(component.type(), component.value(), ChatFormatting.WHITE, tooltip));
-                }
-                Object data = patch.getPatch(component.type());
-                if (data == null) { // Component is deleted
+                } else if (optData.isEmpty()) { // Component is deleted
                     Component tooltip = CommandUtils.makeTranslatableWithFallback(
                             "commands.neoforge.data_components.list.tooltip.deleted",
                             getTypeId(component.type()),
@@ -67,18 +68,17 @@ class DataComponentCommand {
                             "commands.neoforge.data_components.list.tooltip.modified",
                             getTypeId(component.type()),
                             component.value().toString(),
-                            data.toString());
-                    text.append(print(component.type(), data, ChatFormatting.YELLOW, tooltip));
+                            optData.get().toString());
+                    text.append(print(component.type(), optData.get(), ChatFormatting.YELLOW, tooltip));
                 }
             });
-            patch.keySet().forEach(type -> {
-                Object value = patch.getPatch(type);
-                if (!prototype.has(type) && value != null) { // New component added
+            patch.entrySet().forEach(entry -> {
+                if (!prototype.has(entry.getKey()) && entry.getValue().isPresent()) { // New component added
                     Component tooltip = CommandUtils.makeTranslatableWithFallback(
                             "commands.neoforge.data_components.list.tooltip.added",
-                            getTypeId(type),
-                            value.toString());
-                    text.append(print(type, value, ChatFormatting.GREEN, tooltip));
+                            getTypeId(entry.getKey()),
+                            entry.getValue().get().toString());
+                    text.append(print(entry.getKey(), entry.getValue().get(), ChatFormatting.GREEN, tooltip));
                 }
             });
             return text;

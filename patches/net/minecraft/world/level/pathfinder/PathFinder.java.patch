@@ -18,7 +18,7 @@
      }
  
 -    private @Nullable Path findPath(Node from, Map<Target, BlockPos> targetMap, float maxPathLength, int reachRange, float maxVisitedNodesMultiplier) {
-+    private @Nullable Path findPath(Node from, List<Map.Entry<Target, BlockPos>> targets, float maxPathLength, int reachRange, float maxVisitedNodesMultiplier) {
++    private @Nullable Path findPath(Node from, List<Map.Entry<Target, BlockPos>> targets, float maxPathLength, int reachRange, float maxVisitedNodesMultiplier) { // Paper - optimize collection
          ProfilerFiller profiler = Profiler.get();
          profiler.push("find_path");
          profiler.markForCharting(MetricCategory.PATH_FINDING);
@@ -68,8 +68,8 @@
 +        Path best = null;
 +        boolean entryListIsEmpty = reachedTargets.isEmpty();
 +        Comparator<Path> comparator = entryListIsEmpty
-+            ? Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount)
-+            : Comparator.comparingInt(Path::getNodeCount);
++                ? Comparator.comparingInt(Path::getNodeCount)
++                : Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount);
 +        for (Map.Entry<Target, BlockPos> entry : entryListIsEmpty ? targets : reachedTargets) {
 +            Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !entryListIsEmpty);
 +            if (best == null || comparator.compare(path, best) < 0) {
@@ -83,7 +83,7 @@
 -
 -        Path path = optPath.get();
 -        if (captureDebug) {
--            path.setDebug(List.of(this.openSet.getHeap()), List.copyOf(closedSet), targets);
+-            path.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), targets);
 -        }
 -
 -        return path;
@@ -92,7 +92,7 @@
 +            for(Map.Entry<Target, BlockPos> entry : targets) {
 +                set.add(entry.getKey());
 +            }
-+            best.setDebug(List.of(this.openSet.getHeap()), List.copyOf(closedSet), set);
++            best.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), set);
 +        }
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection
@@ -103,7 +103,7 @@
      }
  
 -    private float getBestH(Node from, Set<Target> targets) {
-+    private float getBestH(Node from, List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
++    private float getBestH(Node from, final List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
          float bestH = Float.MAX_VALUE;
  
 -        for (Target target : targets) {

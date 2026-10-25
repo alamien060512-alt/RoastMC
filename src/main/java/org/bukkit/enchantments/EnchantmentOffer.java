@@ -1,26 +1,18 @@
 package org.bukkit.enchantments;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.InternalAPIBridge;
-import org.bukkit.inventory.ItemStack;
-import java.util.Objects;
-import org.checkerframework.checker.index.qual.Positive;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
-
-import static io.papermc.paper.util.BoundChecker.requirePositive;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A class for the available enchantment offers in the enchantment table.
  */
-@NullMarked
 public class EnchantmentOffer {
 
     private Enchantment enchantment;
     private int enchantmentLevel;
     private int cost;
 
-    public EnchantmentOffer(final Enchantment enchantment, final int enchantmentLevel, final int cost) {
+    public EnchantmentOffer(@NotNull Enchantment enchantment, int enchantmentLevel, int cost) {
         this.enchantment = enchantment;
         this.enchantmentLevel = enchantmentLevel;
         this.cost = cost;
@@ -31,8 +23,9 @@ public class EnchantmentOffer {
      *
      * @return type of enchantment
      */
+    @NotNull
     public Enchantment getEnchantment() {
-        return this.enchantment;
+        return enchantment;
     }
 
     /**
@@ -40,7 +33,7 @@ public class EnchantmentOffer {
      *
      * @param enchantment type of the enchantment
      */
-    public void setEnchantment(final Enchantment enchantment) {
+    public void setEnchantment(@NotNull Enchantment enchantment) {
         Preconditions.checkArgument(enchantment != null, "The enchantment may not be null!");
 
         this.enchantment = enchantment;
@@ -52,7 +45,7 @@ public class EnchantmentOffer {
      * @return level of the enchantment
      */
     public int getEnchantmentLevel() {
-        return this.enchantmentLevel;
+        return enchantmentLevel;
     }
 
     /**
@@ -60,8 +53,8 @@ public class EnchantmentOffer {
      *
      * @param enchantmentLevel level of the enchantment
      */
-    public void setEnchantmentLevel(final @Positive int enchantmentLevel) {
-        requirePositive(enchantmentLevel, "enchantmentLevel");
+    public void setEnchantmentLevel(int enchantmentLevel) {
+        Preconditions.checkArgument(enchantmentLevel > 0, "The enchantment level must be greater than 0!");
 
         this.enchantmentLevel = enchantmentLevel;
     }
@@ -73,7 +66,7 @@ public class EnchantmentOffer {
      * @return cost for this enchantment
      */
     public int getCost() {
-        return this.cost;
+        return cost;
     }
 
     /**
@@ -82,42 +75,9 @@ public class EnchantmentOffer {
      *
      * @param cost cost for this enchantment
      */
-    public void setCost(final @Positive int cost) {
-        requirePositive(cost, "cost");
+    public void setCost(int cost) {
+        Preconditions.checkArgument(cost > 0, "The cost must be greater than 0!");
 
         this.cost = cost;
-    }
-
-    @Override
-    public boolean equals(final @Nullable Object o) {
-        if (o == null || this.getClass() != o.getClass()) {
-            return false;
-        }
-        final EnchantmentOffer that = (EnchantmentOffer) o;
-        return this.getEnchantmentLevel() == that.getEnchantmentLevel() && this.getCost() == that.getCost() && Objects.equals(this.getEnchantment(), that.getEnchantment());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.getEnchantment(), this.getEnchantmentLevel(), this.getCost());
-    }
-
-    /**
-     * Rolls a new set of enchantment offers based on a target item stack, a seed and a bookshelf count.
-     *
-     * @param targetStack    the itemstack for which the enchantment offers are rolled.
-     * @param seed           the seed used for random selection of enchantments.
-     *                       Mirrors {@link org.bukkit.inventory.view.EnchantmentView#getEnchantmentSeed()}.
-     * @param bookshelfCount the number of virtual bookshelves to consider when rolling the enchantments.
-     * @param offerAmount    the amount of enchantment offers to roll.
-     * @return an array of enchantment offers with size {@code offerAmount}.
-     */
-    public static @Nullable EnchantmentOffer[] rollEnchantmentOffers(
-        final ItemStack targetStack,
-        final int seed,
-        final int bookshelfCount,
-        final int offerAmount
-    ) {
-        return InternalAPIBridge.get().rollEnchantmentOffers(targetStack, seed, bookshelfCount, offerAmount);
     }
 }

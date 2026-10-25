@@ -4,7 +4,7 @@ import net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinTeleportRandomlyConsumeEffect {
 
     @Inject(method = "apply", at = @At("HEAD"))
-    private void roastmc_apply(CallbackInfoReturnable<Boolean> cir) {
+    private void roastmc_apply(CallbackInfo ci) {
         // CraftBukkit
     }
 }

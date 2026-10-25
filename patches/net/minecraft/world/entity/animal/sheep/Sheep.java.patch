@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/sheep/Sheep.java
 +++ b/net/minecraft/world/entity/animal/sheep/Sheep.java
-@@ -54,6 +_,7 @@
+@@ -53,6 +_,7 @@
  import net.minecraft.world.level.storage.ValueInput;
  import net.minecraft.world.level.storage.ValueOutput;
  import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -8,7 +8,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class Sheep extends Animal implements Shearable {
-@@ -67,14 +_,78 @@
+@@ -66,10 +_,56 @@
      private int eatAnimationTick;
      private EatBlockGoal eatBlockGoal;
  
@@ -62,32 +62,10 @@
 +    }
 +    // Purpur end - Breedable mobs can have multiple babies
 +
-+    // Purpur start - Ridables
-+    @Override
-+    public boolean isRidable() {
-+        return level().purpurConfig.sheepRidable;
-+    }
-+
-+    @Override
-+    public boolean dismountsUnderwater() {
-+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.sheepRidableInWater;
-+    }
-+
-+    @Override
-+    public boolean isControllable() {
-+        return level().purpurConfig.sheepControllable;
-+    }
-+    // Purpur end - Ridables
-+
      @Override
      protected void registerGoals() {
          this.eatBlockGoal = new EatBlockGoal(this);
-         this.goalSelector.addGoal(0, new FloatGoal(this));
-+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur - Ridables
-         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
-         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
-         this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, i -> i.is(ItemTags.SHEEP_FOOD), false));
-@@ -146,9 +_,17 @@
+@@ -145,9 +_,17 @@
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
          ItemStack itemStack = player.getItemInHand(hand);
@@ -107,7 +85,7 @@
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
                  return InteractionResult.SUCCESS_SERVER;
-@@ -161,27 +_,39 @@
+@@ -160,27 +_,39 @@
      }
  
      @Override
@@ -165,7 +143,7 @@
          );
          this.setSheared(true);
      }
-@@ -291,6 +_,12 @@
+@@ -290,6 +_,12 @@
  
      @Override
      public void ate() {

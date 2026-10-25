@@ -36,8 +36,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/6/14 14:46:34
+ * @author Mgazul by MohistMC
+ * @date 2023/6/14 14:46:34
  */
 public class RoastMCPlugin {
 

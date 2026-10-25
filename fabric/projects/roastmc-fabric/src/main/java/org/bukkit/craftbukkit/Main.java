@@ -189,7 +189,7 @@ public class Main {
                     Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
 
                     Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.WEEK_OF_YEAR, -4);
+                    deadline.add(Calendar.DAY_OF_YEAR, -2);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
                         System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
@@ -199,10 +199,7 @@ public class Main {
                 }
 
                 System.out.println("Loading libraries, please wait...");
-                // CraftBukkit start - roastmc: hand OptionSet over to MainHook, then start vanilla Main
-                com.roastmc.fabric.bukkit.MainHook.configure(options);
-                net.minecraft.server.Main.main(new String[0]);
-                // CraftBukkit end
+                //net.minecraft.server.Main.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
             }

@@ -2,7 +2,6 @@ package io.papermc.paper.configuration;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
@@ -58,7 +57,7 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.slf4j.Logger;
 import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -336,8 +335,6 @@ public class WorldConfiguration extends ConfigurationPart {
             public boolean cooldownFailedBeehiveReleases = true;
             @Comment("The delay before retrying POI acquisition when entity navigation is stuck. This will reduce pathfinding performance impact. Measured in ticks.")
             public IntOr.Disabled stuckEntityPoiRetryDelay = new IntOr.Disabled(OptionalInt.of(200));
-            @Comment("If specified, this setting controls how often to tick inactive mobs' goal selectors. Higher values reduce the performance impact of ticking mobs that are far away. Measured in ticks.")
-            public IntOr.Disabled inactiveMobGoalSelectorThrottleRate = IntOr.Disabled.DISABLED;
         }
 
         public TrackingRangeY trackingRangeY;
@@ -513,8 +510,6 @@ public class WorldConfiguration extends ConfigurationPart {
         public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
         public int maxAutoSaveChunksPerTick = 24;
         public int fixedChunkInhabitedTime = -1;
-        public int minChunkUnloadCount = 50;
-        public double minChunkUnloadFraction = 0.05;
         public boolean preventMovingIntoUnloadedChunks = false;
         public Duration delayChunkUnloadsBy = Duration.of("10s");
         public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
@@ -561,7 +556,7 @@ public class WorldConfiguration extends ConfigurationPart {
         @Setting(FeatureSeedsGeneration.GENERATE_KEY)
         public boolean generateRandomSeedsForAll = false;
         @Setting(FeatureSeedsGeneration.FEATURES_KEY)
-        public Reference2LongMap<Holder<Feature>> features = new Reference2LongOpenHashMap<>();
+        public Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = new Reference2LongOpenHashMap<>();
 
         @PostProcess
         private void postProcess() {

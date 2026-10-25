@@ -55,12 +55,12 @@ public class Main {
         RoastMCConfigUtil.i18n();
         if (RoastMCConfigUtil.aBoolean("roastmc.show_logo", true)) {
             System.out.printf("%n%s%n%s - %s, Java(%s) %s PID: %s%n",
-                LOGO,
-                i18n.as("roastmc.launch.welcomemessage"),
-                getVersion(),
-                System.getProperty("java.class.version"),
-                System.getProperty("java.version"),
-                ManagementFactory.getRuntimeMXBean().getName().split("@")[0]
+                    LOGO,
+                    i18n.as("roastmc.launch.welcomemessage"),
+                    getVersion(),
+                    System.getProperty("java.class.version"),
+                    System.getProperty("java.version"),
+                    ManagementFactory.getRuntimeMXBean().getName().split("@")[0]
             );
             System.out.println("+------------------------------------------------------+");
             System.out.println("|                                                      |");

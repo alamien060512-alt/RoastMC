@@ -14,6 +14,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
 
 public class KeyMappingLookup {
@@ -62,7 +63,7 @@ public class KeyMappingLookup {
 
                     // Loop through all modifier codes
                     for (var otherModifierCode : otherModifier.codes()) {
-                        if (InputConstants.isKeyDown(otherModifierCode.getValue())) {
+                        if (InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), otherModifierCode.getValue())) {
                             matchingBindings.addAll(findKeybinds(otherModifierCode, modifier));
                         }
                     }

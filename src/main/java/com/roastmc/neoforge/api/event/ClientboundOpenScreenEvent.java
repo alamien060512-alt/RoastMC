@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * the screen comes from a mod.
  *
  * @author Mgazul
- * {@code @date} 2025/11/1 17:47
+ * @date 2025/11/1 17:47
  */
 public class ClientboundOpenScreenEvent extends Event implements Cancellable {
 

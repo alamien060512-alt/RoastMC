@@ -4,16 +4,19 @@ import com.mohistmc.tools.NumberUtil;
 import com.mohistmc.tools.OSUtil;
 import com.mohistmc.tools.StatsUtils;
 import com.mohistmc.tools.StringUtil;
+import com.roastmc.neoforge.RoastMC;
 import com.roastmc.neoforge.RoastMCConfig;
 import com.roastmc.neoforge.api.PlayerAPI;
 import com.roastmc.neoforge.api.ServerAPI;
 import com.roastmc.neoforge.feature.PacketStatistics;
 import com.roastmc.neoforge.feature.WorldBackup;
+import org.purpurmc.purpur.task.PacketBarTask;
 import com.roastmc.neoforge.feature.db.DatabaseMigration;
 import com.roastmc.neoforge.util.I18n;
 import com.roastmc.neoforge.util.MemoryUtils;
 import com.roastmc.neoforge.util.TimeUtils;
 import com.roastmc.neoforge.util.RoastMCThreadCost;
+import com.roastmc.neoforge.util.RoastMCVersion;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -21,27 +24,35 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.PacketFlow;
+import net.neoforged.neoforge.common.NeoForgeVersion;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.spigotmc.SpigotConfig;
 
 public class RoastMCCommand extends Command {
 
     private static final String[] COMMAND_LIST = {
-        "windows", "mods", "playermods", "reload",
-        "channels_incom", "channels_outgo", "speed", "printthreadcost",
-        "packetstats", "heal", "help", "cleardropitem", "memoryfix", "showp",
-        "backupworld", "migratedb"
+            "info", "mods", "playermods", "reload", "version",
+            "channels_incom", "channels_outgo", "modchannels", "speed", "printthreadcost",
+            "packetstats", "heal", "help", "cleardropitem", "memoryfix", "showp",
+            "backupworld", "migratedb"
     };
 
     private final List<String> params = Arrays.asList(COMMAND_LIST);
@@ -53,52 +64,14 @@ public class RoastMCCommand extends Command {
         this.setPermission("roastmc.command.roastmc");
     }
 
-    public static String getJVMUpTime() {
-        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
-        long seconds = uptime / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-
-        return String.format("%d %s %d %s %d %s %d %s",
-            days, I18n.as("roastmccmd.time.days"),
-            hours % 24, I18n.as("roastmccmd.time.hours"),
-            minutes % 60, I18n.as("roastmccmd.time.minutes"),
-            seconds % 60, I18n.as("roastmccmd.time.seconds"));
-    }
-
-    private static void migrateAll(CommandSender sender, String target) {
-        int totalSucceeded = 0;
-        int totalRows = 0;
-        int totalCount = 0;
-
-        for (String module : DatabaseMigration.getModuleNames()) {
-            sender.sendMessage(I18n.as("migratedb.starting",
-                DatabaseMigration.getDisplayName(module), target));
-            DatabaseMigration.MigrationResult result = DatabaseMigration.migrate(module, target);
-            totalCount++;
-            if (result.success()) {
-                totalSucceeded++;
-                totalRows += result.rows();
-                sender.sendMessage(I18n.as("migratedb.success",
-                    DatabaseMigration.getDisplayName(module), result.rows()));
-            } else {
-                sender.sendMessage(I18n.as("migratedb.fail",
-                    DatabaseMigration.getDisplayName(module), result.message()));
-            }
-        }
-
-        sender.sendMessage(I18n.as("migratedb.all.complete",
-            totalSucceeded, totalCount, totalRows));
-    }
-
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String[] args) {
         List<String> list = new ArrayList<>();
         if ((sender.isOp() || testPermission(sender))) {
             if (args.length == 1) {
+                String prefix = args[0].toLowerCase();
                 for (String param : params) {
-                    if (param.toLowerCase().startsWith(args[0].toLowerCase())) {
+                    if (param.toLowerCase().startsWith(prefix)) {
                         list.add(param);
                     }
                 }
@@ -106,8 +79,8 @@ public class RoastMCCommand extends Command {
                 return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
             } else if (args.length == 2 && args[0].equalsIgnoreCase("packetstats")) {
                 return Stream.of("start", "stop", "status")
-                    .filter(param -> param.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .toList();
+                        .filter(param -> param.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .toList();
             } else if (args.length == 2 && (args[0].equalsIgnoreCase("heal") || args[0].equalsIgnoreCase("showp"))) {
                 return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
             } else if (args.length == 2 && args[0].equalsIgnoreCase("cleardropitem")) {
@@ -116,13 +89,13 @@ public class RoastMCCommand extends Command {
                 List<String> mods = new ArrayList<>(DatabaseMigration.getModuleNames());
                 mods.add("all");
                 return mods.stream()
-                    .filter(m -> m.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .sorted()
-                    .toList();
+                        .filter(m -> m.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .sorted()
+                        .toList();
             } else if (args.length == 3 && args[0].equalsIgnoreCase("migratedb")) {
                 return Stream.of("sqlite", "mysql")
-                    .filter(t -> t.startsWith(args[2].toLowerCase()))
-                    .toList();
+                        .filter(t -> t.startsWith(args[2].toLowerCase()))
+                        .toList();
             }
         }
 
@@ -164,12 +137,22 @@ public class RoastMCCommand extends Command {
             case "reload" -> {
                 MinecraftServer console = MinecraftServer.getServer();
                 RoastMCConfig.init((File) console.options.valueOf("roastmc-settings"));
+                ((CraftServer) Bukkit.getServer()).initConfig();
+                ((CraftServer) Bukkit.getServer()).loadCustomPermissions();
+                SpigotConfig.init((File) console.options.valueOf("spigot-settings"));
                 for (ServerLevel world : console.getAllLevels()) {
                     world.spigotConfig.init(); // TODO
                 }
 
                 console.server.reloadCount++;
                 sender.sendMessage(I18n.as("roastmccmd.reload.complete"));
+                return true;
+            }
+            case "version" -> {
+                sender.sendMessage("RoastMC: " + RoastMCVersion.getVersion());
+                sender.sendMessage("NeoForge: " + NeoForgeVersion.getVersion());
+                sender.sendMessage("Paper: " + RoastMCVersion.getPaperVersion());
+                sender.sendMessage("Purpur: " + RoastMCVersion.getPurpurVersion());
                 return true;
             }
             case "packetstats" -> {
@@ -201,6 +184,10 @@ public class RoastMCCommand extends Command {
                         String durationString = TimeUtils.formatDuration(durationSeconds);
 
                         PacketStatistics.stopCollecting();
+
+                        // Stop the packet bar too — it would otherwise show stale zeros
+                        PacketBarTask.instance().stop();
+
                         sender.sendMessage(I18n.as("packetstats.report.title"));
                         sender.sendMessage(I18n.as("packetstats.total.bytes", StringUtil.formatBytes(PacketStatistics.getTotalBytesSent())));
                         sender.sendMessage(I18n.as("packetstats.total.packets", String.valueOf(PacketStatistics.getTotalPacketsSent())));
@@ -213,10 +200,10 @@ public class RoastMCCommand extends Command {
                             sender.sendMessage(I18n.as("packetstats.by.type.title", String.valueOf(bytesByPacketType.size())));
 
                             List<Map.Entry<String, Long>> top10 = bytesByPacketType.entrySet().stream()
-                                .filter(entry -> entry.getValue() > 0 && PacketStatistics.getPacketsByPacketType().getOrDefault(entry.getKey(), 0L) > 0)
-                                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                                .limit(10)
-                                .toList();
+                                    .filter(entry -> entry.getValue() > 0 && PacketStatistics.getPacketsByPacketType().getOrDefault(entry.getKey(), 0L) > 0)
+                                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                                    .limit(10)
+                                    .toList();
 
                             for (int i = 0; i < top10.size(); i++) {
                                 Map.Entry<String, Long> entry = top10.get(i);
@@ -234,12 +221,12 @@ public class RoastMCCommand extends Command {
                                 };
 
                                 sender.sendMessage(rankColor + String.format("%2d", i + 1) + ". " +
-                                    "#碧色" + packetType + "#灰色: " +
-                                    "#aqua" + StringUtil.formatBytes(bytes) +
-                                    "#灰色 (" + "#鹅黄" + packets + "#dark_gray" + "p" + "#灰色) " +
-                                    "#dark_aqua" + "| " +
-                                    "#aqua" + StringUtil.formatBytes(bytesPerSecond) + "/s " +
-                                    "#灰色(" + "#鹅黄" + packetsPerSecond + "#dark_gray" + "p" + "#灰色/s)");
+                                        "#碧色" + packetType + "#灰色: " +
+                                        "#aqua" + StringUtil.formatBytes(bytes) +
+                                        "#灰色 (" + "#鹅黄" + packets + "#dark_gray" + "p" + "#灰色) " +
+                                        "#dark_aqua" + "| " +
+                                        "#aqua" + StringUtil.formatBytes(bytesPerSecond) + "/s " +
+                                        "#灰色(" + "#鹅黄" + packetsPerSecond + "#dark_gray" + "p" + "#灰色/s)");
                             }
 
                             if (bytesByPacketType.size() > 10) {
@@ -262,8 +249,8 @@ public class RoastMCCommand extends Command {
                         if (PacketStatistics.isCollecting()) {
                             sender.sendMessage(I18n.as("packetstats.status.running"));
                             sender.sendMessage(I18n.as("packetstats.status.collected",
-                                StringUtil.formatBytes(PacketStatistics.getTotalBytesSent()),
-                                PacketStatistics.getTotalPacketsSent()));
+                                    StringUtil.formatBytes(PacketStatistics.getTotalBytesSent()),
+                                    PacketStatistics.getTotalPacketsSent()));
                         } else {
                             sender.sendMessage(I18n.as("packetstats.status.not.running"));
                         }
@@ -308,9 +295,38 @@ public class RoastMCCommand extends Command {
                 return true;
             }
 
-            case "channels_incom" -> sender.sendMessage(ServerAPI.channels_Incoming().toString());
-            case "printthreadcost" -> RoastMCThreadCost.dumpThreadCpuTime(sender);
-            case "channels_outgo" -> sender.sendMessage(ServerAPI.channels_Outgoing().toString());
+            case "channels_incom" -> {
+                listPluginChannels(sender, true);
+                return true;
+            }
+            case "channels_outgo" -> {
+                listPluginChannels(sender, false);
+                return true;
+            }
+            case "modchannels" -> {
+                // List every custom payload channel registered by mods through NeoForge.
+                sender.sendMessage(I18n.as("roastmccmd.modchannels.title"));
+                boolean any = false;
+                for (ConnectionProtocol protocol : NetworkRegistry.PAYLOAD_REGISTRATIONS.keySet()) {
+                    var registrations = NetworkRegistry.PAYLOAD_REGISTRATIONS.get(protocol);
+                    if (registrations.isEmpty()) {
+                        continue;
+                    }
+                    any = true;
+                    sender.sendMessage(I18n.as("roastmccmd.modchannels.protocol", protocol.toString(), registrations.size()));
+                    for (var entry : registrations.entrySet()) {
+                        var reg = entry.getValue();
+                        String flow = reg.flow()
+                                .map(f -> f == PacketFlow.SERVERBOUND ? "UPSTREAM" : "DOWNSTREAM")
+                                .orElse("BIDIRECTIONAL");
+                        sender.sendMessage(I18n.as("roastmccmd.modchannels.entry", entry.getKey().toString(), flow, reg.version()));
+                    }
+                }
+                if (!any) {
+                    sender.sendMessage(I18n.as("roastmccmd.modchannels.empty"));
+                }
+                return true;
+            }
             case "speed" -> {
                 if (sender instanceof Player p) {
                     if (args.length == 2 && p.isOp()) {
@@ -370,7 +386,8 @@ public class RoastMCCommand extends Command {
                 sender.sendMessage(I18n.as("roastmccmd.memoryfix.result", result));
                 return true;
             }
-            case "windows" -> {
+            case "info" -> {
+                int pid = (int) ProcessHandle.current().pid();
                 int playerAmount = Bukkit.getOnlinePlayers().size();
                 int maxplayerAmount = Bukkit.getMaxPlayers();
                 boolean onlineMode = Bukkit.getOnlineMode();
@@ -381,43 +398,44 @@ public class RoastMCCommand extends Command {
                 String osArch = System.getProperty("os.arch");
                 String osVersion = System.getProperty("os.version");
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.title"));
+                sender.sendMessage(I18n.as("roastmccmd.info.title"));
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.version", bukkitVersion));
-                sender.sendMessage(I18n.as("roastmccmd.windows.players", playerAmount, maxplayerAmount));
-                sender.sendMessage(I18n.as("roastmccmd.windows.onlineMode", onlineMode ? I18n.as("roastmccmd.windows.enabled") : I18n.as("roastmccmd.windows.disabled")));
-                sender.sendMessage(I18n.as("roastmccmd.windows.javaVersion", javaVersion));
-                sender.sendMessage(I18n.as("roastmccmd.windows.jvmUptime", getJVMUpTime()));
+                sender.sendMessage(I18n.as("roastmccmd.info.pid", pid));
+                sender.sendMessage(I18n.as("roastmccmd.info.version", bukkitVersion));
+                sender.sendMessage(I18n.as("roastmccmd.info.players", playerAmount, maxplayerAmount));
+                sender.sendMessage(I18n.as("roastmccmd.info.onlineMode", onlineMode ? I18n.as("roastmccmd.info.enabled") : I18n.as("roastmccmd.info.disabled")));
+                sender.sendMessage(I18n.as("roastmccmd.info.javaVersion", javaVersion));
+                sender.sendMessage(I18n.as("roastmccmd.info.jvmUptime", getJVMUpTime()));
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.memory",
-                    StatsUtils.BytesToMegaBytes(StatsUtils.freeMemory()),
-                    StatsUtils.BytesToMegaBytes(StatsUtils.totalMemory()),
-                    StatsUtils.BytesToMegaBytes(StatsUtils.maxMemory()),
-                    I18n.as("roastmccmd.windows.disk.free"),
-                    I18n.as("roastmccmd.windows.disk.usable"),
-                    I18n.as("roastmccmd.windows.disk.total")));
+                sender.sendMessage(I18n.as("roastmccmd.info.memory",
+                        StatsUtils.BytesToMegaBytes(StatsUtils.freeMemory()),
+                        StatsUtils.BytesToMegaBytes(StatsUtils.totalMemory()),
+                        StatsUtils.BytesToMegaBytes(StatsUtils.maxMemory()),
+                        I18n.as("roastmccmd.info.disk.free"),
+                        I18n.as("roastmccmd.info.disk.usable"),
+                        I18n.as("roastmccmd.info.disk.total")));
 
                 try {
-                    sender.sendMessage(I18n.as("roastmccmd.windows.cpu",
-                        StatsUtils.LoadAverange(),
-                        I18n.as("roastmccmd.windows.cpu.loadavg"),
-                        StatsUtils.getProcessCpuLoad(),
-                        I18n.as("roastmccmd.windows.cpu.process")));
+                    sender.sendMessage(I18n.as("roastmccmd.info.cpu",
+                            StatsUtils.LoadAverange(),
+                            I18n.as("roastmccmd.info.cpu.loadavg"),
+                            StatsUtils.getProcessCpuLoad(),
+                            I18n.as("roastmccmd.info.cpu.process")));
                 } catch (final Exception ignored) {
-                    sender.sendMessage(I18n.as("roastmccmd.windows.cpu.unavailable_msg"));
+                    sender.sendMessage(I18n.as("roastmccmd.info.cpu.unavailable_msg"));
                 }
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.disk",
-                    StatsUtils.BytesToGigaBytes(StatsUtils.freeDisk()),
-                    StatsUtils.BytesToGigaBytes(StatsUtils.usableDisk()),
-                    StatsUtils.BytesToGigaBytes(StatsUtils.totalDisk()),
-                    I18n.as("roastmccmd.windows.disk.free"),
-                    I18n.as("roastmccmd.windows.disk.usable"),
-                    I18n.as("roastmccmd.windows.disk.total")));
+                sender.sendMessage(I18n.as("roastmccmd.info.disk",
+                        StatsUtils.BytesToGigaBytes(StatsUtils.freeDisk()),
+                        StatsUtils.BytesToGigaBytes(StatsUtils.usableDisk()),
+                        StatsUtils.BytesToGigaBytes(StatsUtils.totalDisk()),
+                        I18n.as("roastmccmd.info.disk.free"),
+                        I18n.as("roastmccmd.info.disk.usable"),
+                        I18n.as("roastmccmd.info.disk.total")));
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.system", osName, osVersion, osArch));
+                sender.sendMessage(I18n.as("roastmccmd.info.system", osName, osVersion, osArch));
 
-                sender.sendMessage(I18n.as("roastmccmd.windows.separator"));
+                sender.sendMessage(I18n.as("roastmccmd.info.separator"));
             }
 
             case "showp" -> {
@@ -443,20 +461,20 @@ public class RoastMCCommand extends Command {
 
                         org.bukkit.Location loc = p2.getLocation();
                         sender.sendMessage(I18n.as("roastmccmd.showp.location",
-                            p2.getWorld().getName(),
-                            String.valueOf(loc.getBlockX()),
-                            String.valueOf(loc.getBlockY()),
-                            String.valueOf(loc.getBlockZ())));
+                                p2.getWorld().getName(),
+                                String.valueOf(loc.getBlockX()),
+                                String.valueOf(loc.getBlockY()),
+                                String.valueOf(loc.getBlockZ())));
 
                         org.bukkit.OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(p2.getUniqueId());
                         if (offlinePlayer.getLastPlayed() > 0 && offlinePlayer.hasPlayedBefore()) {
                             org.bukkit.Location lastPlayedLocation = offlinePlayer.getLocation();
                             if (lastPlayedLocation != null) {
                                 sender.sendMessage(I18n.as("roastmccmd.showp.lastLocation",
-                                    lastPlayedLocation.getWorld().getName(),
-                                    String.valueOf(lastPlayedLocation.getBlockX()),
-                                    String.valueOf(lastPlayedLocation.getBlockY()),
-                                    String.valueOf(lastPlayedLocation.getBlockZ())));
+                                        lastPlayedLocation.getWorld().getName(),
+                                        String.valueOf(lastPlayedLocation.getBlockX()),
+                                        String.valueOf(lastPlayedLocation.getBlockY()),
+                                        String.valueOf(lastPlayedLocation.getBlockZ())));
                             }
                         }
 
@@ -498,14 +516,14 @@ public class RoastMCCommand extends Command {
                         migrateAll(sender, target);
                     } else {
                         sender.sendMessage(I18n.as("migratedb.starting",
-                            DatabaseMigration.getDisplayName(module), target));
+                                DatabaseMigration.getDisplayName(module), target));
                         DatabaseMigration.MigrationResult result = DatabaseMigration.migrate(module, target);
                         if (result.success()) {
                             sender.sendMessage(I18n.as("migratedb.success",
-                                DatabaseMigration.getDisplayName(module), result.rows()));
+                                    DatabaseMigration.getDisplayName(module), result.rows()));
                         } else {
                             sender.sendMessage(I18n.as("migratedb.fail",
-                                DatabaseMigration.getDisplayName(module), result.message()));
+                                    DatabaseMigration.getDisplayName(module), result.message()));
                         }
                     }
                 }, "DB-Migration-" + module).start();
@@ -519,11 +537,45 @@ public class RoastMCCommand extends Command {
         return true;
     }
 
+    private void listPluginChannels(CommandSender sender, boolean incoming) {
+        var messenger = Bukkit.getMessenger();
+        var byChannel = new TreeMap<String, TreeSet<String>>();
+        for (var plugin : Bukkit.getPluginManager().getPlugins()) {
+            var channels = incoming ? messenger.getIncomingChannels(plugin) : messenger.getOutgoingChannels(plugin);
+            for (var ch : channels) {
+                byChannel.computeIfAbsent(ch, k -> new TreeSet<>()).add(plugin.getName());
+            }
+        }
+        sender.sendMessage(I18n.as(incoming ? "roastmccmd.channels_incom.title" : "roastmccmd.channels_outgo.title"));
+        if (byChannel.isEmpty()) {
+            sender.sendMessage(I18n.as("roastmccmd.channels.empty"));
+            return;
+        }
+        for (var entry : byChannel.entrySet()) {
+            sender.sendMessage(I18n.as("roastmccmd.channels.entry", entry.getKey(), String.join(", ", entry.getValue())));
+        }
+    }
+
+    public static String getJVMUpTime() {
+        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+        long seconds = uptime / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        return String.format("%d %s %d %s %d %s %d %s",
+                days, I18n.as("roastmccmd.time.days"),
+                hours % 24, I18n.as("roastmccmd.time.hours"),
+                minutes % 60, I18n.as("roastmccmd.time.minutes"),
+                seconds % 60, I18n.as("roastmccmd.time.seconds"));
+    }
+
     private void showHelp(CommandSender sender) {
         sender.sendMessage(I18n.as("roastmccmd.help.title"));
         sender.sendMessage(I18n.as("roastmccmd.help.mods"));
         sender.sendMessage(I18n.as("roastmccmd.help.playermods"));
         sender.sendMessage(I18n.as("roastmccmd.help.reload"));
+        sender.sendMessage(I18n.as("roastmccmd.help.version"));
         sender.sendMessage(I18n.as("roastmccmd.help.packetstats"));
         sender.sendMessage(I18n.as("roastmccmd.help.heal"));
         sender.sendMessage(I18n.as("roastmccmd.help.speed"));
@@ -531,9 +583,35 @@ public class RoastMCCommand extends Command {
         sender.sendMessage(I18n.as("roastmccmd.help.memoryfix"));
         sender.sendMessage(I18n.as("roastmccmd.help.channels_incom"));
         sender.sendMessage(I18n.as("roastmccmd.help.channels_outgo"));
+        sender.sendMessage(I18n.as("roastmccmd.help.modchannels"));
         sender.sendMessage(I18n.as("roastmccmd.help.printthreadcost"));
         sender.sendMessage(I18n.as("roastmccmd.help.help"));
         sender.sendMessage(I18n.as("roastmccmd.help.backupworld"));
         sender.sendMessage(I18n.as("roastmccmd.help.migratedb"));
+    }
+
+    private static void migrateAll(CommandSender sender, String target) {
+        int totalSucceeded = 0;
+        int totalRows = 0;
+        int totalCount = 0;
+
+        for (String module : DatabaseMigration.getModuleNames()) {
+            sender.sendMessage(I18n.as("migratedb.starting",
+                    DatabaseMigration.getDisplayName(module), target));
+            DatabaseMigration.MigrationResult result = DatabaseMigration.migrate(module, target);
+            totalCount++;
+            if (result.success()) {
+                totalSucceeded++;
+                totalRows += result.rows();
+                sender.sendMessage(I18n.as("migratedb.success",
+                        DatabaseMigration.getDisplayName(module), result.rows()));
+            } else {
+                sender.sendMessage(I18n.as("migratedb.fail",
+                        DatabaseMigration.getDisplayName(module), result.message()));
+            }
+        }
+
+        sender.sendMessage(I18n.as("migratedb.all.complete",
+                totalSucceeded, totalCount, totalRows));
     }
 }

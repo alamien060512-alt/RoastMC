@@ -51,7 +51,6 @@ import net.minecraft.network.protocol.game.ServerboundPlayerAbilitiesPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
-import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.network.protocol.game.ServerboundRecipeBookChangeSettingsPacket;
 import net.minecraft.network.protocol.game.ServerboundRecipeBookSeenRecipePacket;
 import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
@@ -65,6 +64,7 @@ import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
 import net.minecraft.network.protocol.game.ServerboundSetJigsawBlockPacket;
 import net.minecraft.network.protocol.game.ServerboundSetStructureBlockPacket;
 import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
+import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
@@ -96,7 +96,7 @@ public class FakePlayer extends ServerPlayer {
     public FakePlayer(ServerLevel level, GameProfile name) {
         super(level.getServer(), level, name, ClientInformation.createDefault());
         this.connection = new FakePlayerNetHandler(level.getServer(), this);
-        this.setPermanentlyInvulnerable(true);
+        this.setInvulnerable(true);
     }
 
     @Override
@@ -289,7 +289,7 @@ public class FakePlayer extends ServerPlayer {
         public void handleChat(ServerboundChatPacket packet) {}
 
         @Override
-        public void handlePunch(ServerboundPunchPacket packet) {}
+        public void handleAnimate(ServerboundSwingPacket packet) {}
 
         @Override
         public void handlePlayerCommand(ServerboundPlayerCommandPacket packet) {}

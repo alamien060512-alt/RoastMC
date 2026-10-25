@@ -134,7 +134,7 @@ public interface ContextServerPlayer extends ContextPlayer {
         throw new ContextStateException("Not implemented");
     }
 
-    default void roastmc$setSentListPacket(boolean sentListPacket) {
+    default void roastmc$setSentListPacketroastmc$sentListPacket(boolean sentListPacket) {
         throw new ContextStateException("Not implemented");
     }
 

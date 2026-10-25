@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(Arrow.class)
 public class MixinArrow {
 
-    @Redirect(method = "lambda$doPostHurtEffects$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z"))
-    private static boolean roastmc_addEffect(LivingEntity mob, MobEffectInstance effect, Entity source) {
+    @Redirect(method = "applyPotionEffects", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z"))
+    private boolean roastmc_addEffect(LivingEntity mob, MobEffectInstance effect, Entity source) {
         return mob.addEffect(effect, source, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); // CraftBukkit
     }
 }

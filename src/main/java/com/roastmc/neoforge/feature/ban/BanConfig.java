@@ -10,7 +10,7 @@ import java.util.Set;
 import org.bukkit.entity.HumanEntity;
 
 /**
- * @author Mgazul
+ * @author Mgazul by MohistMC
  * <p>
  * Ban configuration storage backed by database — 8 independent tables.
  * Each can be independently set to sqlite/mysql via database.yml features.bans.<type>.
@@ -18,8 +18,6 @@ import org.bukkit.entity.HumanEntity;
  */
 public class BanConfig {
 
-    private static final Map<BanType, List<String>> globalCache = new HashMap<>();
-    private static final Map<BanType, BanConfig> typeToConfigMap = new HashMap<>();
     public static BanConfig ITEM_MOSHOU;
     public static BanConfig ITEM;
     public static BanConfig ENTITY;
@@ -28,7 +26,13 @@ public class BanConfig {
     public static BanConfig BLOCK;
     public static BanConfig NBT;
     public static BanConfig WORLD;
+    public static BanConfig STRUCTURE;
+    public static BanConfig EFFECT;
+
     private static BanDatabaseStorage storage;
+    private static final Map<BanType, List<String>> globalCache = new HashMap<>();
+    private static final Map<BanType, BanConfig> typeToConfigMap = new HashMap<>();
+
     private final BanType banType;
 
     public BanConfig(BanType banType) {
@@ -47,6 +51,8 @@ public class BanConfig {
         BLOCK = new BanConfig(BanType.BLOCK);
         NBT = new BanConfig(null); // NBT operations
         WORLD = new BanConfig(BanType.WORLD);
+        STRUCTURE = new BanConfig(BanType.STRUCTURE);
+        EFFECT = new BanConfig(BanType.EFFECT);
 
         typeToConfigMap.put(BanType.ITEM_MOSHOU, ITEM_MOSHOU);
         typeToConfigMap.put(BanType.ITEM, ITEM);
@@ -55,6 +61,8 @@ public class BanConfig {
         typeToConfigMap.put(BanType.RECIPE, RECIPE);
         typeToConfigMap.put(BanType.BLOCK, BLOCK);
         typeToConfigMap.put(BanType.WORLD, WORLD);
+        typeToConfigMap.put(BanType.STRUCTURE, STRUCTURE);
+        typeToConfigMap.put(BanType.EFFECT, EFFECT);
 
         for (BanType type : typeToConfigMap.keySet()) refreshCache(type);
     }
@@ -66,23 +74,6 @@ public class BanConfig {
     public static void refreshCache(BanType type) {
         List<String> list = storage.getList(type);
         globalCache.put(type, list != null ? new ArrayList<>(list) : new ArrayList<>());
-    }
-
-    public static void saveToYaml(HumanEntity player, ClickType clickType, List<String> list, BanType banType) {
-        switch (banType) {
-            case ITEM -> BanConfig.ITEM.put(banType.key, list);
-            case ENTITY -> BanConfig.ENTITY.put(banType.key, list);
-            case ENCHANTMENT -> BanConfig.ENCHANTMENT.put(banType.key, list);
-            case ITEM_MOSHOU -> BanConfig.ITEM_MOSHOU.put(banType.key, list);
-            case RECIPE -> BanConfig.RECIPE.put(banType.key, list);
-            case BLOCK -> BanConfig.BLOCK.put(banType.key, list);
-            case WORLD -> BanConfig.WORLD.put(banType.key, list);
-        }
-        if (clickType == ClickType.ADD) {
-            player.sendMessage(I18n.as(banType.i18n_key_add));
-        } else if (clickType == ClickType.REMOVE) {
-            player.sendMessage(I18n.as(banType.i18n_key_remove));
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -106,14 +97,14 @@ public class BanConfig {
         return storage.getMessage(banType, key);
     }
 
-    // === NBT methods ===
-
     public void setMessage(String key, String message) {
         if (banType == null) {
             return;
         }
         storage.setMessage(banType, key, message);
     }
+
+    // === NBT methods ===
 
     public Set<String> getAllNbtKeys() {
         return storage.getNbtKeys();
@@ -135,11 +126,28 @@ public class BanConfig {
         storage.clearNbt(key);
     }
 
-    /**
-     * @deprecated Database doesn't need file reload.
-     */
+    /** @deprecated Database doesn't need file reload. */
     @Deprecated
     public void reload() {
         for (BanType type : typeToConfigMap.keySet()) refreshCache(type);
+    }
+
+    public static void saveToYaml(HumanEntity player, ClickType clickType, List<String> list, BanType banType) {
+        switch (banType) {
+            case ITEM -> BanConfig.ITEM.put(banType.key, list);
+            case ENTITY -> BanConfig.ENTITY.put(banType.key, list);
+            case ENCHANTMENT -> BanConfig.ENCHANTMENT.put(banType.key, list);
+            case ITEM_MOSHOU -> BanConfig.ITEM_MOSHOU.put(banType.key, list);
+            case RECIPE -> BanConfig.RECIPE.put(banType.key, list);
+            case BLOCK -> BanConfig.BLOCK.put(banType.key, list);
+            case WORLD -> BanConfig.WORLD.put(banType.key, list);
+            case STRUCTURE -> BanConfig.STRUCTURE.put(banType.key, list);
+            case EFFECT -> BanConfig.EFFECT.put(banType.key, list);
+        }
+        if (clickType == ClickType.ADD) {
+            player.sendMessage(I18n.as(banType.i18n_key_add));
+        } else if (clickType == ClickType.REMOVE) {
+            player.sendMessage(I18n.as(banType.i18n_key_remove));
+        }
     }
 }

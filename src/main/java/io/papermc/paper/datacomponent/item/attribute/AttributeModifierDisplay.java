@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * The display behavior for a dedicated attribute entry.
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.Contract;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ATTRIBUTE_MODIFIERS
  * @see io.papermc.paper.datacomponent.item.ItemAttributeModifiers#itemAttributes()
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface AttributeModifierDisplay {
 

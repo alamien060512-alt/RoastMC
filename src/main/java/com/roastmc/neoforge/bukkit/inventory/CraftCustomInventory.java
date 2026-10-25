@@ -19,7 +19,9 @@ package com.roastmc.neoforge.bukkit.inventory;
 
 import java.util.List;
 import net.minecraft.world.Container;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.Inventory;
@@ -32,6 +34,10 @@ public class CraftCustomInventory implements InventoryHolder {
 
     public CraftCustomInventory(Container inventory) {
         this.container = new CraftInventory(inventory);
+    }
+
+    public CraftCustomInventory(ItemStackHandler handler) {
+        this.container = new CraftInventoryCustom(this, handler.stacks);
     }
 
     public CraftCustomInventory(net.minecraft.world.entity.player.Inventory playerInventory) {

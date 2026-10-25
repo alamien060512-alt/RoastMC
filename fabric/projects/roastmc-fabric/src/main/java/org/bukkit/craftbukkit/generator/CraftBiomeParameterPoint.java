@@ -34,12 +34,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxTemperature() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.temperature().maxValue();
     }
 
     @Override
     public double getMinTemperature() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.temperature().minValue();
     }
 
     @Override
@@ -49,12 +49,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxHumidity() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.humidity().maxValue();
     }
 
     @Override
     public double getMinHumidity() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.humidity().minValue();
     }
 
     @Override
@@ -64,12 +64,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxContinentalness() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.continentalness().maxValue();
     }
 
     @Override
     public double getMinContinentalness() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.continentalness().minValue();
     }
 
     @Override
@@ -79,12 +79,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxErosion() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.erosion().maxValue();
     }
 
     @Override
     public double getMinErosion() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.erosion().minValue();
     }
 
     @Override
@@ -94,12 +94,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxDepth() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.depth().maxValue();
     }
 
     @Override
     public double getMinDepth() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.depth().minValue();
     }
 
     @Override
@@ -109,11 +109,11 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxWeirdness() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.weirdness().maxValue();
     }
 
     @Override
     public double getMinWeirdness() {
-        throw new UnsupportedOperationException("Not supported.");
+        return this.sampler.weirdness().minValue();
     }
 }

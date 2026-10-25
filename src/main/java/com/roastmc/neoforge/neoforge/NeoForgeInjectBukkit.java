@@ -19,8 +19,10 @@ import java.util.stream.Collectors;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.MobCategory;
@@ -29,11 +31,13 @@ import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.grower.TreeGrower;
 import net.minecraft.world.level.dimension.LevelStem;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Statistic;
+import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -62,6 +66,7 @@ public class NeoForgeInjectBukkit {
             .build());
     public static Map<Villager.Profession, Identifier> profession = new HashMap<>();
     public static Map<SpawnCategory, MobCategory> CATEGORYSPAWNMAP = new HashMap<>();
+    public static Map<String, TreeType> treeTypeByGrowerName = new HashMap<>();
 
 
     public static void init() {
@@ -74,6 +79,8 @@ public class NeoForgeInjectBukkit {
         loadSpawnCategory();
         addPose();
         addModRecipeBookType();
+        addEnumTreeType();
+        addEnumEnvironment(MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.LEVEL_STEM));
         reloadBukkitRegistries();
     }
 
@@ -362,6 +369,19 @@ public class NeoForgeInjectBukkit {
         }
         if (count > 0) {
             RoastMC.LOGGER.info(ColorAPI.ansi("§aRegistered {} §6mod RecipeBookType(s) §7as Bukkit §bRecipeBookType"), count);
+        }
+    }
+
+    public static void addEnumTreeType() {
+        for (Map.Entry<String, TreeGrower> entry : TreeGrower.getGrowers().entrySet()) {
+            String name = entry.getKey();
+            if (!name.contains(":")) continue;
+
+            String enumName = DynamicEnumUtil.normalizeName(name);
+            TreeType treeType = DynamicEnumUtil.addEnum(TreeType.class, enumName);
+            if (treeType != null) {
+                treeTypeByGrowerName.put(name, treeType);
+            }
         }
     }
 

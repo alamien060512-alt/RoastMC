@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/dolphin/Dolphin.java
 +++ b/net/minecraft/world/entity/animal/dolphin/Dolphin.java
-@@ -69,6 +_,9 @@
+@@ -68,6 +_,9 @@
  import net.minecraft.world.level.storage.ValueInput;
  import net.minecraft.world.level.storage.ValueOutput;
  import net.minecraft.world.phys.Vec3;
@@ -10,7 +10,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class Dolphin extends AgeableWaterCreature {
-@@ -86,14 +_,103 @@
+@@ -85,14 +_,103 @@
          .withAttachments(EntityAttachments.builder().attach(EntityAttachment.PASSENGER, 0.0F, 0.3125F, 0.0F));
      private static final boolean DEFAULT_GOT_FISH = false;
      public @Nullable BlockPos treasurePos;
@@ -115,7 +115,7 @@
      @Override
      public @Nullable SpawnGroupData finalizeSpawn(
          ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData groupData
-@@ -101,6 +_,7 @@
+@@ -100,6 +_,7 @@
          this.setAirSupply(this.getMaxAirSupply());
          this.setXRot(0.0F);
          SpawnGroupData spawnGroupData = Objects.requireNonNullElseGet(groupData, () -> new AgeableMob.AgeableMobGroupData(0.1F));
@@ -123,7 +123,7 @@
          return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
      }
  
-@@ -108,6 +_,13 @@
+@@ -107,6 +_,13 @@
          return EntityTypes.DOLPHIN.create(level, EntitySpawnReason.BREEDING);
      }
  
@@ -137,10 +137,10 @@
      @Override
      public float getAgeScale() {
          return this.isBaby() ? 0.65F : 1.0F;
-@@ -158,19 +_,22 @@
+@@ -157,18 +_,22 @@
      protected void registerGoals() {
          this.goalSelector.addGoal(0, new BreathAirGoal(this));
-         this.goalSelector.addGoal(0, new TryFindLiquidGoal(this, FluidTags.DOLPHIN_TRIES_TO_FIND));
+         this.goalSelector.addGoal(0, new TryFindWaterGoal(this));
 +        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur - Ridables
 +        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.2000000476837158D, true)); // Purpur - Dolphins naturally aggressive to players chance
          this.goalSelector.addGoal(1, new Dolphin.DolphinSwimToTreasureGoal(this));
@@ -150,7 +150,6 @@
          this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
          this.goalSelector.addGoal(5, new DolphinJumpGoal(this, 10));
 -        this.goalSelector.addGoal(6, new MeleeAttackGoal(this, 1.2F, true));
--        this.goalSelector.addGoal(7, new Dolphin.MoveToItemGoal());
 +        //this.goalSelector.addGoal(6, new MeleeAttackGoal(this, 1.2F, true)); // Purpur - moved up - Dolphins naturally aggressive to players chance
          this.goalSelector.addGoal(8, new Dolphin.PlayWithItemsGoal());
          this.goalSelector.addGoal(8, new FollowPlayerRiddenEntityGoal(this, AbstractBoat.class));
@@ -162,7 +161,7 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
-@@ -194,7 +_,7 @@
+@@ -192,7 +_,7 @@
  
      @Override
      public int getMaxAirSupply() {
@@ -171,7 +170,7 @@
      }
  
      @Override
-@@ -222,11 +_,17 @@
+@@ -220,11 +_,17 @@
          if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
              ItemStack itemStack = entity.getItem();
              if (this.canHoldItem(itemStack)) {
@@ -190,19 +189,7 @@
              }
          }
      }
-@@ -234,6 +_,11 @@
-     @Override
-     public void tick() {
-         super.tick();
-+        // Purpur start - Ridables
-+        if (spitCooldown > 0) {
-+            spitCooldown--;
-+        }
-+        // Purpur end - Ridables
-         if (this.isNoAi()) {
-             this.setAirSupply(this.getMaxAirSupply());
-         } else {
-@@ -393,6 +_,7 @@
+@@ -391,6 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -210,7 +197,7 @@
              return this.dolphin.gotFish() && this.dolphin.getAirSupply() >= 100;
          }
  
-@@ -490,7 +_,7 @@
+@@ -488,7 +_,7 @@
  
          @Override
          public void start() {
@@ -219,7 +206,7 @@
          }
  
          @Override
-@@ -509,7 +_,7 @@
+@@ -507,7 +_,7 @@
              }
  
              if (this.player.isSwimming() && this.player.level().getRandom().nextInt(6) == 0) {
@@ -228,12 +215,3 @@
              }
          }
      }
-@@ -531,7 +_,7 @@
-                     0.3F * Mth.cos(Dolphin.this.getYRot() * (float) (Math.PI / 180.0)) * Mth.cos(Dolphin.this.getXRot() * (float) (Math.PI / 180.0))
-                         + Mth.sin(dir) * pow2
-                 );
--                Dolphin.this.level().addFreshEntity(thrownItem);
-+                Dolphin.this.spawnAtLocation(getServerLevel(Dolphin.this), thrownItem); // Paper - Call EntityDropItemEvent
-             }
-         }
- 

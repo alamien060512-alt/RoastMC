@@ -115,8 +115,6 @@ public class MaterialTags {
 
     /**
      * Covers all colors of concrete.
-     *
-     * @deprecated in favour of {@link Tag#CONCRETE}
      */
     @Deprecated(since = "26.2")
     public static final MaterialSetTag CONCRETES = replacedBy(Tag.CONCRETE, "concretes");
@@ -243,11 +241,9 @@ public class MaterialTags {
 
     /**
      * Covers all mushrooms.
-     *
-     * @deprecated in favour of {@link Tag#ITEMS_MUSHROOMS}
      */
-    @Deprecated(since = "26.3")
-    public static final MaterialSetTag MUSHROOMS = replacedBy(Tag.ITEMS_MUSHROOMS);
+    public static final MaterialSetTag MUSHROOMS = new BuiltinMaterialSetTag(keyFor("mushrooms"))
+        .add(Material.BROWN_MUSHROOM, Material.RED_MUSHROOM).lock();
 
     /**
      * Covers all music disc items.
@@ -257,14 +253,12 @@ public class MaterialTags {
 
     /**
      * Covers all ores.
-     *
-     * @deprecated in favour of {@link Tag#ORES}, makes sure to also check for ancient debris if you relied on this edge case
      */
     @SuppressWarnings("unchecked")
-    @Deprecated(since = "26.3")
     public static final MaterialSetTag ORES = new BuiltinMaterialSetTag(keyFor("ores"))
-        .add(Tag.ORES)
-        .add(Material.ANCIENT_DEBRIS).lock();
+        .add(Tag.COAL_ORES, Tag.COPPER_ORES, Tag.IRON_ORES, Tag.GOLD_ORES,
+            Tag.LAPIS_ORES, Tag.REDSTONE_ORES, Tag.DIAMOND_ORES, Tag.EMERALD_ORES)
+        .add(Material.ANCIENT_DEBRIS, Material.NETHER_QUARTZ_ORE).lock();
 
     /**
      * Covers all piston typed items and blocks including the piston head and moving piston.
@@ -614,9 +608,7 @@ public class MaterialTags {
      */
     @SuppressWarnings("unchecked")
     public static final MaterialSetTag COLORABLE = new BuiltinMaterialSetTag(keyFor("colorable"))
-        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.WOOL_SLABS, Tag.WOOL_STAIRS,
-            Tag.CONCRETE_SLABS, Tag.CONCRETE_STAIRS,
-            Tag.SHULKER_BOXES, Tag.BEDS, Tag.ITEMS_CUSHIONS)
+        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS, Tag.CONCRETE)
         .add(STAINED_GLASS, STAINED_GLASS_PANES)
         .lock();
 

@@ -1,3 +1,4 @@
+
 package com.roastmc.neoforge.commands;
 
 import com.roastmc.neoforge.api.ColorAPI;
@@ -26,8 +27,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Mgazul
- * {@code @date} 2025/8/31 20:00:00
+ * @author Mgazul by MohistMC
+ * @date 2025/8/31 20:00:00
  */
 public class InfoCommand extends Command {
 
@@ -182,19 +183,19 @@ public class InfoCommand extends Command {
                     String valueStr = String.valueOf(value);
 
                     gui.addItem(new GUIItem(new ItemStackFactory(Material.KNOWLEDGE_BOOK)
-                        .setDisplayName("§e" + typeName)
-                        .addLore(I18n.as("info.item_component.value", valueStr))
-                        .addLore("")
-                        .addLore("§a" + I18n.as("itemscmd.copy"))
-                        .build()) {
+                            .setDisplayName("§e" + typeName)
+                            .addLore(I18n.as("info.item_component.value", valueStr))
+                            .addLore("")
+                            .addLore("§a" + I18n.as("itemscmd.copy"))
+                            .build()) {
                         @Override
                         public void ClickAction(ClickType type, Player p, ItemStack itemStack) {
                             if (type.isLeftClick() && !type.isShiftClick()) {
                                 p.sendMessage(
-                                    ColorAPI.adventure("§e" + typeName + "§7: §f" + valueStr)
-                                        .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(valueStr))
-                                        .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
-                                            ColorAPI.adventure("§c" + I18n.as("itemscmd.copy"))))
+                                        ColorAPI.adventure("§e" + typeName + "§7: §f" + valueStr)
+                                                .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(valueStr))
+                                                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                                                        ColorAPI.adventure("§c" + I18n.as("itemscmd.copy"))))
                                 );
                             }
                         }
@@ -243,10 +244,10 @@ public class InfoCommand extends Command {
 
         String firstLine = I18n.as("info.cmd.header_format", I18n.as("info.cmd.non_plugin_title"));
         String message = firstLine + "\n" +
-            I18n.as("info.cmd.source", commandLabel) + "\n" +
-            I18n.as("info.cmd.command_description", commandDescription) + "\n" +
-            I18n.as("info.cmd.permission", permission != null ? permission : I18n.as("info.cmd.none")) + "\n" +
-            I18n.as("info.cmd.aliases", aliases.isEmpty() ? I18n.as("info.cmd.none") : aliases);
+                I18n.as("info.cmd.source", commandLabel) + "\n" +
+                I18n.as("info.cmd.command_description", commandDescription) + "\n" +
+                I18n.as("info.cmd.permission", permission != null ? permission : I18n.as("info.cmd.none")) + "\n" +
+                I18n.as("info.cmd.aliases", aliases.isEmpty() ? I18n.as("info.cmd.none") : aliases);
 
         sender.sendMessage(message);
     }
@@ -267,13 +268,13 @@ public class InfoCommand extends Command {
 
         String firstLine = I18n.as("info.cmd.header_format", I18n.as("info.cmd.plugin_title"));
         String message = firstLine + "\n" +
-            I18n.as("info.cmd.plugin_name", pluginName) + "\n" +
-            I18n.as("info.cmd.plugin_version", pluginVersion) + "\n" +
-            I18n.as("info.cmd.plugin_description", pluginDescription) + "\n" +
-            I18n.as("info.cmd.plugin_authors", authorsDisplay) + "\n" +
-            I18n.as("info.cmd.command_description", commandDescription) + "\n" +
-            I18n.as("info.cmd.permission", permission != null ? permission : I18n.as("info.cmd.none")) + "\n" +
-            I18n.as("info.cmd.aliases", aliases.isEmpty() ? I18n.as("info.cmd.none") : aliases);
+                I18n.as("info.cmd.plugin_name", pluginName) + "\n" +
+                I18n.as("info.cmd.plugin_version", pluginVersion) + "\n" +
+                I18n.as("info.cmd.plugin_description", pluginDescription) + "\n" +
+                I18n.as("info.cmd.plugin_authors", authorsDisplay) + "\n" +
+                I18n.as("info.cmd.command_description", commandDescription) + "\n" +
+                I18n.as("info.cmd.permission", permission != null ? permission : I18n.as("info.cmd.none")) + "\n" +
+                I18n.as("info.cmd.aliases", aliases.isEmpty() ? I18n.as("info.cmd.none") : aliases);
 
         sender.sendMessage(message);
     }

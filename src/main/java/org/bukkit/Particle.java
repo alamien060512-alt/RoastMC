@@ -142,9 +142,6 @@ public enum Particle implements Keyed {
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
-    RED_POPLAR_LEAVES("red_poplar_leaves"),
-    ORANGE_POPLAR_LEAVES("orange_poplar_leaves"),
-    YELLOW_POPLAR_LEAVES("yellow_poplar_leaves"),
     /**
      * Uses {@link Color} as DataType
      */
@@ -246,6 +243,7 @@ public enum Particle implements Keyed {
         return key;
     }
 
+    // Paper start - Particle API expansion
     /**
      * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
      *
@@ -255,29 +253,7 @@ public enum Particle implements Keyed {
     public com.destroystokyo.paper.ParticleBuilder builder() {
         return new com.destroystokyo.paper.ParticleBuilder(this);
     }
-
-    /**
-     * The randomization type for the particle, which controls how offset and speed are randomized.
-     */
-    public enum RandomizationType {
-        /**
-         * The default randomization type, which multiplies each offset axis and each speed axis independently by its
-         * own Gaussian random value (similar to {@link java.util.Random#nextGaussian()} (mean 0, standard deviation 1).
-         */
-        DEFAULT,
-
-        /**
-         * Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
-         * similar to {@link java.util.Random#nextDouble()}. Speed is left unmodified.
-         */
-        ALTERNATIVE,
-
-        /**
-         * Multiplies each offset axis <b>and</b> each speed axis independently by its own uniform random
-         * value in the range [0, 1) similar to {@link java.util.Random#nextDouble()}.
-         */
-        ALTERNATIVE_WITH_SPEED
-    }
+    // Paper end
 
     /**
      * Options which can be applied to dust particles - a particle

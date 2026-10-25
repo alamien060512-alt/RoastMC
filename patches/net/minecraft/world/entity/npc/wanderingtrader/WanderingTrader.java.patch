@@ -1,13 +1,6 @@
 --- a/net/minecraft/world/entity/npc/wanderingtrader/WanderingTrader.java
 +++ b/net/minecraft/world/entity/npc/wanderingtrader/WanderingTrader.java
-@@ -45,17 +_,74 @@
- import net.minecraft.world.level.storage.ValueInput;
- import net.minecraft.world.level.storage.ValueOutput;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.event.entity.EntityRemoveEvent;
- import org.jspecify.annotations.Nullable;
- 
- public class WanderingTrader extends AbstractVillager implements Consumable.OverrideConsumeSound {
+@@ -51,11 +_,67 @@
      private static final int DEFAULT_DESPAWN_DELAY = 0;
      private @Nullable BlockPos wanderTarget;
      private int despawnDelay = 0;
@@ -100,14 +93,9 @@
          this.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 0.35));
          this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.35));
          this.goalSelector.addGoal(9, new InteractGoal(this, Player.class, 3.0F, 1.0F));
-@@ -113,11 +_,14 @@
- 
-             if (!this.level().isClientSide()) {
-                 if (this.getOffers().isEmpty()) {
--                    return InteractionResult.CONSUME;
-+                    return tryRide(player, hand, InteractionResult.CONSUME); // Purpur - Ridables
+@@ -116,8 +_,10 @@
+                     return InteractionResult.CONSUME;
                  }
-+                if (level().purpurConfig.wanderingTraderRidable && itemStack.isEmpty()) return tryRide(player, hand); // Purpur - Ridables
  
 +                if (this.level().purpurConfig.wanderingTraderAllowTrading) { // Purpur - Add config for villager trading
                  this.setTradingPlayer(player);
@@ -115,7 +103,7 @@
 +                } // Purpur - Add config for villager trading
              }
  
-             return InteractionResult.SUCCESS_SERVER;
+             return InteractionResult.SUCCESS;
 @@ -158,7 +_,7 @@
      protected void rewardTradeXp(MerchantOffer offer) {
          if (offer.shouldRewardExp()) {
@@ -132,15 +120,5 @@
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          }
-     }
- 
-@@ -218,7 +_,8 @@
-         this.wanderTarget = pos;
-     }
- 
--    public @Nullable BlockPos getWanderTarget() {
-+    @Nullable
-+    public BlockPos getWanderTarget() {
-         return this.wanderTarget;
      }
  

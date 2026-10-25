@@ -3,12 +3,11 @@ package com.roastmc.neoforge.feature;
 import com.roastmc.neoforge.RoastMCConfig;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.gamerules.GameRules;
-import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/7/24 2:54:00
+ * @author Mgazul by MohistMC
+ * @date 2023/7/24 2:54:00
  */
 public class KeepInventory {
 
@@ -29,7 +28,7 @@ public class KeepInventory {
         }
         String world = bukkit_player.getWorld().getName();
         boolean i = RoastMCConfig.keepinventory_global ? RoastMCConfig.keepinventory_inventory : RoastMCConfig.yml.getBoolean("keepinventory." + world + ".inventory");
-        player.getBukkitEntity().getWorld().setGameRule(GameRule.KEEP_INVENTORY, i);
+        player.getBukkitEntity().getWorld().setGameRule(org.bukkit.GameRules.KEEP_INVENTORY, i);
         return i;
     }
 

@@ -2,7 +2,3 @@
 /run/
 /.idea/
 /.gradle/
-.jxscan/
-/tools/
-/.workbuddy/
-*.txt

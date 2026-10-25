@@ -23,7 +23,7 @@
  import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
  import net.minecraft.world.item.Item;
  import net.minecraft.world.item.ItemStack;
-@@ -95,6 +_,16 @@
+@@ -94,6 +_,16 @@
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.ticks.ContainerSingleItem;
@@ -40,17 +40,15 @@
  import org.jspecify.annotations.Nullable;
  
  public abstract class Mob extends LivingEntity implements Targeting, EquipmentUser, Leashable {
-@@ -132,7 +_,8 @@
-     protected JumpControl jumpControl;
+@@ -132,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
--    public final GoalSelector goalSelector;
-+    public GoalSelector goalSelector;
+     public GoalSelector goalSelector;
 +    public net.minecraft.world.entity.ai.goal.@Nullable FloatGoal goalFloat; // Paper - Allow nerfed mobs to jump and float
      public GoalSelector targetSelector;
      private @Nullable LivingEntity target;
      private final Sensing sensing;
-@@ -145,13 +_,24 @@
+@@ -144,13 +_,22 @@
      private Leashable.@Nullable LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
@@ -61,8 +59,6 @@
 +    protected boolean preventConversionSpawns = false;
 +
 +    public boolean aware = true; // CraftBukkit
-+    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
-+
 +    public int ticksSinceLastInteraction; // Purpur - Entity lifespan
 +    protected boolean willHaveAnotherBaby() { return false; } protected int getBreedingMinOffspring() { return 1; } protected int getBreedingMaxOffspring() { return 1; } // Purpur - Breedable mobs can have multiple babies
  
@@ -77,19 +73,24 @@
          this.jumpControl = new JumpControl(this);
          this.bodyRotationControl = this.createBodyControl();
          this.navigation = this.createNavigation(level);
-@@ -206,6 +_,23 @@
+@@ -205,6 +_,28 @@
          return this.lookControl;
      }
  
 +    // Paper start
-+    private int inactiveTickDisableCounter;
-+
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
-+        final boolean isThrottled = this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.enabled() && inactiveTickDisableCounter++ % this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.intValue() != 0; // Paper - Throttle inactive goal selector ticking
-+        if (this.goalSelector.inactiveTick() && !isThrottled) {
++        // Paper start - Allow nerfed mobs to jump and float
++        if (!this.aware) {
++            if (this.goalFloat != null) {
++                if (this.goalFloat.canUse()) this.goalFloat.tick();
++                this.getJumpControl().tick();
++            }
++            return;
++        }
++        // Paper end - Allow nerfed mobs to jump and float
++        if (this.goalSelector.inactiveTick()) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
@@ -101,74 +102,36 @@
      public MoveControl getMoveControl() {
          return this.getControlledVehicle() instanceof Mob riding ? riding.getMoveControl() : this.moveControl;
      }
-@@ -245,12 +_,65 @@
-         }
-     }
- 
-+    // CraftBukkit start - allows the Bukkit bridge to drop a target a plugin has set that this mob cannot attack
-+    public @Nullable LivingEntity pruneInvalidTarget(@Nullable LivingEntity target) {
-+        return this.asValidTarget(target);
-+    }
-+    // CraftBukkit end
-+
-     protected final @Nullable LivingEntity getTargetFromBrain() {
+@@ -248,8 +_,27 @@
          return this.asValidTarget(this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null));
      }
  
-+    private EntityTargetEvent.@Nullable TargetReason reason = EntityTargetEvent.TargetReason.UNKNOWN;
++    private EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.UNKNOWN;
 +    public AtomicBoolean canSetTarget = new AtomicBoolean(true);
-+    public void setTargetReason(org.bukkit.event.entity.EntityTargetEvent.@Nullable TargetReason reason) {
++    public void setTargetReason(EntityTargetEvent.TargetReason reason) {
 +        this.reason = reason;
-+    }
-+
-+    /**
-+     * The reason that is reported to Bukkit for the target change that is currently being processed.
-+     * {@code null} means that no Bukkit event has to be fired for it.
-+     */
-+    public EntityTargetEvent.@Nullable TargetReason getTargetReason() {
-+        return this.reason;
 +    }
 +
      public void setTarget(@Nullable LivingEntity target) {
 -        this.target = this.asValidTarget(target);
-+        this.setTarget(target, this.reason);
++        target = this.asValidTarget(target);
++        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, target, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET);
++        if(!changeTargetEvent.isCanceled()) {
++             this.target = changeTargetEvent.getNewAboutToBeSetTarget();
++            if (target instanceof net.minecraft.server.level.ServerPlayer) this.ticksSinceLastInteraction = 0; // Purpur - Entity lifespan
++        }
 +    }
 +
-+    public boolean setTarget(@Nullable LivingEntity target, org.bukkit.event.entity.EntityTargetEvent.@Nullable TargetReason reason) {
-+        LivingEntity currentTarget = this.getTargetUnchecked();
-+        boolean unchanged = Objects.equals(currentTarget, target);
-+        LivingEntity originalTarget = target;
-+        target = this.asValidTarget(target);
-+        EntityTargetEvent.TargetReason targetReason = reason;
-+        if (targetReason != null) {
-+            if (unchanged) {
-+                targetReason = null; // the target is not changing, no Bukkit event
-+            } else if (target != originalTarget) { // target got pruned in asValidTarget
-+                targetReason = CraftEventFactory.getForgotTargetReason(this, currentTarget, true);
-+            } else if (targetReason == EntityTargetEvent.TargetReason.FORGOT_TARGET
-+                    || (targetReason == EntityTargetEvent.TargetReason.UNKNOWN && target == null)) { // try to get a more relevant reason
-+                targetReason = CraftEventFactory.getForgotTargetReason(this, currentTarget, false);
-+            }
-+        }
-+        this.reason = targetReason;
-+        boolean changed = true;
-+        try {
-+            net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, target, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET);
-+            if(!changeTargetEvent.isCanceled()) {
-+                 this.target = changeTargetEvent.getNewAboutToBeSetTarget();
-+                if (target instanceof net.minecraft.server.level.ServerPlayer) this.ticksSinceLastInteraction = 0; // Purpur - Entity lifespan
-+            } else {
-+                changed = false;
-+            }
-+        } finally {
-+            this.reason = EntityTargetEvent.TargetReason.UNKNOWN;
-+        }
-+        boolean allowed = canSetTarget.getAndSet(true);
-+        return changed && !unchanged && allowed;
++    public boolean setTarget(LivingEntity p_21544_, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
++        if (getTarget() == p_21544_) return false;
++        setTargetReason(reason);
++        setTarget(p_21544_);
++        return canSetTarget.getAndSet(true);
++        // CraftBukkit end
      }
  
      @Override
-@@ -291,7 +_,27 @@
+@@ -290,7 +_,27 @@
          }
  
          profiler.pop();
@@ -197,7 +160,7 @@
  
      @Override
      protected void playHurtSound(DamageSource source) {
-@@ -346,6 +_,12 @@
+@@ -345,6 +_,12 @@
          if (!this.level().isClientSide() && this.tickCount % 5 == 0) {
              this.updateControlFlags();
          }
@@ -210,7 +173,7 @@
      }
  
      protected void updateControlFlags() {
-@@ -365,6 +_,12 @@
+@@ -364,6 +_,12 @@
          return null;
      }
  
@@ -223,7 +186,7 @@
      @Override
      protected void addAdditionalSaveData(ValueOutput output) {
          super.addAdditionalSaveData(output);
-@@ -389,13 +_,32 @@
+@@ -388,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
@@ -231,11 +194,6 @@
 +        if (this.spawnType != null) {
 +            output.putString("neoforge:spawn_type", this.spawnType.name());
 +        }
-+        // Paper start - allow changing despawnInPeaceful
-+        if (this.despawnInPeacefulOverride != net.kyori.adventure.util.TriState.NOT_SET) {
-+            output.putString("Paper.DespawnInPeacefulOverride", this.despawnInPeacefulOverride.name());
-+        }
-+        // Paper end - allow changing despawnInPeaceful
 +        output.putInt("Purpur.ticksSinceLastInteraction", this.ticksSinceLastInteraction); // Purpur - Entity lifespan
      }
  
@@ -258,7 +216,7 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -407,12 +_,22 @@
+@@ -406,12 +_,21 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
@@ -271,7 +229,6 @@
 +                    } catch (Exception ignored) {
 +                    }
 +                });
-+        this.despawnInPeacefulOverride = input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - allow changing despawnInPeaceful
      }
  
      @Override
@@ -282,7 +239,7 @@
      }
  
      @Override
-@@ -455,9 +_,7 @@
+@@ -454,9 +_,7 @@
      @Override
      public void aiStep() {
          super.aiStep();
@@ -293,12 +250,12 @@
  
          ProfilerFiller profiler = Profiler.get();
          profiler.push("looting");
-@@ -465,12 +_,17 @@
+@@ -464,12 +_,17 @@
              && this.canPickUpLoot()
              && this.isAlive()
              && !this.dead
 -            && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
-+            && org.purpurmc.purpur.PurpurWorldConfig.canEntityGrief(serverLevel, this, checkEntityPickUpLootOverride())) { // Purpur - Check mobGriefing Overrides
++            && net.neoforged.neoforge.event.EventHooks.canEntityGrief(serverLevel, this)) {
              Vec3i pickupReach = this.getPickupReach();
  
              for (ItemEntity entity : this.level()
@@ -312,7 +269,7 @@
                      this.pickUpItem(serverLevel, entity);
                  }
              }
-@@ -479,6 +_,13 @@
+@@ -478,6 +_,13 @@
          profiler.pop();
      }
  
@@ -326,8 +283,8 @@
      protected EquipmentSlot sunProtectionSlot() {
          return EquipmentSlot.HEAD;
      }
-@@ -492,22 +_,14 @@
-                     sunBlocker.hurtAndBreak(this.random.nextInt(2), this, slot);
+@@ -496,22 +_,14 @@
+                     }
                  }
              } else {
 +                if (getRider() == null || !this.isControllable()) // Purpur - Ridables
@@ -351,7 +308,7 @@
      }
  
      protected Vec3i getPickupReach() {
-@@ -516,53 +_,65 @@
+@@ -520,53 +_,65 @@
  
      protected void pickUpItem(ServerLevel level, ItemEntity entity) {
          ItemStack itemStack = entity.getItem();
@@ -441,7 +398,7 @@
      }
  
      protected boolean attemptToShearEquipment(Player player, InteractionHand hand, ItemStack heldItem) {
-@@ -642,6 +_,8 @@
+@@ -646,6 +_,8 @@
      private double getApproximateAttributeWith(ItemStack itemStack, Holder<Attribute> attribute, EquipmentSlot slot) {
          double baseValue = this.getAttributes().hasAttribute(attribute) ? this.getAttributeBaseValue(attribute) : 0.0;
          ItemAttributeModifiers attributeModifiers = itemStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
@@ -450,25 +407,22 @@
          return attributeModifiers.compute(attribute, baseValue, slot);
      }
  
-@@ -681,37 +_,51 @@
+@@ -685,23 +_,31 @@
  
      @Override
      public void checkDespawn() {
--        if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
--            this.discard();
--        } else {
--            boolean isPersistent = this.isPersistenceRequired() || this.requiresCustomPersistence();
--            Entity player = this.level().getNearestPlayer(this, -1.0);
 +        if (net.neoforged.neoforge.event.EventHooks.checkMobDespawn(this)) return;
-+        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.despawnInPeacefulOverride.toBooleanOrElse(!this.getType().isAllowedInPeaceful())) { // Paper - allow changing despawnInPeaceful
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
+-            this.discard();
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-+        } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+-            Entity player = this.level().getNearestPlayer(this, -1.0);
 +            Entity player = this.level().findNearbyPlayer(this, -1.0, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
              if (player != null) {
 -                double distSqr = player.distanceToSqr(this);
 -                int instantDespawnDistance = this.getType().getCategory().getDespawnDistance();
 -                int despawnDistanceSqr = instantDespawnDistance * instantDespawnDistance;
--                if (!isPersistent && distSqr > despawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
+-                if (distSqr > despawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
 -                    this.discard();
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
@@ -485,11 +439,7 @@
  
 -                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
 -                int noDespawnDistanceSqr = noDespawnDistance * noDespawnDistance;
--                if (!isPersistent
--                    && this.noActionTime > 600
--                    && this.random.nextInt(800) == 0
--                    && distSqr > noDespawnDistanceSqr
--                    && this.removeWhenFarAway(distSqr)) {
+-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && distSqr > noDespawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
 -                    this.discard();
 -                } else if (distSqr < noDespawnDistanceSqr) {
 +                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
@@ -501,11 +451,7 @@
                      this.noActionTime = 0;
                  }
              }
-+        } else {
-+            this.noActionTime = 0;
-         }
-     }
- 
+@@ -713,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
          this.noActionTime++;
@@ -521,7 +467,7 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("sensing");
          this.sensing.tick();
-@@ -882,20 +_,82 @@
+@@ -883,15 +_,76 @@
              public boolean stillValid(Player player) {
                  return player.getVehicle() == Mob.this || player.isWithinEntityInteractionRange(Mob.this, 4.0);
              }
@@ -598,14 +544,7 @@
              float dropChance = this.dropChances.byEquipment(slot);
              if (dropChance != 0.0F) {
                  boolean preserve = this.dropChances.isPreserved(slot);
-                 if (source.getEntity() instanceof LivingEntity livingSource && this.level() instanceof ServerLevel serverLevel) {
--                    dropChance = EnchantmentHelper.processEquipmentDropChance(serverLevel, livingSource, source, dropChance);
-+                    // Neo: pass in slot context for GetEquipmentDropChanceEvent
-+                    dropChance = EnchantmentHelper.processEquipmentDropChance(serverLevel, livingSource, source, dropChance, slot);
-                 }
- 
-                 if (!itemStack.isEmpty()
-@@ -909,7 +_,8 @@
+@@ -910,7 +_,8 @@
                      }
  
                      this.spawnAtLocation(level, itemStack);
@@ -615,7 +554,7 @@
                  }
              }
          }
-@@ -928,11 +_,17 @@
+@@ -929,11 +_,17 @@
  
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
              ItemStack itemStack = this.getItemBySlot(slot);
@@ -635,7 +574,7 @@
                      this.spawnAtLocation(level, itemStack);
                  }
              }
-@@ -1077,6 +_,11 @@
+@@ -1078,6 +_,11 @@
          }
      }
  
@@ -647,7 +586,7 @@
      public @Nullable SpawnGroupData finalizeSpawn(
          ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData groupData
      ) {
-@@ -1088,7 +_,8 @@
+@@ -1089,7 +_,8 @@
              );
          }
  
@@ -657,7 +596,7 @@
          return groupData;
      }
  
-@@ -1175,7 +_,7 @@
+@@ -1176,7 +_,7 @@
      }
  
      protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -666,7 +605,7 @@
      }
  
      protected void usePlayerItem(Player player, InteractionHand hand, ItemStack itemStack) {
-@@ -1226,30 +_,69 @@
+@@ -1227,30 +_,69 @@
      public <T extends Mob> @Nullable T convertTo(
          EntityType<T> entityType, ConversionParams params, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
      ) {
@@ -755,7 +694,7 @@
      }
  
      @Override
-@@ -1290,7 +_,17 @@
+@@ -1291,7 +_,17 @@
      public boolean startRiding(Entity entity, boolean force, boolean sendEventAndTriggers) {
          boolean result = super.startRiding(entity, force, sendEventAndTriggers);
          if (result && this.isLeashed()) {
@@ -774,7 +713,7 @@
          }
  
          return result;
-@@ -1394,18 +_,29 @@
+@@ -1395,18 +_,29 @@
          }
  
          this.postPiercingAttack();
@@ -805,7 +744,7 @@
      @VisibleForTesting
      public void removeFreeWill() {
          this.removeAllGoals(goal -> true);
-@@ -1459,7 +_,7 @@
+@@ -1460,7 +_,7 @@
                  Set<WrappedGoal> availableGoals = this.goalSelector.getAvailableGoals();
                  List<DebugGoalInfo.DebugGoal> goalInfo = new ArrayList<>(availableGoals.size());
                  availableGoals.forEach(
@@ -814,33 +753,38 @@
                  );
                  return new DebugGoalInfo(goalInfo);
              }
-@@ -1481,4 +_,88 @@
-     public void swing(InteractionHand hand, SwingAnimation animation) {
-         this.swing(hand, animation, false);
+@@ -1473,4 +_,93 @@
+     public float chargeSpeedModifier() {
+         return 1.0F;
      }
 +
-+    /// {@return the type of spawn that created this mob, if applicable}
-+    /// If it could not be determined, this will return null.
-+    ///
-+    /// This is set via [Mob#finalizeSpawn], so you should not call this from within that method, instead using the parameter.
++    /**
++     * Returns the type of spawn that created this mob, if applicable.
++     * If it could not be determined, this will return null.
++     * <p>
++     * This is set via {@link Mob#finalizeSpawn}, so you should not call this from within that method, instead using the parameter.
++     */
 +    @Nullable
 +    public final EntitySpawnReason getSpawnType() {
 +        return this.spawnType;
 +    }
 +
-+    /// This method exists so that spawns can be canceled from the [`FinalizeSpawnEvent`][net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent]
-+    /// without needing to hook up an additional handler for the [`EntityJoinLevelEvent`][net.neoforged.neoforge.event.entity.EntityJoinLevelEvent].
-+    /// @return if this mob will be blocked from spawning during [Level#addFreshEntity(Entity)]
-+    /// @apiNote Not public-facing API.
++    /**
++     * This method exists so that spawns can be cancelled from the {@link net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent FinalizeSpawnEvent}
++     * without needing to hook up an additional handler for the {@link net.neoforged.neoforge.event.entity.EntityJoinLevelEvent EntityJoinLevelEvent}.
++     * @return if this mob will be blocked from spawning during {@link Level#addFreshEntity(Entity)}
++     * @apiNote Not public-facing API.
++     */
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public final boolean isSpawnCancelled() {
 +        return this.spawnCancelled;
 +    }
 +
-+    /// Marks this mob as being disallowed to spawn during [Level#addFreshEntity(Entity)].
-+    ///
-+    /// @throws UnsupportedOperationException if this entity has already been [Entity#isAddedToLevel()] added to the level.
-+    /// @apiNote Not public-facing API.
++    /**
++     * Marks this mob as being disallowed to spawn during {@link Level#addFreshEntity(Entity)}.<p>
++     * @throws UnsupportedOperationException if this entity has already been {@link Entity#isAddedToLevel()} added to the level.
++     * @apiNote Not public-facing API.
++     */
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public final void setSpawnCancelled(boolean cancel) {
 +        if (this.isAddedToLevel()) {

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.CampfireBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -11,8 +12,8 @@ import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> implements Campfire {
 
-    public CraftCampfire(World world, CampfireBlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftCampfire(World world, CampfireBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftCampfire(CraftCampfire state, Location location) {
@@ -27,7 +28,7 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
     @Override
     public ItemStack getItem(int index) {
         net.minecraft.world.item.ItemStack item = this.getSnapshot().getItems().get(index);
-        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 
     @Override

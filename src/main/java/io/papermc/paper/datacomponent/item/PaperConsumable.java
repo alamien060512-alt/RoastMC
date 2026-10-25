@@ -59,7 +59,6 @@ public record PaperConsumable(
             .consumeSeconds(this.consumeSeconds())
             .animation(this.animation())
             .sound(this.sound())
-            .hasConsumeParticles(this.hasConsumeParticles())
             .addEffects(this.consumeEffects());
     }
 

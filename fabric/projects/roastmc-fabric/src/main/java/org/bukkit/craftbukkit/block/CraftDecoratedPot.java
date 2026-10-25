@@ -1,13 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
+import java.util.stream.Collectors;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.DecoratedPotBlockEntity;
 import net.minecraft.world.level.block.entity.PotDecorations;
@@ -17,7 +16,6 @@ import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.DecoratedPot;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDecoratedPot;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.inventory.DecoratedPotInventory;
 
@@ -50,7 +48,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         Preconditions.checkArgument(face != null, "face must not be null");
         Preconditions.checkArgument(sherd == null || sherd == Material.BRICK || Tag.ITEMS_DECORATED_POT_SHERDS.isTagged(sherd), "sherd is not a valid sherd material: %s", sherd);
 
-        Optional<ItemStackTemplate> sherdItem = Optional.of(ItemStackTemplate.fromStack(new ItemStack((sherd != null) ? CraftItemType.bukkitToMinecraft(sherd) : Items.BRICK)));
+        Optional<Item> sherdItem = (sherd != null) ? Optional.of(CraftItemType.bukkitToMinecraft(sherd)) : Optional.of(Items.BRICK);
         PotDecorations decorations = getSnapshot().getDecorations();
 
         switch (face) {
@@ -62,16 +60,12 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         }
     }
 
-    private static Material getSherdItem(Optional<ItemStackTemplate> sherdItem) {
-        return sherdItem.map(CraftItemStack::asCraftMirror).map(CraftItemStack::getType).orElse(Material.BRICK);
-    }
-
     @Override
     public Material getSherd(Side face) {
         Preconditions.checkArgument(face != null, "face must not be null");
 
         PotDecorations decorations = getSnapshot().getDecorations();
-        Optional<ItemStackTemplate> sherdItem = switch (face) {
+        Optional<Item> sherdItem = switch (face) {
             case BACK -> decorations.back();
             case LEFT -> decorations.left();
             case RIGHT -> decorations.right();
@@ -79,7 +73,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
             default -> throw new IllegalArgumentException("Unexpected value: " + face);
         };
 
-        return getSherdItem(sherdItem);
+        return CraftItemType.minecraftToBukkit(sherdItem.orElse(Items.BRICK));
     }
 
     @Override
@@ -87,16 +81,16 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         PotDecorations decorations = getSnapshot().getDecorations();
 
         Map<Side, Material> sherds = new EnumMap<>(Side.class);
-        sherds.put(Side.BACK, getSherdItem(decorations.back()));
-        sherds.put(Side.LEFT, getSherdItem(decorations.left()));
-        sherds.put(Side.RIGHT, getSherdItem(decorations.right()));
-        sherds.put(Side.FRONT, getSherdItem(decorations.front()));
+        sherds.put(Side.BACK, CraftItemType.minecraftToBukkit(decorations.back().orElse(Items.BRICK)));
+        sherds.put(Side.LEFT, CraftItemType.minecraftToBukkit(decorations.left().orElse(Items.BRICK)));
+        sherds.put(Side.RIGHT, CraftItemType.minecraftToBukkit(decorations.right().orElse(Items.BRICK)));
+        sherds.put(Side.FRONT, CraftItemType.minecraftToBukkit(decorations.front().orElse(Items.BRICK)));
         return sherds;
     }
 
     @Override
     public List<Material> getShards() {
-        return ImmutableList.<Material>builder().addAll(getSherds().values()).build();
+        return getSnapshot().getDecorations().ordered().stream().map(CraftItemType::minecraftToBukkit).collect(Collectors.toUnmodifiableList());
     }
 
     @Override

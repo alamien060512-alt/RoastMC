@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BellBlock.class)
 public class MixinBellBlock {
 
-    @Inject(method = "attemptToRing(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BellBlockEntity;onHit(Lnet/minecraft/core/Direction;)V"), cancellable = true)
-    private void roastmc$tryShine(Entity ringingEntity, Level level, BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "tryShine", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BellBlockEntity;onHit(Lnet/minecraft/core/Direction;)V"), cancellable = true)
+    private void roastmc$tryShine(Level level, BlockPos pos, Direction direction, Entity ringingEntity, CallbackInfoReturnable<Boolean> cir) {
         if (!CraftEventFactory.handleBellRingEvent(level, pos, direction, ringingEntity)) {
             cir.setReturnValue(false);
         }

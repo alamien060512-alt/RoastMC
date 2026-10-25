@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 import org.bukkit.craftbukkit.block.CraftBiome;
@@ -44,13 +43,11 @@ public class CustomWorldChunkManager extends BiomeSource {
     }
 
     @Override
-    public BiomeResolver createResolver(Climate.Sampler sampler) {
-        return (int x, int y, int z) -> {
-            org.bukkit.block.Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2, CraftBiomeParameterPoint.createBiomeParameterPoint(sampler, sampler.sample(x, y, z)));
-            Preconditions.checkArgument(biome != org.bukkit.block.Biome.CUSTOM, "Cannot set the biome to %s", biome);
+    public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+        org.bukkit.block.Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2, CraftBiomeParameterPoint.createBiomeParameterPoint(sampler, sampler.sample(x, y, z)));
+        Preconditions.checkArgument(biome != org.bukkit.block.Biome.CUSTOM, "Cannot set the biome to %s", biome);
 
-            return CraftBiome.bukkitToMinecraftHolder(biome);
-        };
+        return CraftBiome.bukkitToMinecraftHolder(biome);
     }
 
     @Override

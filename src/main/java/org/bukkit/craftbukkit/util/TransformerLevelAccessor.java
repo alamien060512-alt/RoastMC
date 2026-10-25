@@ -88,4 +88,9 @@ public class TransformerLevelAccessor extends DelegatedLevelAccessor {
         }
         return super.setBlock(pos, blockState, updateFlags, updateLimit);
     }
+
+    @Override
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        return this.setBlock(pos, blockState, updateFlags, Block.UPDATE_LIMIT);
+    }
 }

@@ -4,7 +4,7 @@ import com.roastmc.fabric.injected.network.chat.ContextTextColor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.TextColor;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.Shadow;
 
 /**
  * @author Mgazul
@@ -13,8 +13,7 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(TextColor.class)
 public class MixinTextColor implements ContextTextColor {
 
-    // CB 自增字段，26.3 vanilla 无此成员
-    @Unique
+    @Shadow
     public ChatFormatting format;
 
     @Override

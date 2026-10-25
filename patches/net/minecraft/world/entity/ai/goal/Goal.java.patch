@@ -35,7 +35,7 @@
      }
  
      @Override
-@@ -42,11 +_,24 @@
+@@ -42,27 +_,52 @@
          return this.getClass().getSimpleName();
      }
  
@@ -65,7 +65,18 @@
          return this.requiresUpdateEveryTick() ? ticks : reducedTickDelay(ticks);
      }
  
-@@ -62,7 +_,19 @@
+-    protected static int reducedTickDelay(int ticks) {
++    protected static int reducedTickDelay(final int ticks) {
+         return Mth.positiveCeilDiv(ticks, 2);
+     }
+ 
+-    protected static ServerLevel getServerLevel(Entity entity) {
++    protected static ServerLevel getServerLevel(final Entity entity) {
+         return (ServerLevel)entity.level();
+     }
+ 
+-    protected static ServerLevel getServerLevel(Level level) {
++    protected static ServerLevel getServerLevel(final Level level) {
          return (ServerLevel)level;
      }
  

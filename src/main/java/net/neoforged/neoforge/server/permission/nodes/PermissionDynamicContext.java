@@ -6,7 +6,6 @@
 package net.neoforged.neoforge.server.permission.nodes;
 
 import java.util.Objects;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Pair of a PermissionDynamicContextKey and a value of the corresponding type.
@@ -39,7 +38,7 @@ public final class PermissionDynamicContext<T> {
     }
 
     @Override
-    public boolean equals(@Nullable Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PermissionDynamicContext otherContext)) return false;
         return dynamic.equals(otherContext.dynamic) && value.equals(otherContext.value);

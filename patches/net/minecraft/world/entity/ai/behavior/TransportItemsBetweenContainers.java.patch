@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
 +++ b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
-@@ -36,6 +_,7 @@
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
- import org.apache.commons.lang3.function.TriConsumer;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- import org.jspecify.annotations.Nullable;
- 
- public class TransportItemsBetweenContainers extends Behavior<PathfinderMob> {
+@@ -27,7 +_,6 @@
+ import net.minecraft.world.level.block.ChestBlock;
+ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+ import net.minecraft.world.level.block.entity.BlockEntity;
+-import net.minecraft.world.level.block.entity.ChestBlockEntity;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.properties.ChestType;
+ import net.minecraft.world.level.chunk.LevelChunk;
 @@ -282,7 +_,7 @@
              LevelChunk levelChunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
              if (levelChunk != null) {
@@ -48,7 +48,7 @@
 +        return target.blockEntity.equals(level.getBlockEntity(target.pos)) && !isContainerRemoved(target.container);
 +    }
 +
-+    private static boolean isContainerRemoved(final Container container) {
++    private static boolean isContainerRemoved(Container container) {
 +        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
 +            return isContainerRemoved(compoundContainer.container1) || isContainerRemoved(compoundContainer.container2);
 +        }
@@ -67,7 +67,7 @@
      }
  
      private static double getInteractionRange(PathfinderMob body) {
-@@ -487,6 +_,18 @@
+@@ -487,6 +_,11 @@
      }
  
      private static boolean matchesLeavingItemsRequirement(PathfinderMob body, Container container) {
@@ -76,13 +76,6 @@
 +            return false;
 +        }
 +        // Purpur end - copper golem can place items in barrels or shulkers option
-+        // Paper start - Add event for container assessment
-+        final io.papermc.paper.event.entity.ItemTransportingEntitySortEvent sortEvent = org.bukkit.craftbukkit.event.CraftEventFactory.createItemTransportingEntitySortEvent(body, container);
-+        sortEvent.callEvent();
-+        if (sortEvent.getResult() != org.bukkit.event.Event.Result.DEFAULT) {
-+            return sortEvent.getResult() == org.bukkit.event.Event.Result.ALLOW;
-+        }
-+        // Paper end - Add event for container assessment
          return container.isEmpty() || hasItemMatchingHandItem(body, container);
      }
  

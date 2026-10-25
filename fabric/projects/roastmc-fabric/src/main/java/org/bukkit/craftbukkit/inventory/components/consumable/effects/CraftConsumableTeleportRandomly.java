@@ -26,9 +26,8 @@ public class CraftConsumableTeleportRandomly extends CraftConsumableEffect<Telep
         super(map);
 
         Float diameter = SerializableMeta.getObject(Float.class, map, "diameter", false);
-        Boolean directionalParticles = SerializableMeta.getObject(Boolean.class, map, "directional-particles", true);
 
-        this.handle = new TeleportRandomlyConsumeEffect(diameter, (directionalParticles == null) ? true : directionalParticles);
+        this.handle = new TeleportRandomlyConsumeEffect(diameter);
     }
 
     @Override
@@ -38,17 +37,7 @@ public class CraftConsumableTeleportRandomly extends CraftConsumableEffect<Telep
 
     @Override
     public void setDiameter(float diameter) {
-        handle = new TeleportRandomlyConsumeEffect(diameter, handle.directionalParticles());
-    }
-
-    @Override
-    public boolean isDirectionalParticles() {
-        return this.handle.directionalParticles();
-    }
-
-    @Override
-    public void setDirectionalParticles(boolean directionalParticles) {
-        handle = new TeleportRandomlyConsumeEffect(handle.diameter(), directionalParticles);
+        handle = new TeleportRandomlyConsumeEffect(diameter);
     }
 
     @NotNull
@@ -56,7 +45,6 @@ public class CraftConsumableTeleportRandomly extends CraftConsumableEffect<Telep
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("diameter", getDiameter());
-        result.put("directional-particles", isDirectionalParticles());
 
         return result;
     }

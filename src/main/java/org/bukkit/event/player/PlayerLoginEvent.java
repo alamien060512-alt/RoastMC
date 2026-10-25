@@ -2,8 +2,6 @@ package org.bukkit.event.player;
 
 import com.roastmc.neoforge.api.ColorAPI;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import org.bukkit.Warning;
 import net.kyori.adventure.text.Component;
@@ -27,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * Additionally, this event causes the full player entity to be created much earlier than it would be in Vanilla,
  * leaving it with mostly dysfunctional methods and state.
  */
-@Warning(reason = "Listening to this event causes the player to be created early.", propagate = false) // don't nag yet given permission are not managable yet on the other events
+@Warning(reason = "Listening to this event causes the player to be created early.")
 @Deprecated(since = "1.21.6")
 public class PlayerLoginEvent extends PlayerEvent {
 
@@ -35,21 +33,16 @@ public class PlayerLoginEvent extends PlayerEvent {
 
     private final String hostname;
     private final InetAddress address;
-    private final SocketAddress realAddress;
+    private final InetAddress realAddress;
     private Result result = Result.ALLOWED;
     private Component message = Component.empty();
 
     @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull SocketAddress realAddress) {
+    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
         super(player);
         this.hostname = hostname;
         this.address = address;
         this.realAddress = realAddress;
-    }
-
-    @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
-        this(player, hostname, address, new InetSocketAddress(realAddress, 0));
     }
 
     @ApiStatus.Internal
@@ -96,30 +89,16 @@ public class PlayerLoginEvent extends PlayerEvent {
         return this.address;
     }
 
-
-    /**
-     * Gets the connection socket address of this player, regardless of whether
-     * it has been spoofed or not.
-     *
-     * @return the player's connection socket address
-     */
-    @NotNull
-    public SocketAddress getRealSocketAddress() {
-        return this.realAddress;
-    }
-
     /**
      * Gets the connection address of this player, regardless of whether it has
      * been spoofed or not.
      *
-     * @return the player's connection address, or the loopback address if the
-     * player is connecting through a Unix domain socket
+     * @return the player's connection address
      * @see #getAddress()
      */
     @NotNull
     public InetAddress getRealAddress() {
-        if (this.realAddress instanceof InetSocketAddress inet) return inet.getAddress();
-        return InetAddress.getLoopbackAddress();
+        return this.realAddress;
     }
 
     /**

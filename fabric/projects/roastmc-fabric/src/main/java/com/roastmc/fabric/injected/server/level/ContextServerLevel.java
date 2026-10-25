@@ -87,34 +87,4 @@ public interface ContextServerLevel extends ContextLevel {
     default ServerExplosion explode0(@Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float r, boolean fire, Level.ExplosionInteraction interactionType, ParticleOptions smallExplosionParticles, ParticleOptions largeExplosionParticles, WeightedList<ExplosionParticleInfo> blockParticles, Holder<SoundEvent> explosionSound) {
         throw new ContextStateException("Not implemented");
     }
-
-    // CraftBukkit start - SPIGOT-7680: per-world weather
-    default void setWeatherParameters(int clearTime, int rainTime, boolean raining, boolean thundering) {
-        throw new ContextStateException("Not implemented");
-    }
-    // CraftBukkit end
-
-    // CraftBukkit start - world generator wiring (CB ServerLevel ctor extras)
-    default org.bukkit.generator.ChunkGenerator roastmc$generator() {
-        return null;
-    }
-
-    default org.bukkit.generator.BiomeProvider roastmc$biomeProvider() {
-        return null;
-    }
-
-    default void roastmc$setGenerator(org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-    }
-
-    default org.bukkit.World.Environment roastmc$environment() {
-        return org.bukkit.World.Environment.NORMAL;
-    }
-
-    default void roastmc$setEnvironment(org.bukkit.World.Environment env) {
-    }
-    // CraftBukkit end
-
-    // CraftBukkit - SPIGOT-6526: expose entity manager tick
-    default void roastmc_tickEntityManager() {
-    }
 }

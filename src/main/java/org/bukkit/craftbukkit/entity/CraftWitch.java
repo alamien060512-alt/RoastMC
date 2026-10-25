@@ -33,7 +33,7 @@ public class CraftWitch extends CraftRaider implements Witch, com.destroystokyo.
     }
 
     public ItemStack getDrinkingPotion() {
-        return CraftItemStack.asBukkitMirror(this.getHandle().getMainHandItem());
+        return CraftItemStack.asCraftMirror(this.getHandle().getMainHandItem());
     }
 
     public void setDrinkingPotion(ItemStack potion) {

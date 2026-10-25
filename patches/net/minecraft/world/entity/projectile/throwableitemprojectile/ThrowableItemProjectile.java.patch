@@ -1,17 +1,15 @@
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrowableItemProjectile.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrowableItemProjectile.java
-@@ -36,7 +_,13 @@
-         this.getEntityData().set(DATA_ITEM_STACK, source.copyWithCount(1));
-     }
+@@ -38,6 +_,12 @@
  
--    protected abstract Item getDefaultItem();
-+    public abstract Item getDefaultItem();
-+
+     public abstract Item getDefaultItem();
+ 
 +    // CraftBukkit start
 +    public Item getDefaultItemPublic() {
 +        return getDefaultItem();
 +    }
 +    // CraftBukkit end
- 
++
      @Override
      public ItemStack getItem() {
+         return this.getEntityData().get(DATA_ITEM_STACK);

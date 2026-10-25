@@ -9,17 +9,6 @@
  
      protected AbstractCubeMob(EntityType<? extends AbstractCubeMob> type, Level level) {
          super(type, level);
-@@ -58,6 +_,10 @@
- 
-     @Override
-     protected void registerGoals() {
-+        // Purpur start - Ridables
-+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
-+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
-+        // Purpur end - Ridables
-         this.goalSelector.addGoal(1, new AbstractCubeMob.CubeMobFloatGoal(this));
-         this.goalSelector.addGoal(4, new AbstractCubeMob.CubeMobRandomDirectionGoal(this));
-         this.goalSelector.addGoal(5, new AbstractCubeMob.CubeMobKeepOnJumpingGoal(this));
 @@ -69,6 +_,31 @@
  
      protected abstract void addTargetingGoals();
@@ -141,7 +130,7 @@
      }
  
      protected void setUpSplitCube(AbstractCubeMob cubeMob, int halfSize, float xd, float zd) {
-@@ -263,11 +_,31 @@
+@@ -259,11 +_,31 @@
          return this.getType().getDimensions().scale(this.getSize());
      }
  
@@ -173,7 +162,7 @@
      }
  
      @Override
-@@ -276,7 +_,7 @@
+@@ -272,7 +_,7 @@
      }
  
      @Override
@@ -182,7 +171,7 @@
          return 0.4F * this.getSize();
      }
  
-@@ -297,10 +_,10 @@
+@@ -293,10 +_,10 @@
      protected abstract SoundEvent getJumpSound();
  
      @Override
@@ -195,7 +184,7 @@
  
      protected abstract SoundEvent getSquishSound();
  
-@@ -340,11 +_,16 @@
+@@ -336,11 +_,16 @@
          @Override
          public boolean canUse() {
              LivingEntity target = this.cubeMob.getTarget();
@@ -217,7 +206,7 @@
          }
  
          @Override
-@@ -356,11 +_,16 @@
+@@ -352,11 +_,16 @@
          @Override
          public boolean canContinueToUse() {
              LivingEntity target = this.cubeMob.getTarget();
@@ -239,8 +228,8 @@
          }
  
          @Override
-@@ -379,6 +_,13 @@
-                 cubeMobMoveControl.setDirection(this.cubeMob.getYRot(), this.cubeMob.canDealDamage());
+@@ -375,6 +_,13 @@
+                 cubeMobMoveControl.setDirection(this.cubeMob.getYRot(), this.cubeMob.isDealsDamage());
              }
          }
 +
@@ -253,16 +242,16 @@
      }
  
      private static class CubeMobFloatGoal extends Goal {
-@@ -392,7 +_,7 @@
+@@ -388,7 +_,7 @@
  
          @Override
          public boolean canUse() {
--            return this.cubeMob.isInLiquid() && this.cubeMob.getMoveControl() instanceof AbstractCubeMob.CubeMobMoveControl;
-+            return this.cubeMob.isInLiquid() && this.cubeMob.getMoveControl() instanceof AbstractCubeMob.CubeMobMoveControl && this.cubeMob.canWander && new com.destroystokyo.paper.event.entity.SlimeSwimEvent((org.bukkit.entity.AbstractCubeMob) this.cubeMob.getBukkitEntity()).callEvent(); // Paper - Slime pathfinder events
+-            return (this.cubeMob.isInWater() || this.cubeMob.isInLava()) && this.cubeMob.getMoveControl() instanceof AbstractCubeMob.CubeMobMoveControl;
++            return (this.cubeMob.isInWater() || this.cubeMob.isInLava()) && this.cubeMob.getMoveControl() instanceof AbstractCubeMob.CubeMobMoveControl && this.cubeMob.canWander && new com.destroystokyo.paper.event.entity.SlimeSwimEvent((org.bukkit.entity.AbstractCubeMob) this.cubeMob.getBukkitEntity()).callEvent(); // Paper - Slime pathfinder events
          }
  
          @Override
-@@ -422,7 +_,7 @@
+@@ -418,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -271,75 +260,16 @@
          }
  
          @Override
-@@ -433,7 +_,7 @@
-         }
-     }
- 
--    protected static class CubeMobMoveControl<T extends AbstractCubeMob> extends MoveControl<T> {
-+    protected static class CubeMobMoveControl<T extends AbstractCubeMob> extends org.purpurmc.purpur.controller.MoveControllerWASD<T> { // Purpur - Ridables
-         private float yRot;
-         private int jumpDelay;
-         private boolean isAggressive;
-@@ -449,21 +_,34 @@
-         }
- 
-         public void setWantedMovement(double speedModifier) {
--            this.speedModifier = speedModifier;
-+            this.setSpeedModifier(speedModifier); // Purpur - Ridables
-             this.operation = MoveControl.Operation.MOVE_TO;
-         }
- 
-         @Override
-         public void tick() {
--            this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
--            this.mob.yHeadRot = this.mob.getYRot();
--            this.mob.yBodyRot = this.mob.getYRot();
--            if (this.operation != MoveControl.Operation.MOVE_TO) {
-+            // Purpur start - Ridables
-+            if (this.mob.getRider() != null && this.mob.isControllable()) {
-+                purpurTick(this.mob.getRider());
-+                if (this.mob.getForwardMot() != 0 || this.mob.getStrafeMot() != 0) {
-+                    if (jumpDelay > 10) {
-+                        jumpDelay = 6;
-+                    }
-+                } else {
-+                    jumpDelay = 20;
-+                }
-+            } else {
-+                this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
-+                this.mob.yHeadRot = this.mob.getYRot();
-+                this.mob.yBodyRot = this.mob.getYRot();
-+            }
-+            // Purpur end - Ridables
-+            if ((this.mob.getRider() == null || !this.mob.isControllable()) && this.operation != MoveControl.Operation.MOVE_TO) { // Purpur - Ridables
-                 this.mob.setZza(0.0F);
-             } else {
-                 this.operation = MoveControl.Operation.WAIT;
-                 if (this.mob.onGround()) {
--                    this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
-+                    this.mob.setSpeed((float)(this.getSpeedModifier() * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.mob.getRider() != null && this.mob.isControllable() && (this.mob.getRider().getForwardMot() != 0 || this.mob.getRider().getStrafeMot() != 0) ? 2.0D : 1.0D))); // Purpur - Ridables
-                     if (this.jumpDelay-- <= 0) {
-                         this.jumpDelay = this.mob.getJumpDelay();
-                         if (this.isAggressive) {
-@@ -480,7 +_,7 @@
-                         this.mob.setSpeed(0.0F);
-                     }
-                 } else {
--                    this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
-+                    this.mob.setSpeed((float)(this.getSpeedModifier() * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.mob.getRider() != null && this.mob.isControllable() && (this.mob.getRider().getForwardMot() != 0 || this.mob.getRider().getStrafeMot() != 0) ? 2.0D : 1.0D))); // Purpur - Ridables
-                 }
-             }
-         }
-@@ -498,7 +_,7 @@
+@@ -494,7 +_,7 @@
  
          @Override
          public boolean canUse() {
 -            return this.cubeMob.getTarget() == null
 +            return this.cubeMob.getTarget() == null && this.cubeMob.canWander // Paper - Slime pathfinder events
-                 && (this.cubeMob.onGround() || this.cubeMob.isInLiquid() || this.cubeMob.hasEffect(MobEffects.LEVITATION))
+                 && (this.cubeMob.onGround() || this.cubeMob.isInWater() || this.cubeMob.isInLava() || this.cubeMob.hasEffect(MobEffects.LEVITATION))
                  && this.cubeMob.getMoveControl() instanceof AbstractCubeMob.CubeMobMoveControl;
          }
-@@ -508,6 +_,11 @@
+@@ -504,6 +_,11 @@
              if (--this.nextRandomizeTime <= 0) {
                  this.nextRandomizeTime = this.adjustedTickDelay(40 + this.cubeMob.getRandom().nextInt(60));
                  this.chosenDegrees = this.cubeMob.getRandom().nextInt(360);

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
 import com.roastmc.fabric.bukkit.BukkitUtils;
 import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.TransmuteResult;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
@@ -34,7 +33,7 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
                                 toNMS(this.getInput(), true),
                                 toNMS(this.getMaterial(), true),
                                 MinMaxBounds.Ints.between(this.getMinimumMaterialCount(), this.getMaximumMaterialCount()),
-                                TransmuteResult.fromTemplate(CraftItemStack.asNMSTemplate(this.getResult())),
+                                CraftItemStack.asNMSTemplate(this.getResult()),
                                 this.isAddMaterialCountToResult()
                         )
                 )

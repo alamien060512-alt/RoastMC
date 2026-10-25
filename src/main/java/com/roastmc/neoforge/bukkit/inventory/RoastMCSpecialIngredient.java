@@ -9,8 +9,8 @@ import org.bukkit.inventory.RecipeChoice;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/7/20 23:18:51
+ * @author Mgazul by MohistMC
+ * @date 2023/7/20 23:18:51
  */
 public record RoastMCSpecialIngredient(Ingredient ingredient) implements RecipeChoice {
 
@@ -18,7 +18,7 @@ public record RoastMCSpecialIngredient(Ingredient ingredient) implements RecipeC
     @Override
     public ItemStack getItemStack() {
         var items = ingredient.items().findFirst();
-        return items.isPresent() ? CraftItemStack.asBukkitMirror(items.get().value().getDefaultInstance()) : new ItemStack(Material.AIR, 0); // TODO
+        return items.isPresent() ? CraftItemStack.asCraftMirror(items.get().value().getDefaultInstance()) : new ItemStack(Material.AIR, 0); // TODO
     }
 
     @NotNull

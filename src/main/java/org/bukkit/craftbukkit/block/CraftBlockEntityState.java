@@ -33,16 +33,17 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     private final T blockEntity;
     private final T snapshot;
     public boolean snapshotDisabled; // Paper
+    public static boolean DISABLE_SNAPSHOT = false; // Paper
 
-    public CraftBlockEntityState(World world, T blockEntity, boolean useSnapshot) {
+    public CraftBlockEntityState(World world, T blockEntity) {
         super(world, blockEntity.getBlockPos(), blockEntity.getBlockState());
 
         this.blockEntity = blockEntity;
 
         try { // Paper - Show blockstate location if we failed to read it
         // Paper start
-        this.snapshotDisabled = !useSnapshot;
-        if (!useSnapshot) {
+        this.snapshotDisabled = DISABLE_SNAPSHOT;
+        if (DISABLE_SNAPSHOT) {
             this.snapshot = this.blockEntity;
         } else {
             this.snapshot = this.createSnapshot(blockEntity);

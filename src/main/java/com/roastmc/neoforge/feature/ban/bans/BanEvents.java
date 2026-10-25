@@ -3,8 +3,8 @@ package com.roastmc.neoforge.feature.ban.bans;
 import com.roastmc.neoforge.RoastMCConfig;
 
 /**
- * @author Mgazul
- * {@code @date} 2023/8/9 20:09:51
+ * @author Mgazul by MohistMC
+ * @date 2023/8/9 20:09:51
  */
 public class BanEvents {
 

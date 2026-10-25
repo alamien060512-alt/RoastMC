@@ -31,6 +31,10 @@ public class RoastMCConfigUtil {
 
     public static void init() {
         try {
+            File parent = roastmc_yml.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
             if (!roastmc_yml.exists()) {
                 roastmc_yml.createNewFile();
             }

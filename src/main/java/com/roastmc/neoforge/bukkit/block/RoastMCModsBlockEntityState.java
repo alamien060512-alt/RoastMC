@@ -7,8 +7,8 @@ import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 
 public class RoastMCModsBlockEntityState extends CraftBlockEntityState<BlockEntity> {
 
-    public RoastMCModsBlockEntityState(World world, BlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public RoastMCModsBlockEntityState(World world, BlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected RoastMCModsBlockEntityState(RoastMCModsBlockEntityState state, Location location) {

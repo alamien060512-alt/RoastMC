@@ -15,7 +15,6 @@ import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.crafting.CompoundIngredient;
 import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs;
 import net.neoforged.neoforge.fluids.FluidStack;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Fluid ingredient that matches if any of the child ingredients match.
@@ -92,7 +91,7 @@ public final class CompoundFluidIngredient extends FluidIngredient {
     }
 
     @Override
-    public boolean equals(@Nullable Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         return obj instanceof CompoundFluidIngredient other && other.children.equals(this.children);
     }

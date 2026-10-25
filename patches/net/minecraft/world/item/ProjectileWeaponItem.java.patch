@@ -43,27 +43,15 @@
      public static ItemStack getHeldProjectile(LivingEntity entity, Predicate<ItemStack> valid) {
          if (valid.test(entity.getItemInHand(InteractionHand.OFF_HAND))) {
              return entity.getItemInHand(InteractionHand.OFF_HAND);
-@@ -40,6 +_,10 @@
- 
-     public abstract int getDefaultProjectileRange();
- 
-+    // Item instances are shared; consume scoped values before callbacks can re-enter.
-+    protected static final ThreadLocal<Float> shoot$drawStrength = ThreadLocal.withInitial(() -> 1.0F);
-+    protected static final ThreadLocal<Boolean> draw$consume = ThreadLocal.withInitial(() -> true);
-+
-     protected void shoot(
-         ServerLevel level,
-         LivingEntity shooter,
-@@ -51,6 +_,8 @@
+@@ -50,6 +_,7 @@
+         float uncertainty,
          boolean isCrit,
          @Nullable LivingEntity targetOverride
++        , final float drawStrength // Paper - Pass draw strength
      ) {
-+        float drawStrength = shoot$drawStrength.get();
-+        shoot$drawStrength.remove();
          float maxAngle = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
          float angleStep = projectiles.size() == 1 ? 0.0F : 2.0F * maxAngle / (projectiles.size() - 1);
-         float angleOffset = (projectiles.size() - 1) % 2 * angleStep / 2.0F;
-@@ -62,12 +_,27 @@
+@@ -62,12 +_,26 @@
                  float angle = angleOffset + direction * ((i + 1) / 2) * angleStep;
                  direction = -direction;
                  int index = i;
@@ -87,8 +75,7 @@
 +                    if (Projectile.spawnProjectile(
 +                            projectileEntity,
 +                            level,
-+                            projectile,
-+                            ignored -> {}
++                            projectile
 +                    ).isRemoved()) {
 +                        return;
 +                    }
@@ -97,27 +84,7 @@
                  weapon.hurtAndBreak(this.getDurabilityUse(projectile), shooter, hand.asEquipmentSlot());
                  if (weapon.isEmpty()) {
                      break;
-@@ -76,6 +_,19 @@
-         }
-     }
- 
-+    protected void shoot(
-+        ServerLevel level, LivingEntity shooter, InteractionHand hand, ItemStack weapon, List<ItemStack> projectiles,
-+        float power, float uncertainty, boolean isCrit, @Nullable LivingEntity targetOverride, float drawStrength
-+    ) {
-+        float previousStrength = shoot$drawStrength.get();
-+        shoot$drawStrength.set(drawStrength);
-+        try {
-+            this.shoot(level, shooter, hand, weapon, projectiles, power, uncertainty, isCrit, targetOverride);
-+        } finally {
-+            shoot$drawStrength.set(previousStrength);
-+        }
-+    }
-+
-     protected int getDurabilityUse(ItemStack projectile) {
-         return 1;
-     }
-@@ -96,11 +_,13 @@
+@@ -96,11 +_,17 @@
          if (isCrit) {
              arrow.setCritArrow(true);
          }
@@ -128,8 +95,12 @@
      }
  
      protected static List<ItemStack> draw(ItemStack weapon, ItemStack projectile, LivingEntity shooter) {
-+        boolean consume = draw$consume.get();
-+        draw$consume.remove();
++        // Paper start
++        return draw(weapon, projectile, shooter, true);
++    }
++
++    protected static List<ItemStack> draw(final ItemStack weapon, final ItemStack projectile, final LivingEntity shooter, final boolean consume) {
++        // Paper end
          if (projectile.isEmpty()) {
              return List.of();
          }
@@ -138,24 +109,13 @@
  
          for (int i = 0; i < numProjectiles; i++) {
 -            ItemStack drawnStack = useAmmo(weapon, i == 0 ? projectile : projectileCopy, shooter, i > 0);
-+            ItemStack drawnStack = useAmmo(weapon, i == 0 ? projectile : projectileCopy, shooter, i > 0 || !consume); // Paper
++            ItemStack drawnStack = useAmmo(weapon, i == 0 ? projectile : projectileCopy, shooter, i > 0|| !consume); // Paper
              if (!drawnStack.isEmpty()) {
                  drawn.add(drawnStack);
              }
-@@ -119,8 +_,19 @@
-         return drawn;
+@@ -120,7 +_,8 @@
      }
  
-+    protected static List<ItemStack> draw(ItemStack weapon, ItemStack projectile, LivingEntity shooter, boolean consume) {
-+        boolean previousConsume = draw$consume.get();
-+        draw$consume.set(consume);
-+        try {
-+            return draw(weapon, projectile, shooter);
-+        } finally {
-+            draw$consume.set(previousConsume);
-+        }
-+    }
-+
      protected static ItemStack useAmmo(ItemStack weapon, ItemStack projectile, LivingEntity holder, boolean forceInfinite) {
 -        int ammoToUse = !forceInfinite && !holder.hasInfiniteMaterials() && holder.level() instanceof ServerLevel serverLevel
 +        // Neo: Adjust this check to respect ArrowItem#isInfinite, bypassing processAmmoUse if true.

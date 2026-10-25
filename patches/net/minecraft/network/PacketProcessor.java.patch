@@ -9,7 +9,7 @@
      private final Thread runningThread;
      private boolean closed;
  
-@@ -21,16 +_,56 @@
+@@ -21,6 +_,22 @@
          this.runningThread = runningThread;
      }
  
@@ -32,12 +32,11 @@
      public boolean isSameThread() {
          return Thread.currentThread() == this.runningThread;
      }
+@@ -30,7 +_,31 @@
+             throw new RejectedExecutionException("Server already shutting down");
+         }
  
-     public <T extends PacketListener> void scheduleIfPossible(T listener, Packet<T> packet) {
-         if (this.closed) {
-+            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
-+        }
-+
+-        this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
 +        // Paper start - improve tick loop
 +        // wake up main thread inbetween ticks to process packets
 +        final boolean isEmpty = this.packetsToBeHandled.isEmpty();
@@ -59,12 +58,10 @@
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public void scheduleIfPossible(Runnable task) {
 +        if (this.closed) {
-             throw new RejectedExecutionException("Server already shutting down");
++            throw new RejectedExecutionException("Server already shutting down");
 +        } else {
 +            this.packetsToBeHandled.add(new net.neoforged.neoforge.network.handling.QueuedPacket.CustomPayload(task));
-         }
--
--        this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
++        }
      }
  
      public void processQueuedPackets() {

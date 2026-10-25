@@ -7,17 +7,11 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 
 public interface ContextRecipeMap {
 
-    // CraftBukkit start - mutable, ordered
-    default void roastmc$makeMutable() {
-        throw new ContextStateException("Not implemented");
-    }
-
     default void addRecipe(RecipeHolder<?> irecipe) {
-        throw new ContextStateException("Not implemented");
+
     }
 
-    default boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
+    default  boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
         throw new ContextStateException("Not implemented");
     }
-    // CraftBukkit end
 }

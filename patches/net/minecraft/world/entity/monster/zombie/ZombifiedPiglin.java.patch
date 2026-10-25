@@ -106,14 +106,11 @@
      }
  
      private void playAngerSound() {
-@@ -154,22 +_,47 @@
+@@ -153,23 +_,43 @@
+     }
  
      @Override
-     public void setTarget(@Nullable LivingEntity target) {
-+        this.setTarget(target, this.getTargetReason()); // RoastMC - keep the vanilla/NeoForge override entry point for mods
-+    }
-+
-+    @Override
+-    public void setTarget(@Nullable LivingEntity target) {
 +    public boolean setTarget(final @Nullable LivingEntity target, org.bukkit.event.entity.EntityTargetEvent.@Nullable TargetReason reason) { // CraftBukkit - signature
          if (this.getTarget() == null && target != null) {
              this.playFirstAngerSoundIn = FIRST_ANGER_SOUND_DELAY.sample(this.random);
@@ -157,12 +154,3 @@
          return level.getDifficulty() != Difficulty.PEACEFUL && !level.getBlockState(pos.below()).is(Blocks.NETHER_WART_BLOCK);
      }
  
-@@ -227,7 +_,7 @@
- 
-     @Override
-     protected void randomizeReinforcementsChance() {
--        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(0.0);
-+        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level().purpurConfig.zombifiedPiglinSpawnReinforcements); // Purpur - Configurable entity base attributes
-     }
- 
-     @Override

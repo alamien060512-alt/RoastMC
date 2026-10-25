@@ -13,8 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MobBucketItem.class)
 public class MixinMobBucketItem {
 
-    // 26.3 的 MobBucketItem 不再声明 useOn（只在 Item），原钩子待重定位 → require=0 暂挂
-    @Inject(method = "useOn", require = 0, at = @At("HEAD"))
+    @Inject(method = "useOn", at = @At("HEAD"))
     private void roastmc_useOn(CallbackInfo ci) {
         // CraftBukkit
     }

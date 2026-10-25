@@ -183,7 +183,7 @@ final class ClientPayloadHandler {
     }
 
     private static void handle(final RecipeContentPayload payload, final IPayloadContext context) {
-        var recipeMap = RecipeMap.createClient(payload.recipes());
+        var recipeMap = RecipeMap.create(payload.recipes());
         NeoForge.EVENT_BUS.post(new RecipesReceivedEvent(payload.recipeTypes(), recipeMap));
     }
 

@@ -17,7 +17,6 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.world.chunk.ChunkGenerationState;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -45,7 +43,6 @@ import net.minecraft.core.QuartPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
-import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
@@ -80,7 +77,6 @@ import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.gamerules.GameRule;
-import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.AABB;
@@ -268,17 +264,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
             biomeSource = customBiomeSource.vanillaBiomeSource;
         }
-        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createUncachedResolver(serverCache.randomState());
+        final net.minecraft.world.level.biome.BiomeSource finalBiomeSource = biomeSource;
+        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
 
-        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
+        final List<Biome> possibleBiomes = finalBiomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
             .toList();
         return new BiomeProvider() {
             @Override
             public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-                return CraftBiome.minecraftHolderToBukkit(resolver.getNoiseBiome(
-                    QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z))
-                );
+                return CraftBiome.minecraftHolderToBukkit(finalBiomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
             }
 
             @Override
@@ -292,9 +287,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean hasStructureAt(final io.papermc.paper.math.Position position, final Structure structure) {
         return this.world.structureManager().getStructureWithPieceAt(
-            position.blockX(),
-            position.blockY(),
-            position.blockZ(),
+            io.papermc.paper.util.MCUtil.toBlockPos(position),
             CraftStructure.bukkitToMinecraft(structure)
         ).isValid();
     }
@@ -418,7 +411,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
         final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
         ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
-            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.BLOCKING, future::complete
+            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
         );
         world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
         return future.thenApply(c -> {
@@ -428,18 +421,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return false;
         }).join();
         // Paper end - Fix this method
-    }
-
-    @Override
-    public ChunkGenerationState getChunkGenerationState(final int x, final int z) {
-        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
-        return FeatureHooks.getChunkGenerationState(this.world, x, z);
-    }
-
-    @Override
-    public CompletableFuture<ChunkGenerationState> getChunkGenerationStateAsync(final int x, final int z) {
-        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
-        return FeatureHooks.getChunkGenerationStateAsync(this.world, x, z);
     }
 
     @Override
@@ -964,12 +945,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public void addEntityToWorld(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
+        this.getHandle().addFreshEntity(entity, reason);
+    }
+
+    @Override
     public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
-        // Be more lenient than ServerLevel#tryAddFreshEntityWithPassengers and ignore already added entities instead of failing completely.
-        // This otherwise causes problems when an entity already added to the world is added as a passenger inside of the pre-spawn consumer.
-        entity.getSelfAndPassengers()
-            .filter(e -> !e.valid)
-            .forEach(e -> this.getHandle().addFreshEntity(e, reason));
+        this.getHandle().tryAddFreshEntityWithPassengers(entity, reason);
     }
 
     @Override
@@ -1393,7 +1375,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean isBedWorks() {
         BedRule bedRule = this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
-        return !bedRule.destroyOnUse() && bedRule.canSleep().test(this.world);
+        return !bedRule.explodes() && bedRule.canSleep().test(this.world);
     }
 
     @Override
@@ -1760,22 +1742,26 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, T data, boolean force, Particle.RandomizationType randomizationType) {
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, false);
+    }
+
+    @Override
+    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
         data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
         this.getHandle().sendParticlesSource(
-            receivers == null ? this.getHandle().players() : Lists.transform(receivers, player -> ((CraftPlayer) player).getHandle()),
-            sender != null ? ((CraftPlayer) sender).getHandle() : null,
-            CraftParticle.createParticleParam(particle, data),
-            force,
-            false,
-            x, y, z,
-            count,
-            offsetX, offsetY, offsetZ,
-            speedX, speedY, speedZ,
-            ClientboundLevelParticlesPacket.RandomizationType.valueOf(randomizationType.name())
+                receivers == null ? this.getHandle().players() : Lists.transform(receivers, player -> ((CraftPlayer) player).getHandle()), // Paper -  Particle API
+                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
+                CraftParticle.createParticleParam(particle, data), // Particle
+                force,
+                false,
+                x, y, z, // Position
+                count, // Count
+                offsetX, offsetY, offsetZ, // Random offset
+                extra // Speed?
         );
 
     }
@@ -1890,9 +1876,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             holders.add(CraftBiome.bukkitToMinecraftHolder(biome));
         }
 
-        final RandomState randomState = this.getHandle().getChunkSource().randomState();
+        Climate.Sampler sampler = this.getHandle().getChunkSource().randomState().sampler();
         // The given predicate is evaluated once at the start of the search, so performance isn't a large concern.
-        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = this.getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, randomState, this.getHandle());
+        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = this.getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, sampler, this.getHandle());
         if (found == null) {
             return null;
         }
@@ -2011,7 +1997,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Collection<GeneratedStructure> getStructures(int x, int z) {
-        return this.getStructures(x, z, _ -> true);
+        return this.getStructures(x, z, struct -> true);
     }
 
     @Override
@@ -2026,7 +2012,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
         List<GeneratedStructure> structures = new ArrayList<>();
-        for (StructureStart start : this.getHandle().structureManager().startsForStructure(x, z, predicate)) {
+        for (StructureStart start : this.getHandle().structureManager().startsForStructure(new ChunkPos(x, z), predicate)) {
             structures.add(new CraftGeneratedStructure(start));
         }
 

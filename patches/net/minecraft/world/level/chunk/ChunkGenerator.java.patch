@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -101,11 +_,16 @@
+@@ -94,19 +_,24 @@
      public ChunkGenerator(BiomeSource biomeSource, Function<Holder<Biome>, BiomeGenerationSettings> generationSettingsGetter) {
          this.biomeSource = biomeSource;
          this.generationSettingsGetter = generationSettingsGetter;
@@ -18,51 +18,26 @@
      public void validate() {
          this.featuresPerStep.get();
      }
-@@ -116,8 +_,8 @@
  
      protected abstract MapCodec<? extends ChunkGenerator> codec();
  
 -    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSets, RandomState randomState, long legacyLevelSeed) {
--        return ChunkGeneratorStructureState.createForNormal(randomState, legacyLevelSeed, this.getOrigin(randomState), this.biomeSource, structureSets);
+-        return ChunkGeneratorStructureState.createForNormal(randomState, legacyLevelSeed, this.biomeSource, structureSets);
 +    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSets, RandomState randomState, long legacyLevelSeed, org.spigotmc.SpigotWorldConfig conf) { // Spigot
-+        return ChunkGeneratorStructureState.createForNormal(randomState, legacyLevelSeed, this.getOrigin(randomState), this.biomeSource, structureSets, conf); // Spigot
++        return ChunkGeneratorStructureState.createForNormal(randomState, legacyLevelSeed, this.biomeSource, structureSets, conf); // Spigot
      }
  
      public Optional<Identifier> getTypeNameForDataFixer() {
-@@ -128,12 +_,14 @@
+@@ -117,7 +_,7 @@
          return CompletableFuture.supplyAsync(() -> {
-             this.doCreateBiomes(blender, randomState, protoChunk);
+             protoChunk.fillBiomesFromNoise(this.biomeSource, randomState.sampler());
              return protoChunk;
--        }, Util.backgroundExecutor().forName("createBiomes"));
+-        }, Util.backgroundExecutor().forName("init_biomes"));
 +        }, Runnable::run); // Paper - rewrite chunk system
      }
  
-     private void doCreateBiomes(Blender blender, RandomState randomState, ChunkAccess protoChunk) {
--        DensityBufferPool bufferPool = randomState.acquireDensityBufferPool();
--
-+        // Paper start - optimise chunk generation - use thread local allocator
-+        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalAllocator = ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.acquire();
-+        DensityBufferPool bufferPool = threadLocalAllocator == null ? randomState.acquireDensityBufferPool() : threadLocalAllocator;
-+        // Paper end - optimise chunk generation - use thread local allocator
-         try {
-             Climate.Sampler climateSampler = randomState.createClimateSampler(SamplerContext.builder().enableCaches().useBufferArena(bufferPool).build());
-             ChunkPos pos = protoChunk.getPos();
-@@ -149,7 +_,13 @@
-                 );
-             protoChunk.fillBiomesFromNoise(this.decorateBiomeResolver(blender, protoChunk, biomeResolver));
-         } finally {
--            randomState.releaseDensityBufferPool(bufferPool);
-+            // Paper start - optimise chunk generation - use thread local allocator
-+            if (!(bufferPool instanceof ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalDensityBufferArena)) {
-+                randomState.releaseDensityBufferPool(bufferPool);
-+            } else {
-+                ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.release(threadLocalDensityBufferArena);
-+            }
-+            // Paper end - optimise chunk generation - use thread local allocator
-         }
-     }
- 
-@@ -164,10 +_,28 @@
+     public abstract void applyCarvers(
+@@ -131,10 +_,50 @@
              return null;
          }
  
@@ -77,9 +52,31 @@
 +        final List<org.bukkit.generator.structure.Structure> apiStructures = wantedStructures.stream().map(org.bukkit.craftbukkit.generator.structure.CraftStructure::minecraftHolderToBukkit).toList();
 +        if (!apiStructures.isEmpty()) {
 +            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, maxSearchRadius, createReference);
-+            if (!event.callEvent()) {
++            // Paper start - StructuresLocateEvent must fire on the main thread; async /locate dispatches it there and waits
++            final boolean[] cancelled = new boolean[1];
++            final Throwable[] error = new Throwable[1];
++            if (io.papermc.paper.util.MCUtil.isMainThread() || !level.getServer().isRunning()) { // Paper - fire inline when stopping, main thread may not drain the executor queue
++                cancelled[0] = !event.callEvent();
++            } else {
++                final java.util.concurrent.CompletableFuture<Void> dispatched = new java.util.concurrent.CompletableFuture<>();
++                level.getServer().execute(() -> {
++                    try {
++                        cancelled[0] = !event.callEvent();
++                    } catch (Throwable throwable) {
++                        error[0] = throwable;
++                    } finally {
++                        dispatched.complete(null);
++                    }
++                });
++                dispatched.join();
++                if (error[0] != null) {
++                    throw new RuntimeException("Failed to fire StructuresLocateEvent on the main thread", error[0]);
++                }
++            }
++            if (cancelled[0]) {
 +                return null;
 +            }
++            // Paper end
 +            if (event.getResult() != null) {
 +                return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraftHolder(event.getResult().structure()));
 +            }
@@ -92,7 +89,7 @@
          ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
          Map<StructurePlacement, Set<Holder<Structure>>> placementScans = new Object2ObjectArrayMap<>();
  
-@@ -262,6 +_,7 @@
+@@ -229,6 +_,7 @@
          BlockPos.MutableBlockPos structurePos = new BlockPos.MutableBlockPos();
  
          for (ChunkPos chunkPos : positions) {
@@ -100,7 +97,7 @@
              structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
              double distSqr = structurePos.distSqr(pos);
              boolean isClosest = closestPos == null || distSqr < closest;
-@@ -293,9 +_,12 @@
+@@ -260,9 +_,12 @@
          for (int x = -radius; x <= radius; x++) {
              boolean xEdge = x == -radius || x == radius;
  
@@ -116,16 +113,16 @@
                      int sectorX = chunkOriginX + spacing * x;
                      int sectorZ = chunkOriginZ + spacing * z;
                      ChunkPos chunkTarget = config.getPotentialStructureChunk(seed, sectorX, sectorZ);
-@@ -327,7 +_,7 @@
+@@ -294,7 +_,7 @@
                      return Pair.of(config.getLocatePos(chunkTarget), structure);
                  }
  
 -                ChunkAccess chunk = level.getChunk(chunkTarget.x(), chunkTarget.z(), ChunkStatus.STRUCTURE_STARTS);
 +                ChunkAccess chunk = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevelReader)level).moonrise$syncLoadNonFull(chunkTarget.x(), chunkTarget.z(), ChunkStatus.STRUCTURE_STARTS); // Paper - rewrite chunk system
-                 StructureStart start = structureManager.getStartForStructure(structure.value(), chunk);
+                 StructureStart start = structureManager.getStartForStructure(SectionPos.bottomOf(chunk), structure.value(), chunk);
                  if (start != null && start.isValid() && (!createReference || tryAddReference(structureManager, start))) {
                      return Pair.of(config.getLocatePos(start.getChunkPos()), structure);
-@@ -347,7 +_,7 @@
+@@ -314,7 +_,7 @@
          }
      }
  
@@ -134,26 +131,7 @@
          ChunkPos centerPos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(centerPos)) {
              SectionPos sectionPos = SectionPos.of(centerPos, level.getMinSectionY());
-@@ -363,7 +_,17 @@
-                 ChunkAccess chunkInRange = level.getChunk(chunkPos.x(), chunkPos.z());
- 
-                 for (LevelChunkSection section : chunkInRange.getSections()) {
--                    section.getBiomes().getAll(possibleBiomes::add);
-+                    // Paper start - optimise chunk generation
-+                    // We do not need to search the entire biome section, as the biome section is never
-+                    // modified after being created - meaning that the palette only contains entries
-+                    // that are present in the section (provided that the palette is NOT global).
-+                    final PalettedContainerRO<Holder<Biome>> biomes = section.getBiomes();
-+                    if (((PalettedContainer<Holder<Biome>>)biomes).data.palette() instanceof GlobalPalette<Holder<Biome>>) {
-+                        biomes.getAll(possibleBiomes::add);
-+                    } else {
-+                        biomes.forEachInPalette(possibleBiomes::add);
-+                    }
-+                    // Paper end - optimise chunk generation
-                 }
-             });
-             possibleBiomes.retainAll(this.biomeSource.possibleBiomes());
-@@ -422,7 +_,14 @@
+@@ -388,7 +_,14 @@
                              Supplier<String> currentlyGenerating = () -> featureRegistry.getResourceKey(feature)
                                  .map(Object::toString)
                                  .orElseGet(feature::toString);
@@ -169,7 +147,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(currentlyGenerating);
-@@ -451,6 +_,35 @@
+@@ -417,6 +_,35 @@
          }
      }
  
@@ -205,7 +183,7 @@
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos chunkPos = chunk.getPos();
          int targetBlockX = chunkPos.getMinBlockX();
-@@ -523,7 +_,7 @@
+@@ -493,7 +_,7 @@
                              }
                          }
  
@@ -214,10 +192,13 @@
                              if (structures.size() == 1) {
                                  this.tryGenerateStructure(
                                      structures.get(0),
-@@ -619,6 +_,14 @@
+@@ -588,6 +_,17 @@
              biomePredicate
          );
          if (start.isValid()) {
++            // RoastMC start - ban structures
++            if (com.roastmc.neoforge.feature.ban.bans.BanStructure.checkBan(BuiltInRegistries.STRUCTURE_TYPE.getKey(structure.type()))) return true;
++            // RoastMC end
 +            // CraftBukkit start
 +            BoundingBox box = start.getBoundingBox();
 +            org.bukkit.event.world.AsyncStructureSpawnEvent event = new org.bukkit.event.world.AsyncStructureSpawnEvent(structureManager.level.getMinecraftWorld().getWorld(), org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(structure), new org.bukkit.util.BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()), sourceChunkPos.x(), sourceChunkPos.z());
@@ -226,6 +207,6 @@
 +                return true;
 +            }
 +            // CraftBukkit end
-             structureManager.setStartForStructure(structure, start, centerChunk);
+             structureManager.setStartForStructure(sectionPos, structure, start, centerChunk);
              return true;
          } else {

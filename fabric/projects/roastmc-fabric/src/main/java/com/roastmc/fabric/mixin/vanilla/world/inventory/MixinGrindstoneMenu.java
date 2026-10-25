@@ -7,6 +7,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -24,8 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MixinGrindstoneMenu extends AbstractContainerMenu {
 
     @Shadow @Final private Container repairSlots;
-    // 26.3 起 ResultContainer 上移为 Container 字段类型
-    @Shadow @Final private Container resultSlots;
+    @Shadow @Final private ResultContainer resultSlots;
     @Shadow @Final private ContainerLevelAccess access;
 
     @Shadow

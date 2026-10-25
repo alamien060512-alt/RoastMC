@@ -11,9 +11,9 @@ import com.roastmc.neoforge.commands.RoastMCCommand;
 import com.roastmc.neoforge.feature.RoastMCPlugin;
 import com.roastmc.neoforge.feature.ban.BansCommand;
 import com.roastmc.neoforge.feature.entitylimits.EntityLimitsConfig;
+import gg.pufferfish.pufferfish.simd.SIMDDetection;
 import com.roastmc.neoforge.util.I18n;
 import com.roastmc.neoforge.util.YamlUtils;
-import gg.pufferfish.pufferfish.simd.SIMDDetection;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -36,21 +36,21 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public class RoastMCConfig {
 
     private static final List<String> HEADER = Arrays.asList("""
-        This is the main configuration file for RoastMC.
-        As you can see, there's tons to configure. Some options may impact gameplay, so use
-        with caution, and make sure you know what each option does before configuring.
-        For a reference for any variable inside this file, check out the RoastMC wiki at
-        - [English Documentation](https://github.com/alamien060512-alt/RoastMC)
-        - [中文文档](https://github.com/alamien060512-alt/RoastMC)
-        
-        If you need help with the configuration or have any questions related to Spigot,
-        join us at the Discord or drop by our forums and leave a post.
-        
-        Discord: https://discord.gg/mohistmc
-        Forums: https://mohistmc.com/
-        Forums (中文): https://www.mohistmc.cn/
-        
-        """.split("\\n"));
+            This is the main configuration file for RoastMC.
+            As you can see, there's tons to configure. Some options may impact gameplay, so use
+            with caution, and make sure you know what each option does before configuring.
+            For a reference for any variable inside this file, check out the RoastMC wiki at
+            - [English Documentation](https://github.com/alamien060512-alt/RoastMC)
+            - [中文文档](https://github.com/alamien060512-alt/RoastMC)
+            
+            If you need help with the configuration or have any questions related to Spigot,
+            join us at the Discord or drop by our forums and leave a post.
+            
+            Discord: https://discord.gg/mohistmc
+            Forums: https://mohistmc.com/
+            Forums (中文): https://www.mohistmc.cn/
+            
+            """.split("\\n"));
     /*========================================================================*/
     public static YamlConfiguration config;
     public static File roastmcyml = new File("roastmc-config", "roastmc.yml");
@@ -89,6 +89,8 @@ public class RoastMCConfig {
     public static boolean ban_enchantment_enable;
     public static boolean ban_recipe_enable;
     public static boolean ban_world_enable;
+    public static boolean ban_structure_enable;
+    public static boolean ban_effect_enable;
     public static String pingCommandOutput;
     // Ban events
     public static boolean doFireTick;
@@ -180,6 +182,7 @@ public class RoastMCConfig {
         try {
             Class.forName("org.sqlite.JDBC");
             Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.mariadb.jdbc.Driver");
         } catch (Throwable t) {
             throw new RuntimeException("Error initializing RoastMC", t);
         }
@@ -287,6 +290,8 @@ public class RoastMCConfig {
         ban_enchantment_enable = getBoolean("bans.enchantment", false);
         ban_recipe_enable = getBoolean("bans.recipe", false);
         ban_world_enable = getBoolean("bans.world", false);
+        ban_structure_enable = getBoolean("bans.structure", false);
+        ban_effect_enable = getBoolean("bans.effect", false);
 
         pingCommandOutput = getString("settings.messages.ping-command-output", "§2%s's ping is %sms");
 

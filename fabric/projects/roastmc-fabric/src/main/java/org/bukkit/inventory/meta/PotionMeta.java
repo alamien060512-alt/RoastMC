@@ -107,7 +107,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @param type the potion effect type to move
      * @return true if the potion meta changed as a result of this call
-     * @deprecated use {@link #setBasePotionType(org.bukkit.potion.PotionType)}
+     * @deprecated use {@link #setBasePotionType(PotionType)}
      */
     @Deprecated(since = "1.9")
     boolean setMainEffect(@NotNull PotionEffectType type);

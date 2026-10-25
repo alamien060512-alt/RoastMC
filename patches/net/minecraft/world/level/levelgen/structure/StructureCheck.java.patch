@@ -1,25 +1,19 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -34,6 +_,7 @@
+@@ -31,6 +_,7 @@
  import net.minecraft.world.level.chunk.ChunkGenerator;
  import net.minecraft.world.level.chunk.storage.ChunkScanAccess;
  import net.minecraft.world.level.chunk.storage.SimpleRegionStorage;
 +import net.minecraft.world.level.dimension.LevelStem;
  import net.minecraft.world.level.levelgen.RandomState;
- import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
  import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
-@@ -52,15 +_,24 @@
-     private final ChunkGenerator chunkGenerator;
-     private final RandomState randomState;
-     private final LevelHeightAccessor heightAccessor;
--    private final Climate.Sampler climateSampler;
-+    private final ThreadLocal<Climate.Sampler> moonrise$climateSampler; // Paper - rewrite chunk system - reuse sampling caches per thread
+ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+@@ -50,10 +_,20 @@
      private final BiomeSource biomeSource;
      private final long seed;
      private final DataFixer fixerUpper;
 -    private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
 -    private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
--    private final LongSet chunksWithoutStartsInStorage = new LongOpenHashSet();
 +    // Paper start - rewrite chunk system
 +    // make sure to purge entries from the maps to prevent memory leaks
 +    private static final int CHUNK_TOTAL_LIMIT = 50 * (2 * 100 + 1) * (2 * 100 + 1); // cache 50 structure lookups
@@ -27,22 +21,18 @@
 +    private final ca.spottedleaf.moonrise.common.map.SynchronisedLong2ObjectMap<it.unimi.dsi.fastutil.objects.Object2IntMap<Structure>> loadedChunksSafe = new ca.spottedleaf.moonrise.common.map.SynchronisedLong2ObjectMap<>(CHUNK_TOTAL_LIMIT);
 +    private final java.util.concurrent.ConcurrentHashMap<Structure, ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap> featureChecksSafe = new java.util.concurrent.ConcurrentHashMap<>();
 +    // Paper end - rewrite chunk system
-+    private final LongSet chunksWithoutStartsInStorage = it.unimi.dsi.fastutil.longs.LongSets.synchronize(new LongOpenHashSet()); // Paper - rewrite chunk system - synchronised
++
 +    // Paper start - also store level stem
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelStem;
  
      public StructureCheck(
-+        ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelStem,
++        final ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelStem,
 +        // Paper end - also store level stem
          ChunkScanAccess storageAccess,
          RegistryAccess registryAccess,
          StructureTemplateManager structureTemplateManager,
-@@ -80,38 +_,47 @@
-         this.randomState = randomState;
-         this.heightAccessor = heightAccessor;
+@@ -75,11 +_,26 @@
          this.biomeSource = biomeSource;
--        this.climateSampler = randomState.createClimateSampler(SamplerContext.builder().enableCaches().build());
-+        this.moonrise$climateSampler = ThreadLocal.withInitial(() -> randomState.createClimateSampler(SamplerContext.builder().enableCaches().build())); // Paper - rewrite chunk system - reuse sampling caches per thread
          this.seed = seed;
          this.fixerUpper = fixerUpper;
 -    }
@@ -70,21 +60,8 @@
          if (cachedResult != null) {
              return this.checkStructureInfo(cachedResult, structure, requireUnreferenced);
          }
- 
--        if (!this.chunksWithoutStartsInStorage.contains(posKey)) {
--            StructureCheckResult storageCheckResult = this.tryLoadFromStorage(pos, structure, requireUnreferenced);
--            if (storageCheckResult != null) {
--                return storageCheckResult;
--            }
--
--            if (this.chunksWithoutStartsInStorage.size() >= 131072) {
--                this.chunksWithoutStartsInStorage.clear();
--            }
--
--            this.chunksWithoutStartsInStorage.add(posKey);
-+        StructureCheckResult storageCheckResult = this.tryLoadFromStorage(pos, structure, requireUnreferenced, posKey);
-+        if (storageCheckResult != null) {
-+            return storageCheckResult;
+@@ -89,13 +_,15 @@
+             return storageCheckResult;
          }
  
 -        if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed)) {
@@ -97,31 +74,13 @@
 -            .computeIfAbsent(posKey, k -> this.canCreateStructure(pos, structure));
 +        // Paper start - rewrite chunk system
 +        boolean isFeatureChunk = this.featureChecksSafe
-+            .computeIfAbsent(structure, k -> new ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT))
-+            .getOrCompute(posKey, k -> this.canCreateStructure(pos, structure));
++                .computeIfAbsent(structure, k -> new ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT))
++                .getOrCompute(posKey, k -> this.canCreateStructure(pos, structure));
 +        // Paper end - rewrite chunk system
          return !isFeatureChunk ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
      }
  
-@@ -121,7 +_,7 @@
-                     this.registryAccess,
-                     this.chunkGenerator,
-                     this.biomeSource,
--                    this.climateSampler,
-+                    this.moonrise$climateSampler.get(), // Paper - rewrite chunk system - reuse sampling caches per thread
-                     this.randomState,
-                     this.structureTemplateManager,
-                     this.seed,
-@@ -133,7 +_,7 @@
-             .isPresent();
-     }
- 
--    private @Nullable StructureCheckResult tryLoadFromStorage(ChunkPos pos, Structure structure, boolean requireUnreferenced) {
-+    private @Nullable StructureCheckResult tryLoadFromStorage(ChunkPos pos, Structure structure, boolean requireUnreferenced, long posKey) {
-         CollectFields collectFields = new CollectFields(
-             new FieldSelector(IntTag.TYPE, "DataVersion"),
-             new FieldSelector("Level", "Structures", CompoundTag.TYPE, "Starts"),
-@@ -150,12 +_,12 @@
+@@ -133,12 +_,12 @@
          if (collectFields.getResult() instanceof CompoundTag chunkTag) {
              int version = NbtUtils.getDataVersion(chunkTag);
              SimpleRegionStorage.injectDatafixingContext(
@@ -132,20 +91,11 @@
              CompoundTag fixedChunkTag;
              try {
 -                fixedChunkTag = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, chunkTag, version);
-+                fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, DataFixTypes.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
++                fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
              } catch (Exception e) {
                  LOGGER.warn("Failed to partially datafix chunk {}", pos, e);
                  return StructureCheckResult.CHUNK_LOAD_NEEDED;
-@@ -166,7 +_,7 @@
-                 return null;
-             }
- 
--            this.storeFullResults(pos.pack(), knownStarts);
-+            this.storeFullResults(posKey, knownStarts);
-             return this.checkStructureInfo(knownStarts, structure, requireUnreferenced);
-         } else {
-             return null;
-@@ -225,17 +_,27 @@
+@@ -208,15 +_,25 @@
      }
  
      private void storeFullResults(long posKey, Object2IntMap<Structure> starts) {
@@ -160,12 +110,10 @@
 +            value.remove(posKey);
 +        }
 +        // Paper end - rewrite chunk system
-         this.chunksWithoutStartsInStorage.remove(posKey);
      }
  
      public void incrementReference(ChunkPos chunkPos, Structure structure) {
-         long posKey = chunkPos.pack();
--        this.loadedChunks.compute(posKey, (key, counts) -> {
+-        this.loadedChunks.compute(chunkPos.pack(), (key, counts) -> {
 -            if (counts == null || counts.isEmpty()) {
 +        this.loadedChunksSafe.compute(chunkPos.pack(), (key, counts) -> { // Paper start - rewrite chunk system
 +            if (counts == null) {

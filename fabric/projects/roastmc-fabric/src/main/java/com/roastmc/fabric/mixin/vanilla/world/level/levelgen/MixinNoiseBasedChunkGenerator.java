@@ -1,11 +1,10 @@
 package com.roastmc.fabric.mixin.vanilla.world.level.levelgen;
 
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -14,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(NoiseBasedChunkGenerator.class)
 public class MixinNoiseBasedChunkGenerator {
 
-    @Inject(method = "debugPreliminarySurfaceLevel", at = @At("HEAD"))
-    private void roastmc_fillFromNoise(CallbackInfoReturnable<BlockState> cir) {
+    @Inject(method = "fillFromNoise", at = @At("HEAD"))
+    private void roastmc_fillFromNoise(CallbackInfo ci) {
         // CraftBukkit
     }
 }

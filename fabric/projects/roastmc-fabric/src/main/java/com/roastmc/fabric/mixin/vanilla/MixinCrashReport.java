@@ -1,7 +1,7 @@
 package com.roastmc.fabric.mixin.vanilla;
 
 import net.minecraft.CrashReport;
-import net.minecraft.SystemReport;
+import net.minecraft.CrashReportCategory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,7 +18,7 @@ public class MixinCrashReport {
 
     @Final
     @Shadow
-    private SystemReport systemReport;
+    private CrashReportCategory systemReport;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void roastmc_initCraftBukkit(String title, Throwable t, CallbackInfo ci) {

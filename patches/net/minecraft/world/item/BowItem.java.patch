@@ -14,23 +14,17 @@
              }
  
              int timeHeld = this.getUseDuration(itemStack, entity) - remainingTime;
-+            timeHeld = net.neoforged.neoforge.event.EventHooks.onArrowLoose(itemStack, level, player, timeHeld);
++            timeHeld = net.neoforged.neoforge.event.EventHooks.onArrowLoose(itemStack, level, player, timeHeld, !projectile.isEmpty());
 +            if (timeHeld < 0) return false;
              float pow = getPowerForTime(timeHeld);
              if (pow < 0.1) {
                  return false;
-@@ -38,7 +_,13 @@
+@@ -38,7 +_,7 @@
  
              List<ItemStack> firedProjectiles = draw(itemStack, projectile, player);
              if (level instanceof ServerLevel serverLevel && !firedProjectiles.isEmpty()) {
 -                this.shoot(serverLevel, player, player.getUsedItemHand(), itemStack, firedProjectiles, pow * 3.0F, 1.0F, pow == 1.0F, null);
-+                float previousStrength = shoot$drawStrength.get();
-+                shoot$drawStrength.set(pow);
-+                try {
-+                    this.shoot(serverLevel, player, player.getUsedItemHand(), itemStack, firedProjectiles, pow * 3.0F, (float) serverLevel.purpurConfig.bowProjectileOffset, pow == 1.0F, null);
-+                } finally {
-+                    shoot$drawStrength.set(previousStrength);
-+                }
++                this.shoot(serverLevel, player, player.getUsedItemHand(), itemStack, firedProjectiles, pow * 3.0F, (float) serverLevel.purpurConfig.bowProjectileOffset, pow == 1.0F, null, pow); // Paper - Pass draw strength // Purpur - Projectile offset config
              }
  
              level.playSound(

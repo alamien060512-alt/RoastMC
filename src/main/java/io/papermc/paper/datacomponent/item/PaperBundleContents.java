@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -19,7 +18,7 @@ public record PaperBundleContents(
 
     @Override
     public List<ItemStack> contents() {
-        return MCUtil.transformUnmodifiable(this.impl.items(), CraftItemStack::asBukkitCopy);
+        return this.impl.itemCopyStream().map(CraftItemStack::asBukkitCopy).toList();
     }
 
     static final class BuilderImpl implements BundleContents.Builder {

@@ -1,3 +1,4 @@
+
 package com.roastmc.neoforge.commands;
 
 import com.roastmc.neoforge.util.I18n;

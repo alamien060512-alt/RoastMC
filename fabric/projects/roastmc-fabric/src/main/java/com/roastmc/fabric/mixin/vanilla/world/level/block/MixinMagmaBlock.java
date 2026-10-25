@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(MagmaBlock.class)
 public class MixinMagmaBlock {
 
-    @Redirect(method = "stepOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;hurt(Lnet/minecraft/world/damagesource/DamageSource;F)V"))
+    @Redirect(method = "stepOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z"))
     private void roastmc$stepOn(Entity instance, net.minecraft.world.damagesource.DamageSource source, float amount, Level level, BlockPos pos) {
         instance.hurt(level.damageSources().hotFloor().directBlock(level, pos), amount);
     }

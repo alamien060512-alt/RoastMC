@@ -18,6 +18,7 @@
 package com.roastmc.neoforge;
 
 import com.roastmc.neoforge.api.ServerAPI;
+import com.roastmc.neoforge.util.ProxyUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -37,9 +38,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
+import net.minecraft.SharedConstants;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -53,9 +56,9 @@ import org.spigotmc.SpigotConfig;
 public class Metrics {
 
     public static final ScheduledExecutorService METRICS = Executors.newScheduledThreadPool(1,
-        Thread.ofVirtual()
-            .name("Metrics", 0)
-            .factory());
+            Thread.ofVirtual()
+                    .name("Metrics", 0)
+                    .factory());
     private final String name;
     private final String serverUUID;
     private final List<CustomChart> charts = new ArrayList<>();
@@ -280,11 +283,11 @@ public class Metrics {
                 config.addDefault("logFailedRequests", false);
 
                 config.options().header(
-                    """
-                        bStats collects some data for plugin authors like how many servers are using their plugins.
-                        To honor their work, you should not disable it.
-                        This has nearly no effect on the server performance!
-                        Check out https://bStats.org/ to learn more :)"""
+                        """
+                                bStats collects some data for plugin authors like how many servers are using their plugins.
+                                To honor their work, you should not disable it.
+                                This has nearly no effect on the server performance!
+                                Check out https://bStats.org/ to learn more :)"""
                 ).copyDefaults(true);
                 try {
                     config.save(configFile);
@@ -299,8 +302,8 @@ public class Metrics {
 
                 metrics.addCustomChart(new SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
                 metrics.addCustomChart(new SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
-                metrics.addCustomChart(new SimplePie("roastmc_version", () -> RoastMC.version));
-                metrics.addCustomChart(new SimplePie("bungeecord", () -> String.valueOf(SpigotConfig.bungee)));
+                metrics.addCustomChart(new SimplePie("roastmc_version", Versioning::getBukkitVersion));
+                metrics.addCustomChart(new SimplePie("bungeecord", () -> String.valueOf(ProxyUtils.useProxy())));
 
                 metrics.addCustomChart(new DrilldownPie("java_version", () -> {
                     Map<String, Map<String, Integer>> map = new HashMap<>();
@@ -342,7 +345,7 @@ public class Metrics {
                     Map<String, Integer> pluginlist = new HashMap<>();
                     for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
                         if (plugin.isEnabled() && !plugin.getName().equals("roastmc")) {
-                            pluginlist.put(plugin.getDescription().getName(), 1);
+                            pluginlist.put(plugin.getPluginMeta().getName(), 1);
                         }
                     }
                     map.put("mods", modslist);

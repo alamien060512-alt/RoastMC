@@ -171,7 +171,6 @@ import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftBrewingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
 import org.bukkit.craftbukkit.inventory.CraftDyeRecipe;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
@@ -233,7 +232,6 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.BlastingRecipe;
-import org.bukkit.inventory.BrewingRecipe;
 import org.bukkit.inventory.CampfireRecipe;
 import org.bukkit.inventory.ComplexRecipe;
 import org.bukkit.inventory.DyeRecipe;
@@ -337,7 +335,7 @@ public final class CraftServer implements Server {
             }
         }));
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
-        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.dataPackManager = new CraftDataPackManager(this.getServer().getPackRepository());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
@@ -1103,7 +1101,7 @@ public final class CraftServer implements Server {
         RegistryAccess.Frozen registryaccess_frozen = worldloader_dataloadcontext.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> registry = registryaccess_frozen.lookupOrThrow(Registries.LEVEL_STEM);
         if (dynamic != null) {
-            LevelDataAndDimensions leveldataanddimensions = LevelStorageSource.getLevelDataAndDimensions(worldSession, dynamic, worldloader_dataloadcontext.dataConfiguration(), registry, worldloader_dataloadcontext.datapackWorldRegistries());
+            LevelDataAndDimensions leveldataanddimensions = LevelStorageSource.getLevelDataAndDimensions(worldSession, dynamic, worldloader_dataloadcontext.dataConfiguration(), registry, worldloader_dataloadcontext.datapackWorldgen());
 
             dataAndSettings = leveldataanddimensions.worldDataAndGenSettings();
             registryaccess_frozen = leveldataanddimensions.dimensions().dimensionsRegistryAccess();
@@ -1115,10 +1113,10 @@ public final class CraftServer implements Server {
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
 
             levelsettings = new LevelSettings(name, GameType.byId(getDefaultGameMode().getValue()), new LevelSettings.DifficultySettings(Difficulty.EASY, hardcore, false), false, worldloader_dataloadcontext.dataConfiguration());
-            worlddimensions = properties.create(worldloader_dataloadcontext.datapackWorldRegistries());
+            worlddimensions = properties.create(worldloader_dataloadcontext.datapackWorldgen());
 
             WorldDimensions.Complete worlddimensions_complete = worlddimensions.bake(registry);
-            Lifecycle lifecycle = worlddimensions_complete.lifecycle().add(worldloader_dataloadcontext.datapackWorldRegistries().allRegistriesLifecycle());
+            Lifecycle lifecycle = worlddimensions_complete.lifecycle().add(worldloader_dataloadcontext.datapackWorldgen().allRegistriesLifecycle());
 
             PrimaryLevelData primaryleveldata = new PrimaryLevelData(levelsettings, worlddimensions_complete.specialWorldProperty(), lifecycle);
             dataAndSettings = new LevelDataAndDimensions.WorldDataAndGenSettings(primaryleveldata, new WorldGenSettings(worldoptions, worlddimensions));
@@ -1210,7 +1208,7 @@ public final class CraftServer implements Server {
 
         try {
             if (save) {
-                handle.save(null, true, false);
+                handle.save(null, true, true);
             }
 
             handle.getChunkSource().close(save);
@@ -1316,8 +1314,6 @@ public final class CraftServer implements Server {
                 toAdd = CraftDyeRecipe.fromBukkitRecipe((DyeRecipe) recipe);
             } else if (recipe instanceof ImbueRecipe) {
                 toAdd = CraftImbueRecipe.fromBukkitRecipe((ImbueRecipe) recipe);
-            } else if (recipe instanceof BrewingRecipe) {
-                toAdd = CraftBrewingRecipe.fromBukkitRecipe((BrewingRecipe) recipe);
             } else if (recipe instanceof ComplexRecipe) {
                 throw new UnsupportedOperationException("Cannot add custom complex recipe");
             } else {

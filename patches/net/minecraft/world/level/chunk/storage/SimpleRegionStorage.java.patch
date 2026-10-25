@@ -8,7 +8,7 @@
  import com.mojang.serialization.Dynamic;
  import java.io.IOException;
  import java.nio.file.Path;
-@@ -18,42 +_,94 @@
+@@ -18,42 +_,95 @@
  import net.minecraft.world.level.ChunkPos;
  import org.jspecify.annotations.Nullable;
  
@@ -31,6 +31,7 @@
 +    public SimpleRegionStorage(
 +            final RegionStorageInfo info, final Path folder, final DataFixer fixerUpper, final boolean syncWrites, final DataFixTypes dataFixType
 +    ) {
++        info.dfuType()[0] = dataFixType; // Paper - crazy hack to indicate what type the region file is
          this.fixerUpper = fixerUpper;
          this.dataFixType = dataFixType;
 -        this.worker = new IOWorker(info, folder, syncWrites);
@@ -113,7 +114,7 @@
 +            // Spigot end
              injectDatafixingContext(chunkTag, dataFixContextTag);
 -            chunkTag = this.dataFixType.update(this.fixerUpper, chunkTag, version, targetVersion);
-+            chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), this.dataFixType, chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
++            chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
 +            // Spigot start
 +            if (stopBelowZero) {
 +                chunkTag.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
@@ -122,7 +123,7 @@
              removeDatafixingContext(chunkTag);
              NbtUtils.addDataVersion(chunkTag, targetVersion);
              return chunkTag;
-@@ -66,41 +_,73 @@
+@@ -66,41 +_,74 @@
          }
      }
  
@@ -140,6 +141,7 @@
 +        }
 +    }
 +    // Paper end - rewrite data conversion system
++
 +
 +    public CompoundTag upgradeChunkTag(final CompoundTag chunkTag, final int defaultVersion) {
          return this.upgradeChunkTag(chunkTag, defaultVersion, null, SharedConstants.getCurrentVersion().dataVersion().version());

@@ -17,20 +17,20 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
 
     @Override
     public boolean isConverting() {
-        return this.getHandle().isShaking();
+        return this.getHandle().isFreezeConverting();
     }
 
     @Override
     public int getConversionTime() {
         Preconditions.checkState(this.isConverting(), "Entity is not converting");
-        return this.getHandle().freezingTracker.conversionTime;
+        return this.getHandle().conversionTime;
     }
 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().freezingTracker.setConverting(false);
-            this.getHandle().freezingTracker.setAfflictionTime(-1);
+            this.getHandle().conversionTime = -1;
+            this.getHandle().setFreezeConverting(false);
         } else {
             this.getHandle().startFreezeConversion(time);
         }
@@ -43,6 +43,6 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
 
     @Override
     public int inPowderedSnowTime() {
-        return this.getHandle().freezingTracker.afflictionTime;
+        return this.getHandle().inPowderSnowTime;
     }
 }

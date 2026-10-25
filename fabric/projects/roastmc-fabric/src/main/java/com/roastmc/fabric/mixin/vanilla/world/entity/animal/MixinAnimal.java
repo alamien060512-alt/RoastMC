@@ -4,7 +4,7 @@ import com.roastmc.fabric.injected.world.entity.animal.ContextAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.Shadow;
 
 /**
  * @author Mgazul
@@ -13,8 +13,7 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(Animal.class)
 public class MixinAnimal implements ContextAnimal {
 
-    // CB 自增字段，26.3 vanilla 无此成员
-    @Unique
+    @Shadow
     public ItemStack breedItem;
 
     @Override

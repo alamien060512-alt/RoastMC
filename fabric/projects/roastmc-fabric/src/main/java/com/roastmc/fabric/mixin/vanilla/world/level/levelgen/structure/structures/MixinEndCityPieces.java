@@ -4,7 +4,7 @@ import net.minecraft.world.level.levelgen.structure.structures.EndCityPieces;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Mgazul
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinEndCityPieces {
 
     @Inject(method = "addPiece", at = @At("HEAD"))
-    private static void roastmc_addPiece(CallbackInfoReturnable<EndCityPieces.EndCityPiece> cir) {
+    private void roastmc_addPiece(CallbackInfo ci) {
         // CraftBukkit
     }
 }

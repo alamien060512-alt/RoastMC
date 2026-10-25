@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import ca.spottedleaf.common.time.TickData;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -9,6 +10,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.roastmc.neoforge.api.ColorAPI;
 import com.roastmc.neoforge.neoforge.NeoForgeInjectBukkit;
+import com.roastmc.neoforge.util.ProxyUtils;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JsonOps;
@@ -95,7 +97,6 @@ import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
@@ -166,7 +167,6 @@ import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftBrewingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftItemCraftResult;
@@ -222,7 +222,6 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.BlastingRecipe;
-import org.bukkit.inventory.BrewingRecipe;
 import org.bukkit.inventory.CampfireRecipe;
 import org.bukkit.inventory.ComplexRecipe;
 import org.bukkit.inventory.FurnaceRecipe;
@@ -259,7 +258,6 @@ import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.permissions.DefaultPermissions;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -405,7 +403,7 @@ public final class CraftServer implements Server {
         this.playerList = (DedicatedPlayerList) playerList;
         this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
-        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
 
@@ -439,6 +437,29 @@ public final class CraftServer implements Server {
 
         NeoForgeInjectBukkit.init();
 
+        initConfig(); // RoastMC
+
+        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+        this.overrideSpawnLimits();
+        console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
+        this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
+        TicketType.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
+        this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
+        this.loadIcon();
+        this.loadCompatibilities();
+        CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
+
+        // Set map color cache
+        if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+            MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+        }
+        this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
+        datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+    }
+
+    // RoastMC start
+    public void initConfig() {
         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
         this.configuration.options().copyDefaults(true);
         YamlConfiguration configurationDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8));
@@ -482,24 +503,8 @@ public final class CraftServer implements Server {
         }
 
         this.saveCommandsConfig();
-        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
-        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
-        this.overrideSpawnLimits();
-        console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
-        this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-        TicketType.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
-        this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
-        this.loadIcon();
-        this.loadCompatibilities();
-        CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
-
-        // Set map color cache
-        if (this.configuration.getBoolean("settings.use-map-color-cache")) {
-            MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
-        }
-        this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
-        datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
     }
+    // RoastMC end
 
     public boolean getCommandBlockOverride(String command) {
         return this.overrideAllCommandBlockCommands || this.commandsConfiguration.getStringList("command-block-overrides").contains(command);
@@ -888,7 +893,7 @@ public final class CraftServer implements Server {
     @Override
     public long getConnectionThrottle() {
         // Spigot start - Automatically set connection throttle for bungee configurations
-        if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
+        if (ProxyUtils.useProxy()) { // Paper - Add Velocity IP Forwarding Support
             return -1;
         } else {
             return this.configuration.getInt("settings.connection-throttle");
@@ -1137,7 +1142,7 @@ public final class CraftServer implements Server {
         }
     }
 
-    private void loadCustomPermissions() {
+    public void loadCustomPermissions() {
         File file = new File(this.configuration.getString("settings.permissions-file"));
         if (!file.isFile()) {
             return;
@@ -1450,7 +1455,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @ApiStatus.Obsolete
     public PluginCommand getPluginCommand(String name) {
         Command command = this.commandMap.getCommand(name);
 
@@ -1468,35 +1472,61 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipe(Recipe recipe) {
-        final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
-        if (craftRecipe == null) {
-            return false;
+    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
+        CraftRecipe toAdd;
+        if (recipe instanceof CraftRecipe) {
+            toAdd = (CraftRecipe) recipe;
+        } else {
+            if (recipe instanceof ShapedRecipe) {
+                toAdd = CraftShapedRecipe.fromBukkitRecipe((ShapedRecipe) recipe);
+            } else if (recipe instanceof ShapelessRecipe) {
+                toAdd = CraftShapelessRecipe.fromBukkitRecipe((ShapelessRecipe) recipe);
+            } else if (recipe instanceof FurnaceRecipe) {
+                toAdd = CraftFurnaceRecipe.fromBukkitRecipe((FurnaceRecipe) recipe);
+            } else if (recipe instanceof BlastingRecipe) {
+                toAdd = CraftBlastingRecipe.fromBukkitRecipe((BlastingRecipe) recipe);
+            } else if (recipe instanceof CampfireRecipe) {
+                toAdd = CraftCampfireRecipe.fromBukkitRecipe((CampfireRecipe) recipe);
+            } else if (recipe instanceof SmokingRecipe) {
+                toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
+            } else if (recipe instanceof StonecuttingRecipe) {
+                toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
+            } else if (recipe instanceof SmithingTransformRecipe) {
+                toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
+            } else if (recipe instanceof SmithingTrimRecipe) {
+                toAdd = CraftSmithingTrimRecipe.fromBukkitRecipe((SmithingTrimRecipe) recipe);
+            } else if (recipe instanceof TransmuteRecipe) {
+                toAdd = CraftTransmuteRecipe.fromBukkitRecipe((TransmuteRecipe) recipe);
+            } else if (recipe instanceof ComplexRecipe) {
+                throw new UnsupportedOperationException("Cannot add custom complex recipe");
+            } else {
+                return false;
+            }
         }
-
-        craftRecipe.addToRecipeManager();
+        toAdd.addToRecipeManager();
+        // Paper start - API for updating recipes on clients
+        if (true || resendRecipes) { // Always needs to be resent now... TODO
+            this.playerList.reloadRecipes();
+        }
+        // Paper end - API for updating recipes on clients
         return true;
     }
 
+    // Purpur start - Added the ability to add combustible items
     @Override
-    public boolean addRecipes(Iterable<Recipe> recipes) {
-        org.spigotmc.AsyncCatcher.catchOp("Recipes Add");
-        Preconditions.checkArgument(recipes != null, "recipes cannot be null");
-        boolean anyAdded = false;
-        final RecipeManager recipeManager = this.getServer().getRecipeManager();
-        for (Recipe recipe : recipes) {
-            final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
-            if (craftRecipe != null) {
-                recipeManager.recipes.addRecipe(craftRecipe.toMinecraftRecipe());
-                anyAdded = true;
-            }
-        }
+    public void addFuel(org.bukkit.Material material, int burnTime) {
+        Preconditions.checkArgument(burnTime > 0, "BurnTime must be greater than 0");
 
-        if (anyAdded) {
-            recipeManager.finalizeRecipeLoading();
-        }
-        return anyAdded;
+        net.minecraft.world.item.ItemStack itemStack = net.minecraft.world.item.ItemStack.fromBukkitCopy(new ItemStack(material));
+        MinecraftServer.getServer().fuelValues().values.put(itemStack.getItem(), burnTime);
     }
+
+    @Override
+    public void removeFuel(org.bukkit.Material material) {
+        net.minecraft.world.item.ItemStack itemStack = net.minecraft.world.item.ItemStack.fromBukkitCopy(new ItemStack(material));
+        MinecraftServer.getServer().fuelValues().values.keySet().removeIf(itemStack::is);
+    }
+    // Purpur end - Added the ability to add combustible items
 
     // Purpur start - Debug Marker API
     @Override
@@ -1705,34 +1735,17 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean hasRecipe(NamespacedKey recipeKey) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
-        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
-        return getServer().getRecipeManager().byKey(id).isPresent();
-    }
+    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-    @Override
-    public boolean removeRecipe(NamespacedKey recipeKey) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
+        // Paper start - resend recipes on successful removal
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
-        return this.getServer().getRecipeManager().removeRecipe(id);
-    }
-
-    @Override
-    public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
-        Preconditions.checkArgument(recipeKeys != null, "recipeKeys cannot be null");
-        boolean anyRemoved = false;
-        final RecipeManager recipeManager = this.getServer().getRecipeManager();
-        for (NamespacedKey recipeKey : recipeKeys) {
-            final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
-            if (recipeManager.recipes.removeRecipe(id)) {
-                anyRemoved = true;
-            }
+        final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
+        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
+            this.playerList.reloadRecipes();
         }
-        if (anyRemoved) {
-            recipeManager.finalizeRecipeLoading();
-        }
-        return anyRemoved;
+        return removed;
+        // Paper end - resend recipes on successful removal
     }
 
     @Override
@@ -1950,26 +1963,6 @@ public final class CraftServer implements Server {
         net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
         MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
-        MapItemSavedData.addTargetDecoration(stack, structurePos, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
-
-        return CraftItemStack.asBukkitCopy(stack);
-    }
-
-    @Override
-    public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.Structure structure, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
-        Preconditions.checkArgument(world != null, "World cannot be null");
-        Preconditions.checkArgument(location != null, "Location cannot be null");
-        Preconditions.checkArgument(structure != null, "Structure cannot be null");
-        Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
-
-        final ServerLevel level = ((CraftWorld) world).getHandle();
-        final org.bukkit.util.StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structure, radius, findUnexplored);
-        if (structureSearchResult == null) {
-            return null;
-        }
-        final BlockPos structurePos = CraftLocation.toBlockPos(structureSearchResult.getLocation());
-        final net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
-        MapItem.renderBiomePreviewMap(level, stack);
         MapItemSavedData.addTargetDecoration(stack, structurePos, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
 
         return CraftItemStack.asBukkitCopy(stack);
@@ -2382,7 +2375,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @ApiStatus.Obsolete
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
     }

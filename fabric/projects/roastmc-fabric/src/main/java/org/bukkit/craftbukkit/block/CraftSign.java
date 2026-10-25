@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
-import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -27,14 +26,14 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     public CraftSign(World world, T tileEntity) {
         super(world, tileEntity);
-        this.front = new CraftSignSide(this.getSnapshot().getText(SignTextSlot.FRONT));
-        this.back = new CraftSignSide(this.getSnapshot().getText(SignTextSlot.BACK));
+        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
+        this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
     protected CraftSign(CraftSign<T> state, Location location) {
         super(state, location);
-        this.front = new CraftSignSide(this.getSnapshot().getText(SignTextSlot.FRONT));
-        this.back = new CraftSignSide(this.getSnapshot().getText(SignTextSlot.BACK));
+        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
+        this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
     @Override
@@ -102,7 +101,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         ensureNoWorldGeneration();
         Preconditions.checkArgument(player != null, "player cannot be null");
 
-        if (getSnapshot().getSlotPlayerIsFacing(((CraftPlayer) player).getHandle()) == SignTextSlot.FRONT) {
+        if (getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
             return front;
         }
 
@@ -141,8 +140,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     @Override
     protected void applyTo(T sign) {
-        getSnapshot().setText(front.applyLegacyStringToSignSide(), SignTextSlot.FRONT);
-        getSnapshot().setText(back.applyLegacyStringToSignSide(), SignTextSlot.BACK);
+        getSnapshot().setText(front.applyLegacyStringToSignSide(), true);
+        getSnapshot().setText(back.applyLegacyStringToSignSide(), false);
 
         super.applyTo(sign);
     }
@@ -170,7 +169,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         SignBlockEntity handle = ((CraftSign<?>) sign).getTileEntity();
         handle.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(handle, (Side.FRONT == side) ? SignTextSlot.FRONT : SignTextSlot.BACK);
+        ((CraftPlayer) player).getHandle().openTextEdit(handle, Side.FRONT == side);
     }
 
     public static Component[] sanitizeLines(String[] lines) {
