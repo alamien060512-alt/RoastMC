@@ -35,14 +35,14 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftInventory implements Inventory {
     protected final Container inventory;
-    private InventoryType inventoryType; // Youer - mod menu type override
+    private InventoryType inventoryType; // RoastMC - mod menu type override
 
     public CraftInventory(Container inventory) {
         this.inventory = inventory;
     }
 
     /**
-     * Youer - overrides the inventory type reported by {@link #getType()}.
+     * RoastMC - overrides the inventory type reported by {@link #getType()}.
      */
     public void setInventoryType(InventoryType inventoryType) {
         this.inventoryType = inventoryType;
@@ -475,11 +475,11 @@ public class CraftInventory implements Inventory {
 
     @Override
     public InventoryType getType() {
-        // Youer start - expose modded menu types
+        // RoastMC start - expose modded menu types
         if (this.inventoryType != null) {
             return this.inventoryType;
         }
-        // Youer end
+        // RoastMC end
         // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
         if (this.inventory instanceof CraftingContainer) {
             if (this.inventory instanceof CrafterBlockEntity) {

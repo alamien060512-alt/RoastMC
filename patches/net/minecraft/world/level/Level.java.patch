@@ -4,9 +4,9 @@
  package net.minecraft.world.level;
  
  import com.google.common.collect.Lists;
-+import com.mohistmc.youer.YouerConfig;
-+import com.mohistmc.youer.api.event.block.SetBlockEvent;
-+import com.mohistmc.youer.feature.ban.bans.BanBlock;
++import com.roastmc.neoforge.RoastMCConfig;
++import com.roastmc.neoforge.api.event.block.SetBlockEvent;
++import com.roastmc.neoforge.feature.ban.bans.BanBlock;
  import com.mojang.serialization.Codec;
  import java.io.IOException;
  import java.util.Collection;
@@ -1032,7 +1032,7 @@
 +            blockState = Blocks.AIR.defaultBlockState();
 +        }
 +        {
-+            if (YouerConfig.custom_disabled_spawner && blockState.getBlock() == Blocks.SPAWNER) {
++            if (RoastMCConfig.custom_disabled_spawner && blockState.getBlock() == Blocks.SPAWNER) {
 +                blockState = Blocks.AIR.defaultBlockState();
 +            }
 +            if (SetBlockEvent.getHandlerList().getRegisteredListeners().length > 0 && this.getWorld() != null) {
@@ -1242,9 +1242,9 @@
 +    public void callEvent(boolean call) {
 +        callEvent.set(call);
 +    }
-+    public BlockState youer$defaultBlockState;
++    public BlockState roastmc$defaultBlockState;
 +    public boolean setBlockAndUpdate(BlockPos pos, BlockState blockState) {
-+        youer$defaultBlockState = blockState;
++        roastmc$defaultBlockState = blockState;
 +        if (callEvent.getAndSet(false)) return false;
 +        return this.setBlock(pos, blockState, 3);
 +    }

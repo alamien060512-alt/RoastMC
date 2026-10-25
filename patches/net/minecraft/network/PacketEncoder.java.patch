@@ -3,7 +3,7 @@
 @@ -1,11 +_,13 @@
  package net.minecraft.network;
  
-+import com.mohistmc.youer.feature.PacketStatistics;
++import com.roastmc.neoforge.feature.PacketStatistics;
  import com.mojang.logging.LogUtils;
  import io.netty.buffer.ByteBuf;
  import io.netty.channel.ChannelHandlerContext;
@@ -18,7 +18,7 @@
  
      public PacketEncoder(ProtocolInfo<T> protocolInfo) {
          this.protocolInfo = protocolInfo;
-+        PacketStatistics.startStatisticsUpdater(); // Youer
++        PacketStatistics.startStatisticsUpdater(); // RoastMC
      }
  
 +    static final ThreadLocal<java.util.Locale> ADVENTURE_LOCALE = ThreadLocal.withInitial(() -> null); // Paper - adventure; set player's locale

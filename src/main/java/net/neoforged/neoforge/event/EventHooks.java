@@ -213,10 +213,10 @@ public class EventHooks {
         BlockSnapshot snap = blockSnapshots.get(0);
         BlockState placedAgainst = snap.getLevel().getBlockState(snap.getPos().relative(direction.getOpposite()));
         EntityMultiPlaceEvent event = new EntityMultiPlaceEvent(blockSnapshots, placedAgainst, entity);
-        // Youer - start
+        // RoastMC - start
         event.setPlaceEventDirection(direction);
         event.setPlaceEventHand(hand);
-        // Youer - end
+        // RoastMC - end
         return NeoForge.EVENT_BUS.post(event).isCanceled();
     }
 
@@ -229,10 +229,10 @@ public class EventHooks {
     public static boolean onBlockPlace(@org.jetbrains.annotations.Nullable Entity entity, @NotNull BlockSnapshot blockSnapshot, @NotNull Direction direction, InteractionHand hand) {
         BlockState placedAgainst = blockSnapshot.getLevel().getBlockState(blockSnapshot.getPos().relative(direction.getOpposite()));
         EntityPlaceEvent event = new BlockEvent.EntityPlaceEvent(blockSnapshot, placedAgainst, entity);
-        // Youer - start
+        // RoastMC - start
         event.setPlaceEventDirection(direction);
         event.setPlaceEventHand(hand);
-        // Youer - end
+        // RoastMC - end
         return NeoForge.EVENT_BUS.post(event).isCanceled();
     }
 

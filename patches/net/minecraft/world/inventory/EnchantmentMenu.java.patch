@@ -192,7 +192,7 @@
      }
  
 +    // Paper start - roll enchantment offers API
-+    // Youer - Keep the native offer generation in slotsChanged intact for NeoForge hooks and mod mixins.
++    // RoastMC - Keep the native offer generation in slotsChanged intact for NeoForge hooks and mod mixins.
 +    public static void fillEnchantmentOffers(final RandomSource random, final int seed, final int bookcases, final ItemStack itemStack, final RegistryAccess registryAccess, final int[] costs, final int[] enchantClue, final int[] levelClue) {
 +        random.setSeed(seed);
 +
@@ -345,7 +345,7 @@
      }
  
 +    // Paper start - roll enchantment offers API
-+    // Youer - Deliberately duplicate the private instance method to preserve its body and native mixin call sites.
++    // RoastMC - Deliberately duplicate the private instance method to preserve its body and native mixin call sites.
 +    public static List<EnchantmentInstance> getEnchantmentList(final RegistryAccess access, final ItemStack itemStack, final int slot, final int enchantmentCost, final RandomSource random, final int seed) {
 +        random.setSeed(seed + slot);
 +        Optional<HolderSet.Named<Enchantment>> tag = access.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);

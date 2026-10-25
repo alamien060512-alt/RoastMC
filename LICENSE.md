@@ -1,6 +1,6 @@
-Youer inherits its licensing from upstream projects.
+RoastMC inherits its licensing from upstream projects.
 
-As such, Youer is licensed under the
+As such, RoastMC is licensed under the
 [GNU General Public License version 3](LICENCE/GPL.md); as it inherits it from Paper,
 who in turn inherits it from the original Bukkit and Craftbukkit and Spigot projects.
 

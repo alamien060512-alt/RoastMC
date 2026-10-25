@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.mohistmc.youer.util.DynamicEnumUtil;
+import com.roastmc.neoforge.util.DynamicEnumUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
 import java.lang.reflect.Constructor;
@@ -2923,13 +2923,13 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         this(id, MaterialData.class);
     }
 
-    // Youer start - constructor used to set if the Material is a block or not
+    // RoastMC start - constructor used to set if the Material is a block or not
     private Material(final int id, boolean isForgeBlock, boolean isForgeItem) {
         this(id);
         this.isModBlock = isForgeBlock;
         this.isModItem = isForgeItem;
     }
-    // Youer end
+    // RoastMC end
 
     private Material(final int id, final Class<?> data) {
         this.id = id;
@@ -3919,7 +3919,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
     // Purpur end - ItemStack convenience methods
 
-    // Youer start
+    // RoastMC start
     public static Material addMaterial(String materialName, int id, boolean isBlock, boolean isItem, Identifier resourceLocation) {
         if (isBlock) {
             Material material = BY_NAME.get(materialName);
@@ -3945,5 +3945,5 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     public ItemStack buildItem() {
         return new ItemStack(this);
     }
-    // Youer end
+    // RoastMC end
 }

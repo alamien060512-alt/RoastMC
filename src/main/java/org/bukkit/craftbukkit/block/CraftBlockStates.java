@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import com.mohistmc.youer.bukkit.block.YouerModsBlockEntityState;
+import com.roastmc.neoforge.bukkit.block.RoastMCModsBlockEntityState;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -91,7 +91,7 @@ public final class CraftBlockStates {
         @Override
         public CraftBlockState createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity, boolean useSnapshot) {
             if (blockEntity != null) {
-                return new YouerModsBlockEntityState(world, blockEntity, useSnapshot);
+                return new RoastMCModsBlockEntityState(world, blockEntity, useSnapshot);
             }
             return new CraftBlockState(world, pos, state);
         }
@@ -184,7 +184,7 @@ public final class CraftBlockStates {
         }
     }
 
-    // Youer start - use vanilla block state wrappers for modded block entities extending vanilla types
+    // RoastMC start - use vanilla block state wrappers for modded block entities extending vanilla types
     private static BlockStateFactory<?> getModdedBlockEntityFactory(BlockEntity blockEntity) {
         if (blockEntity instanceof HangingSignBlockEntity) {
             return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.get(BlockEntityTypes.HANGING_SIGN);
@@ -200,7 +200,7 @@ public final class CraftBlockStates {
         }
         return null;
     }
-    // Youer end
+    // RoastMC end
 
     public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
         Preconditions.checkNotNull(material, "material is null");
@@ -284,7 +284,7 @@ public final class CraftBlockStates {
         } else {
             factory = CraftBlockStates.getFactory(material, blockEntity != null ? blockEntity.getType() : null); // Paper
             if (factory == CraftBlockStates.DEFAULT_FACTORY && blockEntity != null) {
-                BlockStateFactory<?> moddedFactory = CraftBlockStates.getModdedBlockEntityFactory(blockEntity); // Youer - modded block entities extending vanilla types
+                BlockStateFactory<?> moddedFactory = CraftBlockStates.getModdedBlockEntityFactory(blockEntity); // RoastMC - modded block entities extending vanilla types
                 if (moddedFactory != null) {
                     factory = moddedFactory;
                 }

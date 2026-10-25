@@ -1,7 +1,7 @@
 package org.bukkit.map;
 
 import com.google.common.base.Preconditions;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;

@@ -31,17 +31,20 @@ dependencyResolutionManagement {
     }
 }
 
-if (rootProject.name.toLowerCase(Locale.ROOT) == "youer") {
+if (rootProject.name.toLowerCase(Locale.ROOT) == "roastmc") {
     // Solve name clashes between projects/neoforge and the rootProject for Eclipse.
-    rootProject.name = "Youer-Root"
+    rootProject.name = "RoastMC-Root"
 }
 
 include ':base'
 project(':base').projectDir = file('projects/base')
 include ':neoforge'
-project(':neoforge').projectDir = file('projects/youer')
+project(':neoforge').projectDir = file('projects/roastmc')
 
-include 'youerlauncher'
+include 'roastmclauncher'
+
+// Fabric loader support (standalone Loom build, kept separate because Loom and NeoGradle can't share a build)
+includeBuild 'fabric'
 
 include ':coremods'
 // Ensure a unique artifact id within JIJ that does not conflict with net.neoforged:coremods, which is

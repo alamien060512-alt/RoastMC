@@ -45,7 +45,7 @@
      public record Message(String text, MessageArgument.Part[] parts) {
          private Component resolveComponent(CommandSourceStack sender) throws CommandSyntaxException {
 -            return this.toComponent(sender, sender.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS));
-+            // Youer - prefer the Bukkit permission node, then NeoForge permission nodes
++            // RoastMC - prefer the Bukkit permission node, then NeoForge permission nodes
 +            return this.toComponent(sender, sender.hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS, "minecraft.command.selector")
 +                || net.neoforged.neoforge.common.CommonHooks.canUseEntitySelectors(sender));
          }

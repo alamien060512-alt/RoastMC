@@ -17,7 +17,7 @@
          }
  
 -        final JFrame frame = new JFrame("Minecraft server");
-+        final JFrame frame = new JFrame("Youer Minecraft server"); // Purpur - Improve GUI // Youer
++        final JFrame frame = new JFrame("RoastMC Minecraft server"); // Purpur - Improve GUI // RoastMC
          final MinecraftServerGui gui = new MinecraftServerGui(server);
          frame.setDefaultCloseOperation(2);
          frame.add(gui);
@@ -26,7 +26,7 @@
              public void windowClosing(WindowEvent event) {
                  if (!gui.isClosing.getAndSet(true)) {
 -                    frame.setTitle("Minecraft server - shutting down!");
-+                    frame.setTitle("Youer Minecraft server - shutting down!"); // Purpur - Improve GUI // Youer
++                    frame.setTitle("RoastMC Minecraft server - shutting down!"); // Purpur - Improve GUI // RoastMC
                      server.halt(true);
                      gui.runFinalizers();
                  }

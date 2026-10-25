@@ -1,6 +1,6 @@
 package gg.pufferfish.pufferfish.simd;
 
-import com.mohistmc.youer.Youer;
+import com.roastmc.neoforge.RoastMC;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorSpecies;
@@ -18,11 +18,11 @@ public class SIMDChecker {
             VectorSpecies<Integer> ISPEC = IntVector.SPECIES_PREFERRED;
             VectorSpecies<Float> FSPEC = FloatVector.SPECIES_PREFERRED;
 
-            Youer.LOGGER.info("Max SIMD vector size on this system is {} bits (int)", ISPEC.vectorBitSize());
-            Youer.LOGGER.info("Max SIMD vector size on this system is {} bits (float)", FSPEC.vectorBitSize());
+            RoastMC.LOGGER.info("Max SIMD vector size on this system is {} bits (int)", ISPEC.vectorBitSize());
+            RoastMC.LOGGER.info("Max SIMD vector size on this system is {} bits (float)", FSPEC.vectorBitSize());
 
             if (ISPEC.elementSize() < 2 || FSPEC.elementSize() < 2) {
-                Youer.LOGGER.warn("SIMD is not properly supported on this system!");
+                RoastMC.LOGGER.warn("SIMD is not properly supported on this system!");
                 return false;
             }
 

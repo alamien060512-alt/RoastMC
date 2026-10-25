@@ -55,14 +55,14 @@
      @Override
      public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity by, ItemStack itemStack) {
          if (!level.isClientSide()
-+            && !level.captureBlockStates && !level.captureBlockSnapshots // Youer - open the editor after the place event instead
++            && !level.captureBlockStates && !level.captureBlockSnapshots // RoastMC - open the editor after the place event instead
              && by instanceof ServerPlayer player
              && state.getBlock() instanceof SignBlock sign
              && level.getBlockEntity(pos) instanceof SignBlockEntity signEntity
              && !signEntity.isWaxed()
              && signEntity.getText(SignTextSlot.FRONT).hasEditableText(player.isTextFilteringEnabled())) {
 -            sign.openTextEdit(player, signEntity, SignTextSlot.FRONT);
-+            sign.openTextEdit(player, signEntity, SignTextSlot.FRONT, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // Paper - Add PlayerOpenSignEvent // Youer - opened after the place event in BlockEventDispatcher
++            sign.openTextEdit(player, signEntity, SignTextSlot.FRONT, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // Paper - Add PlayerOpenSignEvent // RoastMC - opened after the place event in BlockEventDispatcher
          }
      }
  }

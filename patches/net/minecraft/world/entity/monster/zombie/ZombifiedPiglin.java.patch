@@ -110,7 +110,7 @@
  
      @Override
      public void setTarget(@Nullable LivingEntity target) {
-+        this.setTarget(target, this.getTargetReason()); // Youer - keep the vanilla/NeoForge override entry point for mods
++        this.setTarget(target, this.getTargetReason()); // RoastMC - keep the vanilla/NeoForge override entry point for mods
 +    }
 +
 +    @Override

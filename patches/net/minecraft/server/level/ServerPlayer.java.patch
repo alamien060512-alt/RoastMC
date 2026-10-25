@@ -1223,7 +1223,7 @@
          this.containerMenu.broadcastChanges();
      }
  
-+    private boolean forceSleepInBed; // Youer - Scoped Paper force flag for the original four-argument method
++    private boolean forceSleepInBed; // RoastMC - Scoped Paper force flag for the original four-argument method
 +
      @Override
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(AbstractBedBlock bedBlock, BlockState bedBlockState, BedRule rule, BlockPos pos) {
@@ -1266,7 +1266,7 @@
 -
 -            Either<Player.BedSleepingProblem, Unit> result = super.startSleepInBed(bedBlock, bedBlockState, rule, pos).ifRight(unit -> {
 -                this.awardStat(bedBlock.getSleptInBedStatType());
-+        // Youer - Consume before any callbacks so reentrant unforced attempts do not inherit force.
++        // RoastMC - Consume before any callbacks so reentrant unforced attempts do not inherit force.
 +        boolean force = this.forceSleepInBed;
 +        this.forceSleepInBed = false;
 +        // Neo: Move this earlier, because it is used later on (outside the encapsulated logic)
@@ -1382,7 +1382,7 @@
 +        // Neo: The 'else' clause here attached to the first 'if'-expression is moved earlier
 +    }
 +
-+    // Youer - Keep server checks and the original super call in the four-argument method for mod mixins.
++    // RoastMC - Keep server checks and the original super call in the four-argument method for mod mixins.
 +    @Override
 +    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(AbstractBedBlock bedBlock, BlockState bedBlockState, BedRule rule, BlockPos pos, boolean force) {
 +        boolean previousForce = this.forceSleepInBed;
@@ -1493,7 +1493,7 @@
 +                },
 +                registryAccess()
 +            );
-+            // Youer start - fire InventoryOpenEvent for modded containers too, they use the advanced open screen packet
++            // RoastMC start - fire InventoryOpenEvent for modded containers too, they use the advanced open screen packet
 +            menu.containerOwner = this;
 +            boolean cancelled = false;
 +            // Paper start - Add titleOverride to InventoryOpenEvent
@@ -1502,8 +1502,8 @@
 +            title = io.papermc.paper.adventure.PaperAdventure.asVanilla(result.getFirst());
 +            // Paper end - Add titleOverride to InventoryOpenEvent
 +            boolean cancelScreen = false;
-+            if (menu != null && com.mohistmc.youer.api.event.ClientboundOpenScreenEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+                final com.mohistmc.youer.api.event.ClientboundOpenScreenEvent openScreenEvent = new com.mohistmc.youer.api.event.ClientboundOpenScreenEvent(this.getBukkitEntity(), menu);
++            if (menu != null && com.roastmc.neoforge.api.event.ClientboundOpenScreenEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                final com.roastmc.neoforge.api.event.ClientboundOpenScreenEvent openScreenEvent = new com.roastmc.neoforge.api.event.ClientboundOpenScreenEvent(this.getBukkitEntity(), menu);
 +                cancelScreen = !openScreenEvent.callEvent();
 +            }
 +            if ((menu == null && !cancelled) || cancelScreen) { // Let pre-cancelled events fall through
@@ -1520,7 +1520,7 @@
 +                }
 +                return OptionalInt.empty();
 +            }
-+            // Youer end
++            // RoastMC end
 +            if (extraData.length != 0) {
 +                this.connection.send(
 +                    new net.neoforged.neoforge.network.payload.AdvancedOpenScreenPayload(

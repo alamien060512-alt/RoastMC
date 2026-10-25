@@ -19,13 +19,13 @@ public final class ZeroCollidingReferenceStateTable<O, S> {
     private final Collection<Property<?>> properties;
 
     public ZeroCollidingReferenceStateTable(final Property<?>[] properties) {
-        // Youer start
+        // RoastMC start
         if (properties == null || properties.length == 0) {
             this.propertyToIndexer = new Int2ObjectOpenHashMap<>(0);
             this.properties = Collections.emptyList();
             return;
         }
-        // Youer end
+        // RoastMC end
         this.propertyToIndexer = new Int2ObjectOpenHashMap<>(properties.length);
         this.properties = ReferenceArrayList.wrap(properties.clone());
 
@@ -58,11 +58,11 @@ public final class ZeroCollidingReferenceStateTable<O, S> {
     }
 
     public long getIndex(final StateHolder<O, S> stateHolder, final Property<?>[] keys, final Comparable<?>[] values) {
-        // Youer start
+        // RoastMC start
         if (keys == null || keys.length == 0) {
             return 0L;
         }
-        // Youer end
+        // RoastMC end
         long ret = 0L;
 
         for (int i = 0; i < keys.length; ++i) {

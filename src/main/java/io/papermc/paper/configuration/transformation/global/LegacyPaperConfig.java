@@ -1,6 +1,6 @@
 package io.papermc.paper.configuration.transformation.global;
 
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import java.util.function.Predicate;

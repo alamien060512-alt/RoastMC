@@ -4,7 +4,7 @@
          private final LoadingCache<UUID, Optional<GameProfile>> profileCacheById;
  
          public Cached(SessionService sessionService, UserNameToIdResolver nameToIdCache) {
-+            this(sessionService, nameToIdCache, new io.papermc.paper.profile.PaperFilledProfileCache()); // Youer - keep the vanilla/NeoForge constructor for the client and mods
++            this(sessionService, nameToIdCache, new io.papermc.paper.profile.PaperFilledProfileCache()); // RoastMC - keep the vanilla/NeoForge constructor for the client and mods
 +        }
 +
 +        public Cached(SessionService sessionService, UserNameToIdResolver nameToIdCache, final io.papermc.paper.profile.PaperFilledProfileCache paperCache) { // Paper - add paperCache

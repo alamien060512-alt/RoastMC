@@ -27,7 +27,7 @@
 +    }
 +    // Paper end - add paper configuration files
 +
-+    public static Services create(MinecraftServicesDiscoveryService serviceAccess, File nameCacheDir) { // Youer - keep the vanilla/NeoForge entry point for the client and mods
++    public static Services create(MinecraftServicesDiscoveryService serviceAccess, File nameCacheDir) { // RoastMC - keep the vanilla/NeoForge entry point for the client and mods
          SessionService sessionService = serviceAccess.createMinecraftSessionService();
          GameProfileRepository profileRepository = serviceAccess.createProfileRepository();
 -        UserNameToIdResolver profileCache = new CachedUserNameToIdResolver(profileRepository, new File(nameCacheDir, "usercache.json"));

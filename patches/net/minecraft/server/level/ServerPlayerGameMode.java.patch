@@ -3,8 +3,8 @@
 @@ -1,5 +_,7 @@
  package net.minecraft.server.level;
  
-+import com.mohistmc.youer.feature.ban.bans.BanBlock;
-+import com.mohistmc.youer.feature.ban.bans.BanItem;
++import com.roastmc.neoforge.feature.ban.bans.BanBlock;
++import com.roastmc.neoforge.feature.ban.bans.BanItem;
  import com.mojang.logging.LogUtils;
  import java.util.List;
  import java.util.Objects;
@@ -263,8 +263,8 @@
 -        if (!this.player.getMainHandItem().canDestroyBlock(state, this.level, pos, this.player)) {
 -            return false;
 -        }
-+        if (BanBlock.check(state)) return false; // Youer
-+        if (BanItem.check(this.player)) return false; // Youer
++        if (BanBlock.check(state)) return false; // RoastMC
++        if (BanItem.check(this.player)) return false; // RoastMC
 +        var event = net.neoforged.neoforge.common.CommonHooks.fireBlockBreak(level, gameModeForPlayer, player, pos, state);
 +        if (event.isCanceled()) {
 +            return false;
@@ -434,7 +434,7 @@
          BlockPos pos = hitResult.getBlockPos();
          BlockState state = level.getBlockState(pos);
 +        if (BanBlock.check(state) || BanItem.check(player, state.getBlock().asItem().getDefaultInstance())) {
-+            callUseItemOn(state); // Youer
++            callUseItemOn(state); // RoastMC
 +            return InteractionResult.FAIL;
 +        }
 +        boolean cancelledBlock = false;
@@ -455,7 +455,7 @@
 +        this.interactItemStack = itemStack.copy();
 +
 +        if (bukkitevent.useInteractedBlock() == Event.Result.DENY) {
-+            callUseItemOn(state); // Youer
++            callUseItemOn(state); // RoastMC
 +            return (bukkitevent.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 +        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
              MenuProvider menuProvider = state.getMenuProvider(level, pos);

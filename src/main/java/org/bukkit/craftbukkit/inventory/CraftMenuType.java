@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Suppliers;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import io.papermc.paper.registry.HolderableBase;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;

@@ -1,6 +1,6 @@
 package io.papermc.paper.command;
 
-import com.mohistmc.youer.util.YouerVersion;
+import com.roastmc.neoforge.util.RoastMCVersion;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -123,13 +123,13 @@ public class PaperVersionCommand {
 
     private int serverVersion(CommandContext<CommandSourceStack> context) {
         final CommandSender sender = context.getSource().getSender();
-        // Youer start - report the loader and upstream builds instead of querying the update service
+        // RoastMC start - report the loader and upstream builds instead of querying the update service
         sender.sendMessage(Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE));
-        sender.sendMessage("Youer: " + YouerVersion.getVersion());
+        sender.sendMessage("RoastMC: " + RoastMCVersion.getVersion());
         sender.sendMessage("NeoForge: " + NeoForgeVersion.getVersion());
-        sender.sendMessage("Paper: " + YouerVersion.getPaperVersion());
-        sender.sendMessage("Purpur: " + YouerVersion.getPurpurVersion());
-        // Youer end
+        sender.sendMessage("Paper: " + RoastMCVersion.getPaperVersion());
+        sender.sendMessage("Purpur: " + RoastMCVersion.getPurpurVersion());
+        // RoastMC end
         return Command.SINGLE_SUCCESS;
     }
 }

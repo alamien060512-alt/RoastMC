@@ -171,11 +171,11 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            // Youer start - Neo replaces the vanilla TntBlock.prime tail call with this hook; priming TNT here would spawn two PrimedTnt
++            // RoastMC start - Neo replaces the vanilla TntBlock.prime tail call with this hook; priming TNT here would spawn two PrimedTnt
 +            if (!(oldState.getBlock() instanceof TntBlock)) {
 +                oldState.onCaughtFire(level, pos, face, null, net.minecraft.world.item.ItemStack.EMPTY);
 +            }
-+            // Youer end
++            // RoastMC end
 +
              if (random.nextInt(age + 10) < 5 && !level.isRainingAt(pos)) {
                  int newAge = Math.min(age + random.nextInt(5) / 4, 15);
@@ -195,7 +195,7 @@
 +                }
 +                level.removeBlock(pos, false);
 +                // Paper end - TNTPrimeEvent
-+                oldState.onCaughtFire(level, pos, face, null, net.minecraft.world.item.ItemStack.EMPTY); // Youer - prime only once the Paper event can no longer cancel it
++                oldState.onCaughtFire(level, pos, face, null, net.minecraft.world.item.ItemStack.EMPTY); // RoastMC - prime only once the Paper event can no longer cancel it
              }
          }
      }

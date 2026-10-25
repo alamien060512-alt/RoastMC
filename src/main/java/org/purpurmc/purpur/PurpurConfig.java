@@ -2,7 +2,7 @@ package org.purpurmc.purpur;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import com.mohistmc.youer.Youer;
+import com.roastmc.neoforge.RoastMC;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -231,7 +231,7 @@ public class PurpurConfig {
         deathMessageOnlyBroadcastToAffectedPlayer = getBoolean("settings.broadcasts.death.only-broadcast-to-affected-player", deathMessageOnlyBroadcastToAffectedPlayer);
     }
 
-    public static String serverModName = Youer.NAME;
+    public static String serverModName = RoastMC.NAME;
     private static void serverModName() {
         serverModName = getString("settings.server-mod-name", serverModName);
     }

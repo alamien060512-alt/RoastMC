@@ -3,7 +3,7 @@
 @@ -1,5 +_,6 @@
  package net.minecraft.world.item;
  
-+import com.mohistmc.youer.feature.ban.bans.BanItem;
++import com.roastmc.neoforge.feature.ban.bans.BanItem;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.core.Holder;
@@ -27,7 +27,7 @@
 +                capturedBlockStates = new java.util.ArrayList<>(serverLevel.capturedBlockStates.values());
 +                serverLevel.capturedBlockStates.clear();
 +                if (serverLevel.captureBlockSnapshots) {
-+                    serverLevel.capturedBlockSnapshots.clear(); // Youer - growth is reported through StructureGrowEvent/BlockFertilizeEvent, not as a block placement
++                    serverLevel.capturedBlockSnapshots.clear(); // RoastMC - growth is reported through StructureGrowEvent/BlockFertilizeEvent, not as a block placement
 +                }
 +
 +                treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
@@ -70,7 +70,7 @@
              boolean solidBlockFace = clickedState.isFaceSturdy(level, pos, context.getClickedFace());
              if (solidBlockFace && growWaterPlant(boneMealStack, level, relative, context.getClickedFace())) {
 +                if (player != null && level instanceof ServerLevel serverLevel && serverLevel.captureBlockSnapshots) {
-+                    serverLevel.capturedBlockSnapshots.clear(); // Youer - water plant growth is not a block placement
++                    serverLevel.capturedBlockSnapshots.clear(); // RoastMC - water plant growth is not a block placement
 +                }
                  if (!level.isClientSide()) {
 -                    boneMealStack.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH);

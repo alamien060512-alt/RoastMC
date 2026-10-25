@@ -241,7 +241,7 @@ public class NeoForgeAdvancementProvider extends AdvancementProvider {
             // Paper start add method to get the value for pre-filling builders in the reg mod API
             @Override
             public HolderLookup.Provider lookupForValueCopyViaBuilders() {
-                throw new UnsupportedOperationException("Youer does not support this method"); // TODO
+                throw new UnsupportedOperationException("RoastMC does not support this method"); // TODO
             }
             // Paper end - add method to get the value for pre-filling builders in the reg mod API
         });

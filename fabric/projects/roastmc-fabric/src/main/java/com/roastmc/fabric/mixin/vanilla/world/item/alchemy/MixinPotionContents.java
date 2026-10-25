@@ -1,0 +1,20 @@
+package com.roastmc.fabric.mixin.vanilla.world.item.alchemy;
+
+import net.minecraft.world.item.alchemy.PotionContents;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/**
+ * @author Mgazul
+ * @date 2026/6/8
+ */
+@Mixin(PotionContents.class)
+public class MixinPotionContents {
+
+    @Inject(method = { "<init>(Lnet/minecraft/core/Holder;)V", "<init>(Ljava/util/Optional;Ljava/util/Optional;Ljava/util/List;Ljava/util/Optional;)V" }, at = @At("RETURN"))
+    private void roastmc_init(CallbackInfo ci) {
+        // CraftBukkit
+    }
+}

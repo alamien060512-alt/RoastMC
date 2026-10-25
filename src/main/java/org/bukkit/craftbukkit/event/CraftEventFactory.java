@@ -3,8 +3,8 @@ package org.bukkit.craftbukkit.event;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
-import com.mohistmc.youer.api.MenuAPI;
-import com.mohistmc.youer.bukkit.inventory.YouerModsInventory;
+import com.roastmc.neoforge.api.MenuAPI;
+import com.roastmc.neoforge.bukkit.inventory.RoastMCModsInventory;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -1427,10 +1427,10 @@ public class CraftEventFactory {
         CraftPlayer craftPlayer = player.getBukkitEntity();
         player.containerMenu.transferTo(container, craftPlayer);
 
-        // Youer start - expose modded menu types through Inventory#getType()
+        // RoastMC start - expose modded menu types through Inventory#getType()
         InventoryView view = container.getBukkitView();
         if (view == null) {
-            org.bukkit.inventory.Inventory inventory = new CraftInventory(new YouerModsInventory(container, player));
+            org.bukkit.inventory.Inventory inventory = new CraftInventory(new RoastMCModsInventory(container, player));
             view = new CraftInventoryView<>(craftPlayer, inventory, container);
         }
         InventoryType menuInventoryType = MenuAPI.getInventoryType(container);
@@ -1440,7 +1440,7 @@ public class CraftEventFactory {
             }
         }
         InventoryOpenEvent event = new InventoryOpenEvent(view);
-        // Youer end
+        // RoastMC end
         event.setCancelled(cancelled);
         server.getPluginManager().callEvent(event);
 
@@ -1634,7 +1634,7 @@ public class CraftEventFactory {
         human.containerMenu.containerOwner = human;
         InventoryView view = human.containerMenu.getBukkitView();
         if (view == null) {
-            org.bukkit.inventory.Inventory inventory = new CraftInventory(new YouerModsInventory(human.containerMenu, human));
+            org.bukkit.inventory.Inventory inventory = new CraftInventory(new RoastMCModsInventory(human.containerMenu, human));
             view = new CraftInventoryView<>(human.getBukkitEntity(), inventory, human.containerMenu);
         }
         InventoryCloseEvent event = new InventoryCloseEvent(view, reason); // Paper

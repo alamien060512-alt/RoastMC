@@ -1,6 +1,6 @@
-# Youer Database Configuration
+# RoastMC Database Configuration
 # Each feature can independently choose its database backend: "sqlite" (default) or "mysql"
-# SQLite data is stored in youer-config/database/youer.db
+# SQLite data is stored in roastmc-config/database/roastmc.db
 # MySQL data uses the shared connection configured below
 
 database:
@@ -12,7 +12,7 @@ database:
     jdbc-url: "jdbc:mysql://127.0.0.1:3306/minecraft?useSSL=false&allowPublicKeyRetrieval=true"
     username: "root"
     password: ""
-    table-prefix: "youer"
+    table-prefix: "roastmc"
 
   # Feature-specific database backend selection
   features:

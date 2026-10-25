@@ -35,11 +35,20 @@ jobs:
         chmod +x ./gradlew
         ./gradlew setup
 
-    - name: Build with Gradle Wrapper
-      run: ./gradlew youerJar
+    - name: Build RoastMC (NeoForge)
+      run: ./gradlew roastmcJar
 
-    - name: Upload a Build Artifact
+    - name: Build RoastMC (Fabric)
+      run: ./gradlew fabricJar
+
+    - name: Upload NeoForge build
       uses: actions/upload-artifact@v6
       with:
-        name: Youer-26.3-server
-        path: projects/youer/build/libs/*-server.jar
+        name: RoastMC-NeoForge-26.3-server
+        path: projects/roastmc/build/libs/*-server.jar
+
+    - name: Upload Fabric build
+      uses: actions/upload-artifact@v6
+      with:
+        name: RoastMC-Fabric-26.3-server
+        path: fabric/build/libs/*-server.jar

@@ -20,7 +20,7 @@ license="LGPL v2.1"
     config = "neoforge.mixins.json"
 
 [[mixins]]
-    config = "youer.mixins.json"
+    config = "roastmc.mixins.json"
 
 [[accessTransformers]]
     file="META-INF/accesstransformer.cfg"

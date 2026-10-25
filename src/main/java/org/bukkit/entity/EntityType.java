@@ -1,7 +1,7 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.mohistmc.youer.api.ServerAPI;
+import com.roastmc.neoforge.api.ServerAPI;
 import io.papermc.paper.InternalAPIBridge;
 import java.util.HashMap;
 import java.util.Locale;

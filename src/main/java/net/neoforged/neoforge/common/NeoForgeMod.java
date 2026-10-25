@@ -5,7 +5,7 @@
 
 package net.neoforged.neoforge.common;
 
-import com.mohistmc.youer.Youer;
+import com.roastmc.neoforge.RoastMC;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -620,7 +620,7 @@ public class NeoForgeMod {
         if (NeoForgeVersion.getBuildType() == NeoForgeBuildType.PULL_REQUEST) {
             ModLoader.addLoadingIssue(ModLoadingIssue.warning("loadwarning.neoforge.prbuild").withAffectedMod(container.getModInfo()));
         }
-        new Youer(modEventBus, dist, container);
+        new RoastMC(modEventBus, dist, container);
     }
 
     public void preInit(FMLCommonSetupEvent evt) {

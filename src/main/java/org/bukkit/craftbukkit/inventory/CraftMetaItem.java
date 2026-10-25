@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DynamicOps;
 import io.papermc.paper.registry.RegistryKey;

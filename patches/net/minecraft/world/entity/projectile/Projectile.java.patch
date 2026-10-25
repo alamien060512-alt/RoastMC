@@ -13,7 +13,7 @@
      public boolean hasBeenShot = false;
      private @Nullable Entity lastDeflectedBy;
 +    protected boolean hitCancelled = false; // CraftBukkit
-+    /** Youer: one-shot gate run after the shoot function and before {@code addFreshEntity}; returning false skips the spawn. Lets callers fire events after initial motion is applied. */
++    /** RoastMC: one-shot gate run after the shoot function and before {@code addFreshEntity}; returning false skips the spawn. Lets callers fire events after initial motion is applied. */
 +    public java.util.function.@Nullable Predicate<Projectile> preSpawnHook = null;
  
      protected Projectile(EntityType<? extends Projectile> type, Level level) {
@@ -138,7 +138,7 @@
          shootFunction.accept(projectile);
 -        serverLevel.addFreshEntity(projectile);
 -        projectile.applyOnProjectileSpawned(serverLevel, itemStack);
-+        // Youer start - fire events after the shot is applied but before spawning
++        // RoastMC start - fire events after the shot is applied but before spawning
 +        java.util.function.Predicate<Projectile> hook = projectile.preSpawnHook;
 +        if (hook != null) {
 +            projectile.preSpawnHook = null;
@@ -146,7 +146,7 @@
 +                return projectile;
 +            }
 +        }
-+        // Youer end
++        // RoastMC end
 +        if (serverLevel.addFreshEntity(projectile)) {
 +            projectile.applyOnProjectileSpawned(serverLevel, itemStack);
 +        }

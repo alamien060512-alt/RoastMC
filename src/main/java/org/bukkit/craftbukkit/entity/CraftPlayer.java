@@ -5,7 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
@@ -3046,7 +3046,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // resetTitle implemented above
 
     private @Nullable Set<net.kyori.adventure.bossbar.BossBar> activeBossBars;
-    private Map<net.kyori.adventure.bossbar.BossBar, BossBarImplementationImpl> bossBarImplementation = new HashMap<>(); // Youer TODO
+    private Map<net.kyori.adventure.bossbar.BossBar, BossBarImplementationImpl> bossBarImplementation = new HashMap<>(); // RoastMC TODO
 
     @Override
     public @NonNull Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars() {

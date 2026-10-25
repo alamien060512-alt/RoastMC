@@ -16,7 +16,7 @@
 -        if (this.usesSelector && !sender.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS)) {
 +        if (!sender.bypassSelectorPermissions && this.usesSelector
 +            && !sender.hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS, "minecraft.command.selector") // CraftBukkit // Paper - add bypass for selector perms
-+            && !net.neoforged.neoforge.common.CommonHooks.canUseEntitySelectors(sender)) { // Youer - also honour NeoForge permission nodes
++            && !net.neoforged.neoforge.common.CommonHooks.canUseEntitySelectors(sender)) { // RoastMC - also honour NeoForge permission nodes
              throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
          }
      }
