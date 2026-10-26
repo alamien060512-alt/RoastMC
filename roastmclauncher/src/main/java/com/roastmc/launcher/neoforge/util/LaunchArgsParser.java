@@ -163,10 +163,9 @@ public class LaunchArgsParser {
      */
     static String withConnectorLibraries(String classpath) throws IOException {
         List<String> entries = new ArrayList<>(Arrays.asList(classpath.split(File.pathSeparator)));
-        Path universal = entries.stream().map(Paths::get)
-                .filter(p -> p.getFileName().toString().endsWith("-universal.jar"))
-                .findFirst().orElse(null);
-        if (universal == null || !Files.exists(universal)) {
+        // FML loads the neoforge jar from the libraries folder itself, it is not on the classpath
+        Path universal = findUniversalJar(Paths.get("libraries", "net", "neoforged", "neoforge"));
+        if (universal == null) {
             return classpath;
         }
         Path dir = Paths.get("libraries", "roastmc", "connector");
@@ -193,6 +192,15 @@ public class LaunchArgsParser {
         }
         extractPackages(universal, outputs);
         return String.join(File.pathSeparator, entries);
+    }
+
+    private static Path findUniversalJar(Path root) throws IOException {
+        if (!Files.isDirectory(root)) {
+            return null;
+        }
+        try (var files = Files.walk(root, 3)) {
+            return files.filter(p -> p.getFileName().toString().endsWith("-universal.jar")).findFirst().orElse(null);
+        }
     }
 
     /** Moves the given package prefixes out of {@code universal} into one new jar per prefix. */
