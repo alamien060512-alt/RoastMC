@@ -58,6 +58,8 @@
   <nav aria-label="Sections">
     <a href="#overview">Overview</a>
     <a href="#install">Install and run</a>
+    <a href="#windows">&nbsp;&nbsp;Windows</a>
+    <a href="#linux">&nbsp;&nbsp;Linux and macOS</a>
     <a href="#loaders">Choosing the loader</a>
     <a href="#fabric-mods">Fabric mods on NeoForge</a>
     <a href="#config">Configuration</a>
@@ -81,14 +83,48 @@
     <div class="note">Fabric and NeoForge cannot run inside the same Minecraft. A server runs one edition at a time. To use Fabric mods on the NeoForge edition, see <a href="#fabric-mods">Fabric mods on NeoForge</a>.</div>
 
     <h2 id="install">Install and run</h2>
+    <p>You need Java 25, one RoastMC jar, and an empty folder for the server. Do not double-click the jar: the server needs a console window, so start it from a script or a terminal as shown below.</p>
+
+    <h3 id="download">1. Get the jar</h3>
+    <ul>
+      <li><strong>From GitHub Actions:</strong> open the <a href="https://github.com/alamien060512-alt/RoastMC/actions/workflows/gradle.yml">Build workflow</a>, open the latest successful run, and download <code>RoastMC-All-26.2-server</code> from the <em>Artifacts</em> section at the bottom. You must be signed in to GitHub. It downloads as a <code>.zip</code>; extract it to get <code>roastmc-26.2-all.jar</code>.</li>
+      <li><strong>Build it yourself:</strong> see <a href="#build">Building from source</a>.</li>
+    </ul>
+    <p>Use the <code>-all</code> jar. It contains both editions and lets you pick the loader in <code>server.properties</code> (see <a href="#loaders">Choosing the loader</a>).</p>
+
+    <h3 id="windows">2. Run on Windows</h3>
     <ol>
-      <li>Install <a href="https://adoptium.net/">Java 25</a>.</li>
-      <li>Get the jar: build it yourself (<a href="#build">Building from source</a>) or take the <code>RoastMC-All</code> artifact from the latest successful run of the <em>Build</em> workflow on GitHub Actions.</li>
-      <li>Put the jar in an empty folder and start it:
-<pre><code>java -Xmx4G -jar roastmc-26.2-all.jar nogui</code></pre></li>
-      <li>On first start, accept the EULA by setting <code>eula=true</code> in <code>eula.txt</code>, then start again.</li>
+      <li><strong>Install Java 25.</strong> Download the Windows <code>.msi</code> for JDK 25 from <a href="https://adoptium.net/temurin/releases/?version=25">Adoptium</a> (x64). In the installer, enable <em>Add to PATH</em> and <em>Set JAVA_HOME</em>.</li>
+      <li><strong>Check it worked.</strong> Open a new <em>Command Prompt</em> or <em>PowerShell</em> window and run:
+<pre><code>java -version</code></pre>
+        It should print a version starting with <code>25</code>. If Windows says <code>'java' is not recognized</code>, close and reopen the window, or reinstall with <em>Add to PATH</em> enabled.</li>
+      <li><strong>Make a server folder</strong>, for example <code>C:\RoastMC</code>, and put <code>roastmc-26.2-all.jar</code> in it.</li>
+      <li><strong>Create the start script.</strong> In Notepad, paste:
+<pre><code>@echo off
+java -Xmx4G -jar roastmc-26.2-all.jar nogui
+pause</code></pre>
+        Choose <em>File &rarr; Save As</em>, set <em>Save as type</em> to <em>All files</em>, and name it <code>start.bat</code> in the same folder. (If you save as "Text document" you get <code>start.bat.txt</code>, which will not run. In File Explorer, turn on <em>View &rarr; Show &rarr; File name extensions</em> to check.)</li>
+      <li><strong>Start the server.</strong> Double-click <code>start.bat</code>. The first start downloads Minecraft and libraries and then stops because of the EULA. This is normal.</li>
+      <li><strong>Accept the EULA.</strong> Open <code>eula.txt</code> in Notepad, change <code>eula=false</code> to <code>eula=true</code>, save, and double-click <code>start.bat</code> again.</li>
+      <li><strong>Allow network access.</strong> If Windows Defender Firewall asks, allow Java on private networks, and on public networks too if friends outside your home network will join. To host over the internet, forward TCP port <code>25565</code> on your router to this PC.</li>
+      <li><strong>Join.</strong> In Minecraft, add the server as <code>localhost</code> if you are on the same PC, or use your PC's local or public IP address.</li>
     </ol>
-    <p>The first start downloads Minecraft and libraries, so it takes a while. Put NeoForge or Fabric mods in <code>mods/</code> and plugins in <code>plugins/</code>.</p>
+    <p>To stop the server cleanly, type <code>stop</code> in its window and press Enter. Closing the window or pressing Ctrl+C may skip the world save.</p>
+    <p>Change <code>-Xmx4G</code> to use more or less memory, for example <code>-Xmx6G</code>. Do not give it more than your PC can spare.</p>
+
+    <h3 id="linux">Run on Linux or macOS</h3>
+    <p>Install Java 25 (for example from <a href="https://adoptium.net/temurin/releases/?version=25">Adoptium</a> or your package manager), then:</p>
+<pre><code>mkdir roastmc && cd roastmc
+# put roastmc-26.2-all.jar here
+java -Xmx4G -jar roastmc-26.2-all.jar nogui</code></pre>
+    <p>As on Windows, set <code>eula=true</code> in <code>eula.txt</code> after the first start and run it again. To keep it running after you close the terminal, use <code>screen</code> or <code>tmux</code>.</p>
+
+    <h3 id="first-start">3. After the first start</h3>
+    <ul>
+      <li><code>server.properties</code> now contains the loader keys <code>neoforge</code>, <code>fabric</code> and <code>paper</code>. Edit them and restart to switch loader.</li>
+      <li>Put mods in <code>mods/</code> and plugins in <code>plugins/</code>, then restart.</li>
+      <li>Downloaded libraries and the unpacked editions live in <code>libraries/</code>. You can delete that folder to force a clean re-download.</li>
+    </ul>
 
     <h2 id="loaders">Choosing the loader</h2>
     <p>The unified jar reads three keys from <code>server.properties</code>. They are added automatically on first start. Edit them and restart to switch.</p>
@@ -175,6 +211,12 @@ paper=true</code></pre>
     <p>Connector and its dependencies are not published for your Minecraft version. The server runs without Fabric support. Use a Minecraft version Connector supports, or wait for a release.</p>
     <h3>Fabric mods crash or are ignored</h3>
     <p>Confirm <code>fabric=true</code> and <code>neoforge=true</code>, that the three Connector jars are in <code>mods/</code>, and that the mod is supported by Connector. Remove mods one at a time to find the culprit.</p>
+    <h3>The window flashes and closes (Windows)</h3>
+    <p>Run <code>start.bat</code> from a Command Prompt (<code>cd C:\RoastMC</code>, then <code>start.bat</code>) to read the error. The script ends with <code>pause</code>, so if the window still closes instantly, the file may really be <code>start.bat.txt</code>.</p>
+    <h3>"Unsupported class file major version" or "UnsupportedClassVersionError"</h3>
+    <p>Your Java is too old. RoastMC needs Java 25. Check with <code>java -version</code>, and make sure an older Java is not earlier on your PATH.</p>
+    <h3>Port already in use</h3>
+    <p>Another server is already using port 25565. Close it, or change <code>server-port</code> in <code>server.properties</code>.</p>
     <h3>Out of memory while starting</h3>
     <p>Raise <code>-Xmx</code>, for example <code>java -Xmx6G -jar ...</code>.</p>
     <h3>Switching loaders on an existing world</h3>
