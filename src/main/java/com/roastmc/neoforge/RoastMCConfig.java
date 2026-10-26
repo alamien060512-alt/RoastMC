@@ -53,7 +53,7 @@ public class RoastMCConfig {
             """.split("\\n"));
     /*========================================================================*/
     public static YamlConfiguration config;
-    public static File roastmcyml = new File("roastmc-config", "roastmc.yml");
+    public static File roastmcyml = new File("config/roastmc", "roastmc.yml");
     public static YamlConfiguration yml = YamlConfiguration.loadConfiguration(roastmcyml);
     public static boolean show_logo;
     public static String roastmc_lang;

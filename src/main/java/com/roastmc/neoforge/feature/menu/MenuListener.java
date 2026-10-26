@@ -28,7 +28,7 @@ public class MenuListener {
         }
 
         // Scan all menu config files
-        File menuFolder = new File("roastmc-config/menu");
+        File menuFolder = new File("config/roastmc/menu");
         if (!menuFolder.exists() || !menuFolder.isDirectory()) {
             return;
         }

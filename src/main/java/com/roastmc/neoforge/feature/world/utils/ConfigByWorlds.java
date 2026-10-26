@@ -20,7 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class ConfigByWorlds {
-    public static File f = new File("roastmc-config", "worlds.yml");
+    public static File f = new File("config/roastmc", "worlds.yml");
     public static FileConfiguration config = YamlConfiguration.loadConfiguration(ConfigByWorlds.f);
 
     public static void addInfo(String w, String info) {

@@ -7,7 +7,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 public class RoastMCPluginConfig {
 
-    public static final String CONFIG_FILE = "roastmc-config";
+    public static final String CONFIG_FILE = "config/roastmc";
     public final FileConfiguration yaml;
     public final File config;
 

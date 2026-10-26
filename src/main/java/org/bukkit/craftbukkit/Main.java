@@ -82,13 +82,13 @@ public class Main {
                 this.acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
                         .ofType(File.class)
-                        .defaultsTo(new File("bukkit.yml"))
+                        .defaultsTo(new File("config", "bukkit.yml"))
                         .describedAs("Yml file");
 
                 this.acceptsAll(asList("C", "commands-settings"), "File for command settings")
                         .withRequiredArg()
                         .ofType(File.class)
-                        .defaultsTo(new File("commands.yml"))
+                        .defaultsTo(new File("config", "commands.yml"))
                         .describedAs("Yml file");
 
                 this.accepts("forceUpgrade", "Whether to force a world upgrade");
@@ -112,7 +112,7 @@ public class Main {
                 this.acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
                         .withRequiredArg()
                         .ofType(File.class)
-                        .defaultsTo(new File("spigot.yml"))
+                        .defaultsTo(new File("config", "spigot.yml"))
                         .describedAs("Yml file");
 
                 this.acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
@@ -143,7 +143,7 @@ public class Main {
                 this.acceptsAll(asList("purpur", "purpur-settings"), "File for purpur settings")
                     .withRequiredArg()
                     .ofType(File.class)
-                    .defaultsTo(new File("purpur.yml"))
+                    .defaultsTo(new File("config", "purpur.yml"))
                     .describedAs("Yml file");
                 // Purpur end - Purpur config files
 
