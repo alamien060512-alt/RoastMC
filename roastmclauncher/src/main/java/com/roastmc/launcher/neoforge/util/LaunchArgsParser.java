@@ -21,6 +21,10 @@ public class LaunchArgsParser {
     private static final String ADD_OPENS_PREFIX = "--add-opens ";
     private static final String ADD_EXPORTS_PREFIX = "--add-exports ";
     private static final String CLASSPATH_ARG = "-classpath";
+    /** Set by the unified launcher when Sinytra Connector is installed. */
+    public static final String CONNECTOR_PROPERTY = "roastmc.connector";
+    private static final List<String> BUNDLED_LIBRARIES = List.of(
+            "/com/mojang/authlib/", "/com/mojang/brigadier/", "/com/mojang/datafixerupper/", "/com/mojang/logging/");
     private static final String SYSTEM_PROPERTY_PREFIX = "-D";
     private static final String MODULE_SEPARATOR = "=";
     private static final String PACKAGE_SEPARATOR = "/";
@@ -126,12 +130,31 @@ public class LaunchArgsParser {
         }
 
         if (classpath != null) {
+            if (Boolean.getBoolean(CONNECTOR_PROPERTY)) {
+                classpath = withoutBundledLibraries(classpath);
+            }
             System.setProperty("java.class.path", classpath);
             loadModules(classpath);
         }
 
         addOpens(opens);
         addExports(exports);
+    }
+
+    /**
+     * The neoforge module already contains the complete authlib, brigadier, DataFixerUpper and logging
+     * packages (see the extract*Classes tasks in projects/roastmc/build.gradle), so that patched and original
+     * classes live in one module. The separate library jars would become a second module exporting the same
+     * packages, and any module that reads both (such as the ones Sinytra Connector generates for Fabric mods)
+     * then fails module resolution. Only dropped when Connector is in use.
+     */
+    static String withoutBundledLibraries(String classpath) {
+        return Arrays.stream(classpath.split(File.pathSeparator))
+                .filter(entry -> {
+                    String normalized = entry.replace('\\', '/');
+                    return BUNDLED_LIBRARIES.stream().noneMatch(normalized::contains);
+                })
+                .collect(java.util.stream.Collectors.joining(File.pathSeparator));
     }
 
     public static void loadModules(String modulePath) {

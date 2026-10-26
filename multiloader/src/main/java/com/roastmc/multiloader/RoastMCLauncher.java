@@ -59,14 +59,16 @@ public final class RoastMCLauncher {
         System.out.println("[RoastMC] Minecraft " + mc + ", starting the " + selection.edition().description + " edition"
                 + (selection.connector() ? " with Fabric mod support (Sinytra Connector)" : ""));
 
+        boolean connectorActive = false;
         if (selection.connector()) {
             var result = new ConnectorInstaller(ConnectorInstaller.DEFAULT_API, m -> System.out.println("[RoastMC] " + m))
                     .install(mc, Path.of("mods"));
             System.out.println("[RoastMC] " + (result.installed() ? "" : "WARNING: ") + result.message());
+            connectorActive = result.installed();
         }
 
         Path jar = extractEdition(selection.edition(), mc);
-        System.exit(run(jar, args));
+        System.exit(run(jar, args, connectorActive));
     }
 
     static String minecraftVersion() throws IOException {
@@ -96,13 +98,17 @@ public final class RoastMCLauncher {
         return target;
     }
 
-    private static int run(Path jar, String[] args) throws IOException, InterruptedException {
+    private static int run(Path jar, String[] args, boolean connectorActive) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
         command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
         for (String arg : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
             if (!arg.startsWith("-Djava.class.path")) {
                 command.add(arg);
             }
+        }
+        if (connectorActive) {
+            // Tells the NeoForge edition's launcher to avoid duplicate library modules (see LaunchArgsParser)
+            command.add("-Droastmc.connector=true");
         }
         command.add("-jar");
         command.add(jar.toString());
