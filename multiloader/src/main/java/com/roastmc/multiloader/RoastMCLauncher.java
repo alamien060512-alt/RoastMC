@@ -29,7 +29,20 @@ public final class RoastMCLauncher {
     private RoastMCLauncher() {
     }
 
-    static void main(String[] args) throws Exception {
+    /** Editions are built for this Java version (and the game needs it). */
+    static final int REQUIRED_JAVA = 25;
+
+    public static void main(String[] args) throws Exception {
+        // Keep this check first and free of other classes: this launcher is compiled for an older Java than the editions.
+        int java = Runtime.version().feature();
+        if (java < REQUIRED_JAVA) {
+            System.err.println("[RoastMC] RoastMC needs Java " + REQUIRED_JAVA + " or newer, but this is Java " + java
+                    + " (" + System.getProperty("java.home") + ").");
+            System.err.println("[RoastMC] Install Java " + REQUIRED_JAVA + " from https://adoptium.net/temurin/releases/?version="
+                    + REQUIRED_JAVA + " and make sure 'java -version' shows it, then start again.");
+            System.exit(1);
+            return;
+        }
         System.out.println(LOGO);
         String mc = minecraftVersion();
 

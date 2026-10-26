@@ -13,13 +13,6 @@ project.ext.gitAbbreviatedId = gradleutils.gitInfo.abbreviatedId
 System.out.println("Git Commit " + project.ext.gitAbbreviatedId)
 // RoastMC end
 
-// Fabric build (./fabric) is a separate included build; this exposes it from the root.
-tasks.register('fabricJar') {
-    group = 'build'
-    description = 'Builds the RoastMC Fabric server jar'
-    dependsOn gradle.includedBuild('fabric').task(':jar')
-}
-
 allprojects {
     version = rootProject.version
     group = 'net.neoforged'
