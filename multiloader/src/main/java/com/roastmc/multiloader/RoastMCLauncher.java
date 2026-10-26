@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Entry point of the unified RoastMC jar. Reads server.properties, optionally provisions
@@ -66,8 +67,9 @@ public final class RoastMCLauncher {
             }
         }
         if (selection.connector()) {
-            System.out.println("[RoastMC] WARNING: Fabric mod support (neoforge=true + fabric=true) is experimental and currently "
-                    + "fails to start because of Mixin conflicts with RoastMC's patches. Set fabric=false if the server does not start.");
+            System.out.println("[RoastMC] NOTE: Fabric mod support (neoforge=true + fabric=true) is experimental. RoastMC changes parts of "
+                    + "Minecraft that some Fabric API features hook into, so those features are switched off, and mods that rewrite "
+                    + "large parts of vanilla (for example Lithium) will not work. Set fabric=false to turn it off.");
             var result = new ConnectorInstaller(ConnectorInstaller.DEFAULT_API, m -> System.out.println("[RoastMC] " + m))
                     .install(mc, Path.of("mods"));
             System.out.println("[RoastMC] " + (result.installed() ? "" : "WARNING: ") + result.message());
@@ -91,7 +93,61 @@ public final class RoastMCLauncher {
             jvmProperties.add("-Dfabric.modsFolder=" + fabricMods);
             System.out.println("[RoastMC] Fabric mods go in " + fabricMods + "/");
         }
+        if (connectorActive) {
+            System.exit(runWithFabricCompat(jar, args, jvmProperties));
+        }
         System.exit(run(jar, args, jvmProperties));
+    }
+
+    /** Most automatic "remove one incompatible mixin and restart" rounds before giving up. */
+    private static final int MAX_COMPAT_ROUNDS = 30;
+
+    /**
+     * Runs the NeoForge edition with Fabric support. Fabric jars are adapted first; if startup still fails because
+     * one more mixin cannot apply, that mixin is removed (and remembered) and the server is restarted.
+     */
+    private static int runWithFabricCompat(Path jar, String[] args, List<String> jvmProperties) throws IOException, InterruptedException {
+        Path modsDir = Path.of("mods");
+        Path state = Path.of("config", "roastmc", "fabric-compat.json");
+        java.util.function.Consumer<String> log = m -> System.out.println("[RoastMC] " + m);
+        Set<FabricCompat.Prune> prunes = FabricCompat.loadPrunes(state);
+        for (int round = 1; ; round++) {
+            FabricCompat.prepare(modsDir, prunes, log);
+            Path world = Path.of(levelName());
+            boolean hadWorld = Files.exists(world);
+            long started = System.currentTimeMillis();
+            int code = run(jar, args, jvmProperties);
+            if (code == 0 || round >= MAX_COMPAT_ROUNDS) {
+                return code;
+            }
+            Path serverLog = Path.of("logs", "latest.log");
+            if (!Files.exists(serverLog) || Files.getLastModifiedTime(serverLog).toMillis() < started) {
+                return code;
+            }
+            String text = Files.readString(serverLog, java.nio.charset.StandardCharsets.UTF_8);
+            if (text.contains("Done (")) {
+                return code; // it ran; this is not a startup incompatibility
+            }
+            FabricCompat.Prune failing = FabricCompat.diagnose(text);
+            if (failing == null || !prunes.add(failing)) {
+                return code;
+            }
+            FabricCompat.savePrunes(state, prunes);
+            if (!hadWorld) {
+                FabricCompat.deleteTree(world); // do not keep a world half-created by the failed start
+            }
+            log.accept("Fabric API's " + failing.mixin() + " (" + failing.config() + ") cannot work with RoastMC's patches. "
+                    + "Switching that feature off and restarting (round " + round + ").");
+        }
+    }
+
+    private static String levelName() {
+        try {
+            Properties properties = ServerProperties.loadAndEnsureKeys(Path.of("server.properties"));
+            return properties.getProperty("level-name", "world");
+        } catch (IOException e) {
+            return "world";
+        }
     }
 
     static String minecraftVersion() throws IOException {
