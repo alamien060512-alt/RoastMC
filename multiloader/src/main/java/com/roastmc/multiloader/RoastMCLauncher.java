@@ -136,7 +136,7 @@ public final class RoastMCLauncher {
             if (!hadWorld) {
                 FabricCompat.deleteTree(world); // do not keep a world half-created by the failed start
             }
-            log.accept("Fabric API's " + failing.mixin() + " (" + failing.config() + ") cannot work with RoastMC's patches. "
+            log.accept("Fabric mixin " + failing.mixin() + " (" + failing.config() + ") cannot work with RoastMC's patches. "
                     + "Switching that feature off and restarting (round " + round + ").");
         }
     }
