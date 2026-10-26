@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -176,22 +175,26 @@ public class LaunchArgsParser {
         split.put("/com/mojang/authlib/", "com/mojang/authlib/");
         split.put("/com/mojang/brigadier/", "com/mojang/brigadier/");
 
-        Map<String, Path> outputs = new LinkedHashMap<>();
+        List<Split> splits = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
             String normalized = entries.get(i).replace('\\', '/');
             for (Map.Entry<String, String> e : split.entrySet()) {
                 if (normalized.contains(e.getKey())) {
-                    Path patched = dir.resolve(Paths.get(entries.get(i)).getFileName().toString());
-                    outputs.put(e.getValue(), patched);
+                    Path original = Paths.get(entries.get(i));
+                    Path patched = dir.resolve(original.getFileName().toString());
+                    splits.add(new Split(e.getValue(), original, patched));
                     entries.set(i, patched.toString());
                 }
             }
         }
-        if (outputs.isEmpty()) {
+        if (splits.isEmpty()) {
             return classpath;
         }
-        extractPackages(universal, outputs);
+        mergeLibraries(universal, splits);
         return String.join(File.pathSeparator, entries);
+    }
+
+    private record Split(String prefix, Path original, Path patched) {
     }
 
     private static Path findUniversalJar(Path root) throws IOException {
@@ -203,48 +206,63 @@ public class LaunchArgsParser {
         }
     }
 
-    /** Moves the given package prefixes out of {@code universal} into one new jar per prefix. */
-    private static void extractPackages(Path universal, Map<String, Path> outputs) throws IOException {
-        Path stripped = universal.resolveSibling(universal.getFileName() + ".tmp");
-        Map<String, ZipOutputStream> streams = new LinkedHashMap<>();
-        boolean moved = false;
-        try (ZipFile in = new ZipFile(universal.toFile());
-             ZipOutputStream rest = new ZipOutputStream(Files.newOutputStream(stripped))) {
-            for (Map.Entry<String, Path> e : outputs.entrySet()) {
-                ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(e.getValue()));
-                out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
-                out.write("Manifest-Version: 1.0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
-                out.closeEntry();
-                streams.put(e.getKey(), out);
-            }
-            try {
-                for (ZipEntry entry : Collections.list(in.entries())) {
-                    ZipOutputStream target = rest;
-                    for (Map.Entry<String, ZipOutputStream> e : streams.entrySet()) {
-                        if (entry.getName().startsWith(e.getKey())) {
-                            target = e.getValue();
-                            moved = true;
-                        }
-                    }
-                    target.putNextEntry(new ZipEntry(entry.getName()));
-                    if (!entry.isDirectory()) {
-                        try (InputStream is = in.getInputStream(entry)) {
-                            is.transferTo(target);
-                        }
-                    }
-                    target.closeEntry();
+    /**
+     * Writes, for each split, a jar with everything from the original library jar except the bundled package
+     * (the original classes of that package are superseded), plus the bundled package from the neoforge jar, which
+     * includes the patched classes. The bundled package is then removed from the neoforge jar.
+     */
+    private static void mergeLibraries(Path universal, List<Split> splits) throws IOException {
+        for (Split split : splits) {
+            try (ZipFile probe = new ZipFile(universal.toFile())) {
+                // Already split on an earlier start and the neoforge jar was not extracted again: keep what we built
+                if (Collections.list(probe.entries()).stream().noneMatch(e -> e.getName().startsWith(split.prefix()))
+                        && Files.exists(split.patched())) {
+                    continue;
                 }
-            } finally {
-                for (ZipOutputStream out : streams.values()) {
-                    out.close();
+            }
+            try (ZipFile original = new ZipFile(split.original().toFile());
+                 ZipFile bundled = new ZipFile(universal.toFile());
+                 ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(split.patched()))) {
+                for (ZipEntry entry : Collections.list(original.entries())) {
+                    if (!entry.getName().startsWith(split.prefix())) {
+                        copyEntry(original, entry, out);
+                    }
+                }
+                for (ZipEntry entry : Collections.list(bundled.entries())) {
+                    if (entry.getName().startsWith(split.prefix())) {
+                        copyEntry(bundled, entry, out);
+                    }
                 }
             }
         }
-        if (moved) {
+
+        Path stripped = universal.resolveSibling(universal.getFileName() + ".tmp");
+        boolean removed = false;
+        try (ZipFile in = new ZipFile(universal.toFile());
+             ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(stripped))) {
+            for (ZipEntry entry : Collections.list(in.entries())) {
+                if (splits.stream().anyMatch(s -> entry.getName().startsWith(s.prefix()))) {
+                    removed = true;
+                } else {
+                    copyEntry(in, entry, out);
+                }
+            }
+        }
+        if (removed) {
             Files.move(stripped, universal, StandardCopyOption.REPLACE_EXISTING);
         } else {
             Files.deleteIfExists(stripped);
         }
+    }
+
+    private static void copyEntry(ZipFile from, ZipEntry entry, ZipOutputStream to) throws IOException {
+        to.putNextEntry(new ZipEntry(entry.getName()));
+        if (!entry.isDirectory()) {
+            try (InputStream is = from.getInputStream(entry)) {
+                is.transferTo(to);
+            }
+        }
+        to.closeEntry();
     }
 
     public static void loadModules(String modulePath) {
