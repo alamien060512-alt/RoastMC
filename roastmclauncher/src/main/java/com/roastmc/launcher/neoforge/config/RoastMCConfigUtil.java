@@ -26,7 +26,7 @@ import java.util.Locale;
 
 public class RoastMCConfigUtil {
 
-    public static final File roastmc_yml = new File("roastmc-config", "roastmc.yml");
+    public static final File roastmc_yml = new File("config/roastmc", "roastmc.yml");
     public static final YamlConfiguration yml = YamlConfiguration.loadConfiguration(roastmc_yml);
 
     public static void init() {

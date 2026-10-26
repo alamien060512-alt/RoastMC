@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * @date 2026/07/01
  *
  * Manages database connections for all feature modules.
- * - SQLite: single shared file roastmc-config/database/roastmc.db, each module uses its own table
+ * - SQLite: single shared file config/roastmc/database/roastmc.db, each module uses its own table
  * - MySQL: shared connection, differentiated by table names
  */
 public class DatabaseManager {

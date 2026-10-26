@@ -154,7 +154,18 @@ paper=true</code></pre>
     <div class="note">Connector is also a third-party project and still in beta, and not every Fabric mod works. Check <a href="https://connector.sinytra.org">connector.sinytra.org</a> for mod compatibility.</div>
 
     <h2 id="config">Configuration</h2>
-    <p>NeoForge edition settings live in <code>roastmc-config/roastmc.yml</code>, created on first start. Main groups:</p>
+    <p>Everything is in one place. Only <code>server.properties</code> (including the <code>neoforge</code>, <code>fabric</code> and <code>paper</code> loader keys) lives next to the jar; every other setting is under <code>config/</code>:</p>
+<pre><code>server.properties          loader keys + normal Minecraft settings
+config/
+  roastmc/                 RoastMC's own settings
+    roastmc.yml            main RoastMC options
+    database.yml, commands.yml, menu/ ...
+  bukkit.yml  spigot.yml  purpur.yml  commands.yml     plugin API settings
+  paper-global.yml  paper-world-defaults.yml           Paper settings
+  neoforge-common.toml  neoforge-server.toml  fml.toml  NeoForge settings
+  (and one file per mod)</code></pre>
+    <p>You will usually only touch <code>config/roastmc/roastmc.yml</code> and, for plugins, the file named after the API you are tuning. Servers from older versions are migrated automatically on first start: <code>bukkit.yml</code>, <code>spigot.yml</code>, <code>purpur.yml</code> and <code>commands.yml</code> are moved from the server folder into <code>config/</code>, and <code>roastmc-config/</code> becomes <code>config/roastmc/</code>. Nothing is overwritten.</p>
+    <p>Main groups in <code>config/roastmc/roastmc.yml</code> (NeoForge edition):</p>
     <table>
       <tr><th>Key prefix</th><th>What it controls</th></tr>
       <tr><td><code>roastmc.*</code></td><td>Language (<code>roastmc.lang</code>), startup logo, library check, auto-delete of server-incompatible mods</td></tr>
@@ -168,7 +179,7 @@ paper=true</code></pre>
       <tr><td><code>backup_world.*</code></td><td>Scheduled world backups (interval, maximum number, zstd)</td></tr>
       <tr><td><code>networkmanager.*</code>, <code>pluginchannel.*</code>, <code>permissions.debug.*</code></td><td>Debug output</td></tr>
     </table>
-    <p>The file is commented and lists every option.</p>
+    <p>The file is commented and lists every option. The Fabric edition currently creates no extra config files.</p>
 
     <h2 id="commands">Commands</h2>
     <p>NeoForge edition. Each command is gated by a permission node <code>roastmc.command.&lt;name&gt;</code>.</p>

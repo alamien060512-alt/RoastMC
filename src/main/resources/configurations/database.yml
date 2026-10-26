@@ -1,6 +1,6 @@
 # RoastMC Database Configuration
 # Each feature can independently choose its database backend: "sqlite" (default) or "mysql"
-# SQLite data is stored in roastmc-config/database/roastmc.db
+# SQLite data is stored in config/roastmc/database/roastmc.db
 # MySQL data uses the shared connection configured below
 
 database:

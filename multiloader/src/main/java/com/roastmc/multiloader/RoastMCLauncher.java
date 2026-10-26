@@ -69,6 +69,10 @@ public final class RoastMCLauncher {
             connectorActive = result.installed();
         }
 
+        if (selection.edition() == LoaderSelection.Edition.NEOFORGE) {
+            ConfigMigration.migrate(Path.of("."), m -> System.out.println("[RoastMC] " + m));
+        }
+
         Path jar = extractEdition(selection.edition(), mc);
         System.exit(run(jar, args, connectorActive));
     }
