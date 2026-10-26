@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoastMC Docs</title>
+<meta name="description" content="Documentation for RoastMC, multiloader Minecraft server software for NeoForge and Fabric.">
+<style>
+  :root {
+    --bg: #fbfaf8; --panel: #ffffff; --text: #1d1b19; --muted: #6b655f; --line: #e6e1da;
+    --accent: #c2410c; --code-bg: #f3efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161412; --panel: #1f1c19; --text: #ece7e1; --muted: #a39b92; --line: #332e29; --accent: #fb923c; --code-bg: #272320; }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); }
+  header { border-bottom: 1px solid var(--line); background: var(--panel); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { font-weight: 700; letter-spacing: .2px; color: var(--text); text-decoration: none; }
+  .brand span { color: var(--accent); }
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 40px; padding-top: 32px; padding-bottom: 64px; }
+  nav { position: sticky; top: 16px; align-self: start; font-size: 15px; }
+  nav a { display: block; padding: 5px 0; color: var(--muted); text-decoration: none; }
+  nav a:hover { color: var(--accent); }
+  main { min-width: 0; }
+  h1 { font-size: 2rem; margin: 0 0 8px; }
+  h2 { font-size: 1.35rem; margin: 48px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 24px 0 4px; }
+  p, ul, ol { margin: 10px 0; }
+  .lead { color: var(--muted); font-size: 1.1rem; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--line); }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 15px; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .note { border-left: 3px solid var(--accent); background: var(--panel); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 20px 0 32px; }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; gap: 8px; }
+    nav { position: static; display: flex; flex-wrap: wrap; gap: 4px 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top">Roast<span>MC</span> docs</a>
+    <a href="https://github.com/alamien060512-alt/RoastMC">GitHub</a>
+  </div>
+</header>
+
+<div class="wrap layout" id="top">
+  <nav aria-label="Sections">
+    <a href="#overview">Overview</a>
+    <a href="#install">Install and run</a>
+    <a href="#loaders">Choosing the loader</a>
+    <a href="#fabric-mods">Fabric mods on NeoForge</a>
+    <a href="#config">Configuration</a>
+    <a href="#commands">Commands</a>
+    <a href="#build">Building from source</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="#credits">Credits</a>
+  </nav>
+
+  <main>
+    <h1>RoastMC</h1>
+    <p class="lead">Multiloader Minecraft server software. One project, one jar, your choice of NeoForge or Fabric, with Bukkit-style plugins on top.</p>
+
+    <h2 id="overview">Overview</h2>
+    <table>
+      <tr><th>Edition</th><th>Mods</th><th>Plugin API</th><th>Source</th></tr>
+      <tr><td>NeoForge</td><td>NeoForge</td><td>Paper / Purpur</td><td>Repository root</td></tr>
+      <tr><td>Fabric</td><td>Fabric</td><td>Spigot</td><td><code>fabric/</code></td></tr>
+    </table>
+    <p>Current target: <strong>Minecraft 26.2</strong>, Java 25.</p>
+    <div class="note">Fabric and NeoForge cannot run inside the same Minecraft. A server runs one edition at a time. To use Fabric mods on the NeoForge edition, see <a href="#fabric-mods">Fabric mods on NeoForge</a>.</div>
+
+    <h2 id="install">Install and run</h2>
+    <ol>
+      <li>Install <a href="https://adoptium.net/">Java 25</a>.</li>
+      <li>Get the jar: build it yourself (<a href="#build">Building from source</a>) or take the <code>RoastMC-All</code> artifact from the latest successful run of the <em>Build</em> workflow on GitHub Actions.</li>
+      <li>Put the jar in an empty folder and start it:
+<pre><code>java -Xmx4G -jar roastmc-26.2-all.jar nogui</code></pre></li>
+      <li>On first start, accept the EULA by setting <code>eula=true</code> in <code>eula.txt</code>, then start again.</li>
+    </ol>
+    <p>The first start downloads Minecraft and libraries, so it takes a while. Put NeoForge or Fabric mods in <code>mods/</code> and plugins in <code>plugins/</code>.</p>
+
+    <h2 id="loaders">Choosing the loader</h2>
+    <p>The unified jar reads three keys from <code>server.properties</code>. They are added automatically on first start. Edit them and restart to switch.</p>
+<pre><code>neoforge=true
+fabric=false
+paper=true</code></pre>
+    <table>
+      <tr><th><code>neoforge</code></th><th><code>fabric</code></th><th>Starts</th></tr>
+      <tr><td>true</td><td>false</td><td>NeoForge edition (Paper/Purpur API)</td></tr>
+      <tr><td>false</td><td>true</td><td>Fabric edition (Spigot API)</td></tr>
+      <tr><td>true</td><td>true</td><td>NeoForge edition plus Sinytra Connector, so Fabric mods load too</td></tr>
+      <tr><td>false</td><td>false</td><td>Refuses to start</td></tr>
+    </table>
+    <p><code>paper</code> cannot be disabled on the NeoForge edition, because the Paper API is part of it, so <code>paper=false</code> is ignored with a warning. With only <code>fabric=true</code>, <code>paper=true</code> has no effect because the Fabric edition uses the Spigot API.</p>
+    <p>Each edition runs in its own JVM. Your JVM arguments (such as <code>-Xmx</code>) and program arguments (such as <code>nogui</code>) are passed through.</p>
+
+    <h2 id="fabric-mods">Fabric mods on NeoForge</h2>
+    <p>With <code>neoforge=true</code> and <code>fabric=true</code>, the launcher sets up <a href="https://github.com/Sinytra/Connector">Sinytra Connector</a>, a compatibility layer that runs Fabric mods on NeoForge.</p>
+    <ul>
+      <li>It downloads Connector and its required dependencies (Forgified Fabric API, Launchpad) from Modrinth into <code>mods/</code> for the running Minecraft version.</li>
+      <li>Downloads are checked against Modrinth's SHA-512 hashes. Nothing is installed unless every required piece exists.</li>
+      <li>Files are tracked in <code>mods/.roastmc-connector</code> and updated on later starts.</li>
+      <li>A Connector jar you placed in <code>mods/</code> yourself is left alone.</li>
+      <li>If Modrinth has no build for your Minecraft version, or is unreachable, the server starts without Fabric support and prints why.</li>
+    </ul>
+    <div class="note">Connector is a third-party project and still in beta. It has not been tested against RoastMC's patched NeoForge yet, and not every Fabric mod works. Check <a href="https://connector.sinytra.org">connector.sinytra.org</a> for mod compatibility.</div>
+
+    <h2 id="config">Configuration</h2>
+    <p>NeoForge edition settings live in <code>roastmc-config/roastmc.yml</code>, created on first start. Main groups:</p>
+    <table>
+      <tr><th>Key prefix</th><th>What it controls</th></tr>
+      <tr><td><code>roastmc.*</code></td><td>Language (<code>roastmc.lang</code>), startup logo, library check, auto-delete of server-incompatible mods</td></tr>
+      <tr><td><code>anvilfix.*</code></td><td>Maximum repair cost and enchantment levels</td></tr>
+      <tr><td><code>keepinventory.*</code></td><td>Keep inventory and XP, globally or by permission</td></tr>
+      <tr><td><code>entity.clear.*</code></td><td>Periodic clearing of dropped items and monsters, with whitelists and messages</td></tr>
+      <tr><td><code>bans.*</code></td><td>Banning items, blocks, entities, enchantments, recipes, worlds, structures and effects</td></tr>
+      <tr><td><code>events.*</code></td><td>Fire tick, explosions, join and quit messages</td></tr>
+      <tr><td><code>custom.*</code></td><td>Misc tweaks: villagers, spawners, sign commands, lava speed, end/nether teleport of entities</td></tr>
+      <tr><td><code>player_modlist_blacklist.*</code></td><td>Block clients that have blacklisted mods</td></tr>
+      <tr><td><code>backup_world.*</code></td><td>Scheduled world backups (interval, maximum number, zstd)</td></tr>
+      <tr><td><code>networkmanager.*</code>, <code>pluginchannel.*</code>, <code>permissions.debug.*</code></td><td>Debug output</td></tr>
+    </table>
+    <p>The file is commented and lists every option.</p>
+
+    <h2 id="commands">Commands</h2>
+    <p>NeoForge edition. Each command is gated by a permission node <code>roastmc.command.&lt;name&gt;</code>.</p>
+    <table>
+      <tr><th>Command</th><th>Purpose</th></tr>
+      <tr><td><code>/roastmc</code></td><td>Server tools: <code>info</code>, <code>mods</code>, <code>playermods</code>, <code>reload</code>, <code>version</code>, <code>modchannels</code>, <code>speed</code>, <code>printthreadcost</code>, <code>packetstats</code>, <code>heal</code>, <code>cleardropitem</code>, <code>memoryfix</code>, <code>showp</code>, <code>backupworld</code>, <code>migratedb</code>, <code>help</code></td></tr>
+      <tr><td><code>/dump</code></td><td>Dump server data: <code>potions</code>, <code>enchants</code>, <code>entitytypes</code>, <code>biomes</code>, <code>material</code>, <code>channels</code>, <code>advancements</code>, and more</td></tr>
+      <tr><td><code>/items</code></td><td>Item tools: <code>name</code>, <code>save</code>, <code>list</code>, <code>get</code>, <code>give</code>, <code>remove</code>, <code>lore</code>, <code>attribute</code>, <code>rarity</code>, <code>modeldata</code></td></tr>
+      <tr><td><code>/permission check</code></td><td>Check a permission</td></tr>
+      <tr><td><code>/bans</code></td><td>Manage the ban lists configured under <code>bans.*</code></td></tr>
+      <tr><td><code>/shows</code>, <code>/infos</code></td><td>Extra information commands</td></tr>
+    </table>
+    <p>Run <code>/roastmc help</code> in game or console for the full list for your version.</p>
+
+    <h2 id="build">Building from source</h2>
+    <p>Requires JDK 25 and about 4 GB of free RAM for Minecraft decompilation.</p>
+<pre><code>./gradlew setup          # first time only
+./gradlew roastmcJar     # NeoForge edition
+./gradlew fabricJar      # Fabric edition
+./gradlew roastmcAllJar  # unified jar with both editions</code></pre>
+    <table>
+      <tr><th>Task</th><th>Output</th></tr>
+      <tr><td><code>roastmcJar</code></td><td><code>projects/roastmc/build/libs/*-server.jar</code></td></tr>
+      <tr><td><code>fabricJar</code></td><td><code>fabric/build/libs/*-server.jar</code></td></tr>
+      <tr><td><code>roastmcAllJar</code></td><td><code>multiloader/build/libs/*-all.jar</code></td></tr>
+    </table>
+    <p>The Fabric edition is a separate Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) that the root build includes with <code>includeBuild</code>. Run <code>./gradlew :multiloader:test</code> for the launcher's unit tests.</p>
+    <h3>Repository layout</h3>
+    <table>
+      <tr><th>Path</th><th>Contents</th></tr>
+      <tr><td><code>patches/</code>, <code>src/</code>, <code>projects/roastmc/</code></td><td>NeoForge edition (patches over Minecraft, RoastMC code)</td></tr>
+      <tr><td><code>roastmclauncher/</code></td><td>NeoForge edition's launcher and library installer</td></tr>
+      <tr><td><code>fabric/</code></td><td>Fabric edition (Loom build, Bukkit/CraftBukkit/Spigot layer, launcher)</td></tr>
+      <tr><td><code>multiloader/</code></td><td>Unified launcher, loader selection and Connector installer</td></tr>
+    </table>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <h3>"Neither 'neoforge' nor 'fabric' is enabled"</h3>
+    <p>Set at least one of them to <code>true</code> in <code>server.properties</code>.</p>
+    <h3>"has no NeoForge build for Minecraft ... yet"</h3>
+    <p>Connector and its dependencies are not published for your Minecraft version. The server runs without Fabric support. Use a Minecraft version Connector supports, or wait for a release.</p>
+    <h3>Fabric mods crash or are ignored</h3>
+    <p>Confirm <code>fabric=true</code> and <code>neoforge=true</code>, that the three Connector jars are in <code>mods/</code>, and that the mod is supported by Connector. Remove mods one at a time to find the culprit.</p>
+    <h3>Out of memory while starting</h3>
+    <p>Raise <code>-Xmx</code>, for example <code>java -Xmx6G -jar ...</code>.</p>
+    <h3>Switching loaders on an existing world</h3>
+    <p>Back up first. Worlds and mod data created under one loader are not guaranteed to load under the other.</p>
+
+    <h2 id="credits">Credits</h2>
+    <p>RoastMC builds on <a href="https://github.com/MohistMC/Youer">Youer</a> and <a href="https://github.com/MohistMC/Silkard">Silkard</a> by MohistMC, and on <a href="https://neoforged.net/">NeoForge</a>, <a href="https://fabricmc.net/">Fabric</a>, <a href="https://papermc.io/">Paper</a>, <a href="https://purpurmc.org/">Purpur</a>, <a href="https://www.spigotmc.org/">Spigot</a>, <a href="https://github.com/IzzelAliz/Arclight">Arclight</a> and <a href="https://github.com/Sinytra/Connector">Sinytra Connector</a>. Licensing follows the upstream projects; see <code>LICENSE.md</code> and the <code>LICENCE/</code> folder.</p>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">RoastMC documentation. <a href="https://github.com/alamien060512-alt/RoastMC">Source on GitHub</a>.</div>
+</footer>
+</body>
+</html>
