@@ -117,7 +117,8 @@ public final class RoastMCLauncher {
             boolean hadWorld = Files.exists(world);
             long started = System.currentTimeMillis();
             int code = run(jar, args, jvmProperties);
-            if (code == 0 || round >= MAX_COMPAT_ROUNDS) {
+            // Decide by the log, not the exit code: a crash after the world started loading still exits with 0
+            if (round >= MAX_COMPAT_ROUNDS) {
                 return code;
             }
             Path serverLog = Path.of("logs", "latest.log");
