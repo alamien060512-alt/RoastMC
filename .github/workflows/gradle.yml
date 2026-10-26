@@ -9,9 +9,9 @@ name: Build
 
 on:
   push:
-    branches: [ "26.2" ]
+    branches: [ "26.2", "26.3" ]
   pull_request:
-    branches: [ "26.2" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,6 +34,9 @@ jobs:
       run: |
         chmod +x ./gradlew
         ./gradlew setup
+
+    - name: Launcher unit tests
+      run: ./gradlew :multiloader:test
 
     - name: Build RoastMC (NeoForge)
       run: ./gradlew roastmcJar

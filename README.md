@@ -73,8 +73,7 @@ Connector is a third-party, still-beta project, and it has not been tested again
 
 ## 📚 Documentation
 
-- [English Documentation](https://github.com/alamien060512-alt/RoastMC)
-- [中文文档](https://github.com/alamien060512-alt/RoastMC)
+- [Documentation site](https://alamien060512-alt.github.io/RoastMC/) (source in [`docs/index.html`](docs/index.html))
 
 ## ⚙️ Technical Stack
 
