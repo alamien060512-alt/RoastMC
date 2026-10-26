@@ -122,7 +122,7 @@ java -Xmx4G -jar roastmc-26.2-all.jar nogui</code></pre>
     <h3 id="first-start">3. After the first start</h3>
     <ul>
       <li><code>server.properties</code> now contains the loader keys <code>neoforge</code>, <code>fabric</code> and <code>paper</code>. Edit them and restart to switch loader.</li>
-      <li>Put mods in <code>mods/</code> and plugins in <code>plugins/</code>, then restart.</li>
+      <li>Put plugins in <code>plugins/</code>. Mods go in different folders depending on the loader: <strong>NeoForge mods in <code>mods/</code></strong> (NeoForge cannot read another folder) and <strong>Fabric mods in <code>mods/fabric/</code></strong> (created automatically when you start the Fabric edition). Then restart.</li>
       <li>Downloaded libraries and the unpacked editions live in <code>libraries/</code>. You can delete that folder to force a clean re-download.</li>
     </ul>
 
@@ -139,6 +139,7 @@ paper=true</code></pre>
       <tr><td>false</td><td>false</td><td>Refuses to start</td></tr>
     </table>
     <p><code>paper</code> cannot be disabled on the NeoForge edition, because the Paper API is part of it, so <code>paper=false</code> is ignored with a warning. With only <code>fabric=true</code>, <code>paper=true</code> has no effect because the Fabric edition uses the Spigot API.</p>
+    <p>New servers start from a default <code>server.properties</code> (MOTD, player limit, difficulty and so on) that you can change in the source: <code>multiloader/src/main/resources/default-server.properties</code>. It is only used when the server has no <code>server.properties</code> yet.</p>
     <p>Each edition runs in its own JVM. Your JVM arguments (such as <code>-Xmx</code>) and program arguments (such as <code>nogui</code>) are passed through.</p>
 
     <h2 id="fabric-mods">Fabric mods on NeoForge</h2>
@@ -148,6 +149,7 @@ paper=true</code></pre>
       <li>Downloads are checked against Modrinth's SHA-512 hashes. Nothing is installed unless every required piece exists.</li>
       <li>Files are tracked in <code>mods/.roastmc-connector</code> and updated on later starts.</li>
       <li>A Connector jar you placed in <code>mods/</code> yourself is left alone.</li>
+      <li>When you set <code>fabric=false</code> again, the files RoastMC downloaded are removed from <code>mods/</code> automatically, so plain NeoForge stops loading Connector. Your own mods are never touched.</li>
       <li>If Modrinth has no build for your Minecraft version, or is unreachable, the server starts without Fabric support and prints why.</li>
     </ul>
     <div class="note"><strong>Experimental, does not start yet.</strong> Connector and its dependencies download and load, but the server then stops with a Mixin error such as <code>Critical injection failure ... beforeAddEffect ... fabric-entity-events-v1</code>. Forgified Fabric API patches vanilla methods, and RoastMC's Bukkit patches change some of those methods (for example <code>LivingEntity.addEffect</code> gains a Bukkit <code>cause</code> parameter), so the patch targets no longer exist. Each such mismatch needs a compatibility fix inside RoastMC, and one is enough to stop startup. Until that is done, keep <code>fabric=false</code> when <code>neoforge=true</code>, or use <code>neoforge=false</code> and <code>fabric=true</code> to run the Fabric edition.</div>

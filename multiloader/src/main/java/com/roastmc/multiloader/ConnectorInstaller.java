@@ -108,6 +108,27 @@ public final class ConnectorInstaller {
         }
     }
 
+    /**
+     * Removes the Connector files this installer put in the mods folder (listed in the manifest), so a server
+     * that switched back to plain NeoForge does not keep loading Connector. Files you added yourself are untouched.
+     *
+     * @return the removed file names
+     */
+    public static List<String> uninstall(Path modsDir) throws IOException {
+        Path manifest = modsDir.resolve(MANIFEST);
+        if (!Files.exists(manifest)) {
+            return List.of();
+        }
+        List<String> removed = new ArrayList<>();
+        for (String name : Files.readAllLines(manifest)) {
+            if (isPlainFilename(name) && Files.deleteIfExists(modsDir.resolve(name))) {
+                removed.add(name);
+            }
+        }
+        Files.delete(manifest);
+        return removed;
+    }
+
     private Result fallback(List<String> previous, Path modsDir, String reason) {
         boolean present = !previous.isEmpty() && previous.stream().allMatch(f -> isPlainFilename(f) && Files.exists(modsDir.resolve(f)));
         if (present) {

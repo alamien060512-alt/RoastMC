@@ -60,6 +60,11 @@ public final class RoastMCLauncher {
                 + (selection.connector() ? " with Fabric mod support (Sinytra Connector)" : ""));
 
         boolean connectorActive = false;
+        if (!selection.connector()) {
+            for (String removed : ConnectorInstaller.uninstall(Path.of("mods"))) {
+                System.out.println("[RoastMC] Removed " + removed + " (Fabric mod support is off)");
+            }
+        }
         if (selection.connector()) {
             System.out.println("[RoastMC] WARNING: Fabric mod support (neoforge=true + fabric=true) is experimental and currently "
                     + "fails to start because of Mixin conflicts with RoastMC's patches. Set fabric=false if the server does not start.");
@@ -74,7 +79,19 @@ public final class RoastMCLauncher {
         }
 
         Path jar = extractEdition(selection.edition(), mc);
-        System.exit(run(jar, args, connectorActive));
+        List<String> jvmProperties = new ArrayList<>();
+        if (connectorActive) {
+            // Tells the NeoForge edition's launcher to avoid duplicate library modules (see LaunchArgsParser)
+            jvmProperties.add("-Droastmc.connector=true");
+        }
+        if (selection.edition() == LoaderSelection.Edition.FABRIC) {
+            // FML's mods folder is fixed to mods/, but Fabric Loader can be pointed elsewhere
+            Path fabricMods = Path.of("mods", "fabric");
+            Files.createDirectories(fabricMods);
+            jvmProperties.add("-Dfabric.modsFolder=" + fabricMods);
+            System.out.println("[RoastMC] Fabric mods go in " + fabricMods + "/");
+        }
+        System.exit(run(jar, args, jvmProperties));
     }
 
     static String minecraftVersion() throws IOException {
@@ -104,7 +121,7 @@ public final class RoastMCLauncher {
         return target;
     }
 
-    private static int run(Path jar, String[] args, boolean connectorActive) throws IOException, InterruptedException {
+    private static int run(Path jar, String[] args, List<String> jvmProperties) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
         command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
         for (String arg : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
@@ -112,10 +129,7 @@ public final class RoastMCLauncher {
                 command.add(arg);
             }
         }
-        if (connectorActive) {
-            // Tells the NeoForge edition's launcher to avoid duplicate library modules (see LaunchArgsParser)
-            command.add("-Droastmc.connector=true");
-        }
+        command.addAll(jvmProperties);
         command.add("-jar");
         command.add(jar.toString());
         command.addAll(List.of(args));
