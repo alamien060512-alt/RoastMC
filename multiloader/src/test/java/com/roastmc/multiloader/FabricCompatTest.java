@@ -132,11 +132,24 @@ class FabricCompatTest {
     }
 
     @Test
+    void adaptingAJarDropsConnectorsCachedCopy(@TempDir Path dir) throws Exception {
+        Path mods = Files.createDirectories(dir.resolve("mods"));
+        Path cache = Files.createDirectories(dir.resolve(".cache/connector"));
+        byte[] fabricJar = zip(new String[] {"fabric.mod.json", "x.mixins.json"}, new byte[][] {"{}".getBytes(), CONFIG.getBytes(StandardCharsets.UTF_8)});
+        Files.write(mods.resolve("fab.jar"), fabricJar);
+        Files.writeString(cache.resolve("fab.jar"), "stale");
+        Files.writeString(cache.resolve("other.jar"), "keep");
+        FabricCompat.prepare(mods, new LinkedHashSet<>(), m -> { });
+        assertFalse(Files.exists(cache.resolve("fab.jar")), "stale transformed copy removed");
+        assertTrue(Files.exists(cache.resolve("other.jar")), "other cache entries stay");
+    }
+
+    @Test
     void stateRoundTripStoresOnlyDiscoveredPrunes(@TempDir Path dir) throws Exception {
         Path state = dir.resolve("config/roastmc/fabric-compat.json");
         Set<FabricCompat.Prune> prunes = FabricCompat.loadPrunes(state);
         int known = prunes.size();
-        assertTrue(known >= 6, "built-in list is loaded");
+        assertTrue(known >= 12, "built-in list is loaded");
         prunes.add(new FabricCompat.Prune("lithium.mixins.json", "Foo"));
         FabricCompat.savePrunes(state, prunes);
         String saved = Files.readString(state);

@@ -145,6 +145,11 @@ public final class FabricCompat {
             Files.write(tmp, withMarker);
             Files.move(tmp, jar, StandardCopyOption.REPLACE_EXISTING);
             changed.add(jar);
+            // Connector keeps a transformed copy of each Fabric jar; make sure it is not reused for the changed jar
+            Path parent = modsDir.toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.deleteIfExists(parent.resolve(".cache").resolve("connector").resolve(jar.getFileName().toString()));
+            }
             log.accept("Adapted " + jar.getFileName() + " for RoastMC");
         }
         return changed;

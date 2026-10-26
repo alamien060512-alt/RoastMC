@@ -123,14 +123,22 @@ public final class RoastMCLauncher {
             }
             Path serverLog = Path.of("logs", "latest.log");
             if (!Files.exists(serverLog) || Files.getLastModifiedTime(serverLog).toMillis() < started) {
+                log.accept("Server stopped (code " + code + "); no fresh logs/latest.log to analyse, not retrying.");
                 return code;
             }
-            String text = Files.readString(serverLog, java.nio.charset.StandardCharsets.UTF_8);
+            // Lenient decoding: a log with odd bytes must not stop the analysis
+            String text = new String(Files.readAllBytes(serverLog), java.nio.charset.StandardCharsets.UTF_8);
             if (text.contains("Done (")) {
                 return code; // it ran; this is not a startup incompatibility
             }
             FabricCompat.Prune failing = FabricCompat.diagnose(text);
-            if (failing == null || !prunes.add(failing)) {
+            if (failing == null) {
+                log.accept("Server stopped (code " + code + ") before finishing startup, but no failing Fabric mixin is named in logs/latest.log, not retrying.");
+                return code;
+            }
+            if (!prunes.add(failing)) {
+                log.accept("Fabric mixin " + failing.mixin() + " (" + failing.config() + ") still fails after being removed. Not retrying. "
+                        + "Delete the .cache/connector folder and start again; if it still fails, remove the mod from mods/.");
                 return code;
             }
             FabricCompat.savePrunes(state, prunes);
