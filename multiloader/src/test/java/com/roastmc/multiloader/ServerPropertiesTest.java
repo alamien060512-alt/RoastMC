@@ -21,6 +21,13 @@ class ServerPropertiesTest {
     }
 
     @Test
+    void newServerStartsFromBundledTemplate(@TempDir Path dir) throws Exception {
+        var p = ServerProperties.loadAndEnsureKeys(dir.resolve("server.properties"));
+        assertEquals("A RoastMC Server", p.getProperty("motd"));
+        assertEquals("20", p.getProperty("max-players"));
+    }
+
+    @Test
     void keepsExistingContentAndValues(@TempDir Path dir) throws Exception {
         Path file = dir.resolve("server.properties");
         Files.writeString(file, "motd=Hi\nfabric=true"); // no trailing newline

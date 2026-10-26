@@ -1,6 +1,7 @@
 package com.roastmc.multiloader;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,7 +21,23 @@ public final class ServerProperties {
     private ServerProperties() {
     }
 
+    /** Starts new servers from the bundled default-server.properties, if present in the jar. */
+    private static void writeTemplate(Path file) throws IOException {
+        try (InputStream in = ServerProperties.class.getResourceAsStream("/default-server.properties")) {
+            if (in != null) {
+                Path parent = file.toAbsolutePath().getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+                Files.copy(in, file);
+            }
+        }
+    }
+
     public static Properties loadAndEnsureKeys(Path file) throws IOException {
+        if (!Files.exists(file)) {
+            writeTemplate(file);
+        }
         Properties properties = new Properties();
         if (Files.exists(file)) {
             try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {

@@ -138,6 +138,21 @@ class ConnectorInstallerTest {
     }
 
     @Test
+    void uninstallRemovesOnlyManagedFiles(@TempDir Path mods) throws Exception {
+        Files.writeString(mods.resolve("connector.jar"), "x");
+        Files.writeString(mods.resolve("worldedit.jar"), "mine");
+        Files.writeString(mods.resolve(ConnectorInstaller.MANIFEST), "connector.jar\n../evil.jar\n");
+
+        var removed = ConnectorInstaller.uninstall(mods);
+
+        assertEquals(java.util.List.of("connector.jar"), removed);
+        assertFalse(Files.exists(mods.resolve("connector.jar")));
+        assertFalse(Files.exists(mods.resolve(ConnectorInstaller.MANIFEST)));
+        assertEquals("mine", Files.readString(mods.resolve("worldedit.jar")));
+        assertTrue(ConnectorInstaller.uninstall(mods).isEmpty());
+    }
+
+    @Test
     void offlineKeepsPreviouslyInstalledFiles(@TempDir Path mods) throws Exception {
         Files.writeString(mods.resolve("connector.jar"), "x");
         Files.writeString(mods.resolve(ConnectorInstaller.MANIFEST), "connector.jar\n");
