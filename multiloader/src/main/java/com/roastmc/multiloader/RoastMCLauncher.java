@@ -61,6 +61,8 @@ public final class RoastMCLauncher {
 
         boolean connectorActive = false;
         if (selection.connector()) {
+            System.out.println("[RoastMC] WARNING: Fabric mod support (neoforge=true + fabric=true) is experimental and currently "
+                    + "fails to start because of Mixin conflicts with RoastMC's patches. Set fabric=false if the server does not start.");
             var result = new ConnectorInstaller(ConnectorInstaller.DEFAULT_API, m -> System.out.println("[RoastMC] " + m))
                     .install(mc, Path.of("mods"));
             System.out.println("[RoastMC] " + (result.installed() ? "" : "WARNING: ") + result.message());
