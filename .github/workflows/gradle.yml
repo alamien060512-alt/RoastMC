@@ -38,29 +38,11 @@ jobs:
     - name: Launcher unit tests
       run: ./gradlew :multiloader:test
 
-    - name: Build RoastMC (NeoForge)
-      run: ./gradlew roastmcJar
-
-    - name: Build RoastMC (Fabric)
-      run: ./gradlew fabricJar
-
-    - name: Build unified RoastMC jar
+    - name: Build RoastMC (all-in-one jar)
       run: ./gradlew roastmcAllJar
 
-    - name: Upload NeoForge build
+    - name: Upload RoastMC
       uses: actions/upload-artifact@v6
       with:
-        name: RoastMC-NeoForge-26.2-server
-        path: projects/roastmc/build/libs/*-server.jar
-
-    - name: Upload Fabric build
-      uses: actions/upload-artifact@v6
-      with:
-        name: RoastMC-Fabric-26.2-server
-        path: fabric/build/libs/*-server.jar
-
-    - name: Upload unified build
-      uses: actions/upload-artifact@v6
-      with:
-        name: RoastMC-All-26.2-server
+        name: RoastMC-26.2
         path: multiloader/build/libs/*-all.jar

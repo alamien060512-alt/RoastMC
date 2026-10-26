@@ -33,13 +33,12 @@
 
 Requires JDK 25.
 
-| Edition  | Command                | Output                                     |
-|----------|------------------------|--------------------------------------------|
-| NeoForge | `./gradlew roastmcJar` | `projects/roastmc/build/libs/*-server.jar` |
-| Fabric   | `./gradlew fabricJar`  | `fabric/build/libs/*-server.jar`           |
-| **Both** | `./gradlew roastmcAllJar` | `multiloader/build/libs/roastmc-*-all.jar` |
+```bash
+./gradlew setup          # first time only
+./gradlew roastmcAllJar
+```
 
-The Fabric edition is a standalone Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) wired into the root build via `includeBuild`. It can also be built on its own with `cd fabric && ./gradlew jar`.
+This produces a single jar, `multiloader/build/libs/roastmc-26.2-all.jar`, containing both the NeoForge and Fabric editions. Choose the loader in `server.properties` (see below). The editions are built as part of it; the Fabric edition is a standalone Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) wired into the root build via `includeBuild`.
 
 ## 🔀 Choosing the loader (`server.properties`)
 

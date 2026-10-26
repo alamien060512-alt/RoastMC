@@ -7,6 +7,9 @@ plugins {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.warnings = false
+    // The launcher itself targets Java 17 so that it can start on an older JVM and tell the
+    // user to install Java 25, instead of failing with an UnsupportedClassVersionError.
+    options.release = 17
 }
 
 dependencies {

@@ -87,7 +87,7 @@
 
     <h3 id="download">1. Get the jar</h3>
     <ul>
-      <li><strong>From GitHub Actions:</strong> open the <a href="https://github.com/alamien060512-alt/RoastMC/actions/workflows/gradle.yml">Build workflow</a>, open the latest successful run, and download <code>RoastMC-All-26.2-server</code> from the <em>Artifacts</em> section at the bottom. You must be signed in to GitHub. It downloads as a <code>.zip</code>; extract it to get <code>roastmc-26.2-all.jar</code>.</li>
+      <li><strong>From GitHub Actions:</strong> open the <a href="https://github.com/alamien060512-alt/RoastMC/actions/workflows/gradle.yml">Build workflow</a>, open the latest successful run, and download <code>RoastMC-26.2</code> from the <em>Artifacts</em> section at the bottom. You must be signed in to GitHub. It downloads as a <code>.zip</code>; extract it to get <code>roastmc-26.2-all.jar</code>.</li>
       <li><strong>Build it yourself:</strong> see <a href="#build">Building from source</a>.</li>
     </ul>
     <p>Use the <code>-all</code> jar. It contains both editions and lets you pick the loader in <code>server.properties</code> (see <a href="#loaders">Choosing the loader</a>).</p>
@@ -185,16 +185,8 @@ paper=true</code></pre>
     <h2 id="build">Building from source</h2>
     <p>Requires JDK 25 and about 4 GB of free RAM for Minecraft decompilation.</p>
 <pre><code>./gradlew setup          # first time only
-./gradlew roastmcJar     # NeoForge edition
-./gradlew fabricJar      # Fabric edition
-./gradlew roastmcAllJar  # unified jar with both editions</code></pre>
-    <table>
-      <tr><th>Task</th><th>Output</th></tr>
-      <tr><td><code>roastmcJar</code></td><td><code>projects/roastmc/build/libs/*-server.jar</code></td></tr>
-      <tr><td><code>fabricJar</code></td><td><code>fabric/build/libs/*-server.jar</code></td></tr>
-      <tr><td><code>roastmcAllJar</code></td><td><code>multiloader/build/libs/*-all.jar</code></td></tr>
-    </table>
-    <p>The Fabric edition is a separate Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) that the root build includes with <code>includeBuild</code>. Run <code>./gradlew :multiloader:test</code> for the launcher's unit tests.</p>
+./gradlew roastmcAllJar</code></pre>
+    <p>The result is one jar, <code>multiloader/build/libs/roastmc-26.2-all.jar</code>, containing both the NeoForge and Fabric editions. The editions are built as part of it. The Fabric edition is a separate Gradle build (Fabric Loom cannot share a build with the NeoForge toolchain) that the root build includes with <code>includeBuild</code>. Run <code>./gradlew :multiloader:test</code> for the launcher's unit tests.</p>
     <h3>Repository layout</h3>
     <table>
       <tr><th>Path</th><th>Contents</th></tr>
@@ -213,8 +205,10 @@ paper=true</code></pre>
     <p>Confirm <code>fabric=true</code> and <code>neoforge=true</code>, that the three Connector jars are in <code>mods/</code>, and that the mod is supported by Connector. Remove mods one at a time to find the culprit.</p>
     <h3>The window flashes and closes (Windows)</h3>
     <p>Run <code>start.bat</code> from a Command Prompt (<code>cd C:\RoastMC</code>, then <code>start.bat</code>) to read the error. The script ends with <code>pause</code>, so if the window still closes instantly, the file may really be <code>start.bat.txt</code>.</p>
-    <h3>"Unsupported class file major version" or "UnsupportedClassVersionError"</h3>
-    <p>Your Java is too old. RoastMC needs Java 25. Check with <code>java -version</code>, and make sure an older Java is not earlier on your PATH.</p>
+    <h3>"RoastMC needs Java 25 or newer"</h3>
+    <p>Your Java is too old (for example Java 21). Install Java 25, then run <code>java -version</code> in a new window and confirm it shows <code>25</code>. If it still shows an older version, an older Java is earlier on your PATH: uninstall it, or start the server with the full path to the new one, such as <code>"C:\Program Files\Eclipse Adoptium\jdk-25...\bin\java.exe" -jar ...</code>.</p>
+    <h3>"UnsupportedClassVersionError ... class file version 69.0"</h3>
+    <p>Same cause, from a build made before the Java check was added. Install Java 25.</p>
     <h3>Port already in use</h3>
     <p>Another server is already using port 25565. Close it, or change <code>server-port</code> in <code>server.properties</code>.</p>
     <h3>Out of memory while starting</h3>
