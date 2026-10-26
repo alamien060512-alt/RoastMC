@@ -1,15 +1,26 @@
 package com.roastmc.launcher.neoforge.util;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 import lombok.SneakyThrows;
 
 /**
@@ -23,8 +34,6 @@ public class LaunchArgsParser {
     private static final String CLASSPATH_ARG = "-classpath";
     /** Set by the unified launcher when Sinytra Connector is installed. */
     public static final String CONNECTOR_PROPERTY = "roastmc.connector";
-    private static final List<String> BUNDLED_LIBRARIES = List.of(
-            "/com/mojang/authlib/");
     private static final String SYSTEM_PROPERTY_PREFIX = "-D";
     private static final String MODULE_SEPARATOR = "=";
     private static final String PACKAGE_SEPARATOR = "/";
@@ -131,7 +140,7 @@ public class LaunchArgsParser {
 
         if (classpath != null) {
             if (Boolean.getBoolean(CONNECTOR_PROPERTY)) {
-                classpath = withoutBundledLibraries(classpath);
+                classpath = withConnectorLibraries(classpath);
             }
             System.setProperty("java.class.path", classpath);
             loadModules(classpath);
@@ -142,19 +151,92 @@ public class LaunchArgsParser {
     }
 
     /**
-     * The neoforge module already contains the complete authlib package (see the extract*Classes tasks in projects/roastmc/build.gradle), so that patched and original
-     * classes live in one module. The separate library jars would become a second module exporting the same
-     * packages, and any module that reads both (such as the ones Sinytra Connector generates for Fabric mods)
-     * then fails module resolution. Only dropped when Connector is in use. Other bundled libraries (logging,
-     * DataFixerUpper) have to stay on the classpath because FML and Connector use them before the module layer exists.
+     * The neoforge jar bundles complete copies (including Paper's patched classes) of the authlib and
+     * brigadier packages, so that patched and original classes live in one module. Sinytra Connector turns the
+     * authlib and brigadier library jars into modules of their own, which then export the same packages as the
+     * neoforge module; any module that reads both (such as those Connector generates for Fabric mods) fails
+     * module resolution.
+     *
+     * With Connector in use, move those packages out of the neoforge jar into jars named like the original
+     * libraries and put those on the classpath instead of the originals. Every package is then in exactly one
+     * module, and Connector still finds the library jars it expects.
      */
-    static String withoutBundledLibraries(String classpath) {
-        return Arrays.stream(classpath.split(File.pathSeparator))
-                .filter(entry -> {
-                    String normalized = entry.replace('\\', '/');
-                    return BUNDLED_LIBRARIES.stream().noneMatch(normalized::contains);
-                })
-                .collect(java.util.stream.Collectors.joining(File.pathSeparator));
+    static String withConnectorLibraries(String classpath) throws IOException {
+        List<String> entries = new ArrayList<>(Arrays.asList(classpath.split(File.pathSeparator)));
+        Path universal = entries.stream().map(Paths::get)
+                .filter(p -> p.getFileName().toString().endsWith("-universal.jar"))
+                .findFirst().orElse(null);
+        if (universal == null || !Files.exists(universal)) {
+            return classpath;
+        }
+        Path dir = Paths.get("libraries", "roastmc", "connector");
+        Files.createDirectories(dir);
+
+        // library path fragment -> package prefix inside the neoforge jar
+        Map<String, String> split = new LinkedHashMap<>();
+        split.put("/com/mojang/authlib/", "com/mojang/authlib/");
+        split.put("/com/mojang/brigadier/", "com/mojang/brigadier/");
+
+        Map<String, Path> outputs = new LinkedHashMap<>();
+        for (int i = 0; i < entries.size(); i++) {
+            String normalized = entries.get(i).replace('\\', '/');
+            for (Map.Entry<String, String> e : split.entrySet()) {
+                if (normalized.contains(e.getKey())) {
+                    Path patched = dir.resolve(Paths.get(entries.get(i)).getFileName().toString());
+                    outputs.put(e.getValue(), patched);
+                    entries.set(i, patched.toString());
+                }
+            }
+        }
+        if (outputs.isEmpty()) {
+            return classpath;
+        }
+        extractPackages(universal, outputs);
+        return String.join(File.pathSeparator, entries);
+    }
+
+    /** Moves the given package prefixes out of {@code universal} into one new jar per prefix. */
+    private static void extractPackages(Path universal, Map<String, Path> outputs) throws IOException {
+        Path stripped = universal.resolveSibling(universal.getFileName() + ".tmp");
+        Map<String, ZipOutputStream> streams = new LinkedHashMap<>();
+        boolean moved = false;
+        try (ZipFile in = new ZipFile(universal.toFile());
+             ZipOutputStream rest = new ZipOutputStream(Files.newOutputStream(stripped))) {
+            for (Map.Entry<String, Path> e : outputs.entrySet()) {
+                ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(e.getValue()));
+                out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+                out.write("Manifest-Version: 1.0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+                streams.put(e.getKey(), out);
+            }
+            try {
+                for (ZipEntry entry : Collections.list(in.entries())) {
+                    ZipOutputStream target = rest;
+                    for (Map.Entry<String, ZipOutputStream> e : streams.entrySet()) {
+                        if (entry.getName().startsWith(e.getKey())) {
+                            target = e.getValue();
+                            moved = true;
+                        }
+                    }
+                    target.putNextEntry(new ZipEntry(entry.getName()));
+                    if (!entry.isDirectory()) {
+                        try (InputStream is = in.getInputStream(entry)) {
+                            is.transferTo(target);
+                        }
+                    }
+                    target.closeEntry();
+                }
+            } finally {
+                for (ZipOutputStream out : streams.values()) {
+                    out.close();
+                }
+            }
+        }
+        if (moved) {
+            Files.move(stripped, universal, StandardCopyOption.REPLACE_EXISTING);
+        } else {
+            Files.deleteIfExists(stripped);
+        }
     }
 
     public static void loadModules(String modulePath) {
