@@ -1,0 +1,11 @@
+{
+  "comment": "Fabric API mixins that cannot attach to RoastMC's patched Minecraft (found by booting with Forgified Fabric API 0.161.0 for 26.2). Removing them disables the matching Fabric API feature only.",
+  "pruned": [
+    {"config": "fabric-resource-loader-v1.mixins.json", "mixin": "MinecraftServerMixin"},
+    {"config": "fabric-resource-loader-v1.mixins.json", "mixin": "PackRepositoryMixin"},
+    {"config": "fabric-game-rule-api-v1.mixins.json", "mixin": "MinecraftServerMixin"},
+    {"config": "fabric-loot-api-v3.mixins.json", "mixin": "ReloadableServerRegistriesMixin"},
+    {"config": "fabric-permission-api-v1.mixins.json", "mixin": "CommandSourceStackMixin"},
+    {"config": "fabric-lifecycle-events-v1.mixins.json", "mixin": "ChunkHolderMixin"}
+  ]
+}

@@ -59,7 +59,7 @@ paper=true      # Paper/Purpur API (always on with the NeoForge edition)
 
 Fabric and NeoForge cannot be loaded into the same Minecraft at once, so "both" means Fabric mods translated onto NeoForge by Connector. On start, the launcher downloads Connector and the dependencies it requires (Forgified Fabric API, Launchpad) from Modrinth into `mods/`, verifies their checksums, and keeps them up to date. If Modrinth has no build for the running Minecraft version, the server starts without Fabric support and says so. A Connector jar you put in `mods/` yourself is left alone. `paper=false` is ignored with a warning, because the Paper API is part of the NeoForge edition.
 
-**Status: experimental, the combined mode does not start yet.** Connector and its dependencies download and load, but startup then fails with a Mixin error, because RoastMC's Bukkit patches change vanilla methods (such as `LivingEntity.addEffect`) that Forgified Fabric API patches. Use `neoforge=true, fabric=false` or `neoforge=false, fabric=true` for now. Connector is also a third-party, still-beta project.
+**Status: experimental, but it starts.** RoastMC changes parts of Minecraft that some Fabric API features hook into. On start, the launcher adapts the Fabric jars in `mods/` (mixins without a target are skipped) and switches off the Fabric API features that cannot work, and if a mod's mixin still cannot apply it removes that one mixin, remembers it in `config/roastmc/fabric-compat.json` and restarts by itself. Tested with Chunky. Mods that rewrite large parts of vanilla (Lithium, for example) do not work. Connector is a third-party, still-beta project.
 
 ## 📊 Progress Status
 
