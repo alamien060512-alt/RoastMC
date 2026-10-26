@@ -38,7 +38,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
         getOrEmpty(patch, CraftMetaBundle.ITEMS).ifPresent((bundleContents) -> {
             bundleContents.items().forEach((item) -> {
-                ItemStack itemStack = CraftItemStack.asBukkitCopy(item);
+                ItemStack itemStack = CraftItemStack.asCraftMirror(item.create());
 
                 if (!itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air
                     this.addItem(itemStack);

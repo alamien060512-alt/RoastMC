@@ -27,7 +27,7 @@
                  new ClientPacketListener(
                      this.minecraft,
                      this.connection,
-@@ -178,13 +_,21 @@
+@@ -178,17 +_,30 @@
                          this.customReportDetails,
                          this.serverLinks(),
                          this.seenPlayers,
@@ -51,7 +51,16 @@
                  @Override
                  public boolean hasInfiniteMaterials() {
                      return true;
-@@ -211,6 +_,59 @@
+                 }
++
++                @Override
++                public boolean canUseCommandBlocks() {
++                    return true;
++                }
+             }));
+     }
+ 
+@@ -206,6 +_,59 @@
      public void onDisconnect(DisconnectionDetails reason) {
          super.onDisconnect(reason);
          this.minecraft.clearDownloadedResourcePacks();

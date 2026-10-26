@@ -1,6 +1,22 @@
 --- a/net/minecraft/world/entity/animal/bee/Bee.java
 +++ b/net/minecraft/world/entity/animal/bee/Bee.java
-@@ -94,6 +_,12 @@
+@@ -5,6 +_,7 @@
+ import java.util.Comparator;
+ import java.util.EnumSet;
+ import java.util.List;
++import java.util.Objects;
+ import java.util.Optional;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+@@ -53,6 +_,7 @@
+ import net.minecraft.world.entity.ai.goal.FloatGoal;
+ import net.minecraft.world.entity.ai.goal.FollowParentGoal;
+ import net.minecraft.world.entity.ai.goal.Goal;
++import net.minecraft.world.entity.ai.goal.GoalSelector;
+ import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+ import net.minecraft.world.entity.ai.goal.TemptGoal;
+ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+@@ -93,6 +_,12 @@
  import net.minecraft.world.phys.Vec3;
  import org.jspecify.annotations.Nullable;
  
@@ -13,13 +29,7 @@
  public class Bee extends Animal implements NeutralMob {
      public static final float FLAP_DEGREES_PER_TICK = 120.32113F;
      public static final int TICKS_PER_FLAP = Mth.ceil(1.4959966F);
-@@ -142,23 +_,133 @@
-     private static final int MAX_FIND_FLOWER_RETRY_COOLDOWN = 60;
-     private int remainingCooldownBeforeLocatingNewFlower = Mth.nextInt(this.random, 20, 60);
-     private @Nullable BlockPos savedFlowerPos;
--    private @Nullable BlockPos hivePos;
-+    public @Nullable BlockPos hivePos;
-     private Bee.BeePollinateGoal beePollinateGoal;
+@@ -146,18 +_,121 @@
      private Bee.BeeGoToHiveGoal goToHiveGoal;
      private Bee.BeeGoToKnownFlowerGoal goToKnownFlowerGoal;
      private int underWaterTicks;
@@ -98,13 +108,6 @@
          this.setPathfindingMalus(PathType.FENCE, -1.0F);
      }
  
-+    // Purpur start - Toggle for water sensitive mob damage
-+    @Override
-+    public boolean isSensitiveToWater() {
-+        return this.level().purpurConfig.beeTakeDamageFromWater;
-+    }
-+    // Purpur end - Toggle for water sensitive mob damage
-+
 +    // Purpur start - Ridables
 +    @Override
 +    public boolean isRidable() {
@@ -150,7 +153,7 @@
      @Override
      protected void defineSynchedData(SynchedEntityData.Builder entityData) {
          super.defineSynchedData(entityData);
-@@ -173,6 +_,7 @@
+@@ -172,6 +_,7 @@
  
      @Override
      protected void registerGoals() {
@@ -158,7 +161,7 @@
          this.goalSelector.addGoal(0, new Bee.BeeAttackGoal(this, 1.4F, true));
          this.goalSelector.addGoal(1, new Bee.BeeEnterHiveGoal());
          this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
-@@ -190,6 +_,7 @@
+@@ -189,6 +_,7 @@
          this.goalSelector.addGoal(7, new Bee.BeeGrowCropGoal());
          this.goalSelector.addGoal(8, new Bee.BeeWanderGoal());
          this.goalSelector.addGoal(9, new FloatGoal(this));
@@ -166,7 +169,7 @@
          this.targetSelector.addGoal(1, new Bee.BeeHurtByOtherGoal(this).setAlertOthers());
          this.targetSelector.addGoal(2, new Bee.BeeBecomeAngryTargetGoal(this));
          this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
-@@ -197,9 +_,24 @@
+@@ -196,9 +_,24 @@
  
      @Override
      protected void addAdditionalSaveData(ValueOutput output) {
@@ -193,7 +196,7 @@
          output.putBoolean("HasNectar", this.hasNectar());
          output.putBoolean("HasStung", this.hasStung());
          output.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
-@@ -237,7 +_,7 @@
+@@ -236,7 +_,7 @@
                  }
  
                  if (poisonTime > 0) {
@@ -202,7 +205,7 @@
                  }
              }
  
-@@ -333,13 +_,19 @@
+@@ -332,13 +_,19 @@
          if (this.stayOutOfHiveCountdown <= 0 && !this.beePollinateGoal.isPollinating() && !this.hasStung() && this.getTarget() == null) {
              boolean wantsToEnterHive = this.hasNectar()
                  || this.isTiredOfLookingForNectar()
@@ -223,7 +226,7 @@
      public void setStayOutOfHiveCountdown(int ticks) {
          this.stayOutOfHiveCountdown = ticks;
      }
-@@ -360,7 +_,7 @@
+@@ -359,7 +_,7 @@
      @Override
      protected void customServerAiStep(ServerLevel level) {
          boolean hasStung = this.hasStung();
@@ -232,7 +235,7 @@
              this.underWaterTicks++;
          } else {
              this.underWaterTicks = 0;
-@@ -370,6 +_,7 @@
+@@ -369,6 +_,7 @@
              this.hurtServer(level, this.damageSources().drown(), 1.0F);
          }
  
@@ -240,7 +243,7 @@
          if (hasStung) {
              this.timeSinceSting++;
              if (this.timeSinceSting % 5 == 0 && this.random.nextInt(Mth.clamp(1200 - this.timeSinceSting, 1, 1200)) == 0) {
-@@ -472,7 +_,11 @@
+@@ -471,7 +_,11 @@
          if (this.hivePos == null) {
              return null;
          } else {
@@ -253,7 +256,7 @@
          }
      }
  
-@@ -504,7 +_,8 @@
+@@ -503,7 +_,8 @@
          return this.getFlag(2);
      }
  
@@ -263,7 +266,7 @@
          this.setFlag(2, rolling);
      }
  
-@@ -561,7 +_,7 @@
+@@ -560,7 +_,7 @@
              if (effect != null) {
                  this.usePlayerItem(player, hand, heldItem);
                  if (!this.level().isClientSide()) {
@@ -272,7 +275,7 @@
                  }
  
                  return InteractionResult.SUCCESS;
-@@ -631,18 +_,34 @@
+@@ -630,18 +_,34 @@
      public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
          if (this.isInvulnerableTo(level, source)) {
              return false;
@@ -310,7 +313,7 @@
      public Vec3 getLeashOffset() {
          return new Vec3(0.0, 0.5F * this.getEyeHeight(), this.getBbWidth() * 0.2F);
      }
-@@ -984,7 +_,7 @@
+@@ -983,7 +_,7 @@
                              }
                          }
  
@@ -319,7 +322,7 @@
                              Bee.this.level().levelEvent(2011, belowPos, 15);
                              Bee.this.level().setBlockAndUpdate(belowPos, growState);
                              Bee.this.incrementNumCropsGrownSincePollination();
-@@ -1008,7 +_,7 @@
+@@ -1007,7 +_,7 @@
          @Override
          protected void alertOther(Mob other, LivingEntity hurtByMob) {
              if (other instanceof Bee && this.mob.hasLineOfSight(hurtByMob)) {
@@ -328,26 +331,7 @@
              }
          }
      }
-@@ -1052,15 +_,15 @@
-         }
-     }
- 
--    private class BeeLookControl extends LookControl {
-+    private class BeeLookControl extends org.purpurmc.purpur.controller.LookControllerWASD { // Purpur - Ridables
-         public BeeLookControl(Mob mob) {
-             super(mob);
-         }
- 
-         @Override
--        public void tick() {
-+        public void vanillaTick() { // Purpur - Ridables
-             if (!Bee.this.isAngry()) {
--                super.tick();
-+                super.vanillaTick(); // Purpur - Ridables
-             }
-         }
- 
-@@ -1104,6 +_,7 @@
+@@ -1103,6 +_,7 @@
                      Bee.this.savedFlowerPos = nearbyPos.get();
                      Bee.this.navigation
                          .moveTo(Bee.this.savedFlowerPos.getX() + 0.5, Bee.this.savedFlowerPos.getY() + 0.5, Bee.this.savedFlowerPos.getZ() + 0.5, 1.2F);
@@ -355,7 +339,7 @@
                      return true;
                  } else {
                      Bee.this.remainingCooldownBeforeLocatingNewFlower = Mth.nextInt(Bee.this.random, 20, 60);
-@@ -1155,6 +_,7 @@
+@@ -1154,6 +_,7 @@
              this.pollinating = false;
              Bee.this.navigation.stop();
              Bee.this.remainingCooldownBeforeLocatingNewFlower = 200;
@@ -363,7 +347,7 @@
          }
  
          @Override
-@@ -1170,7 +_,7 @@
+@@ -1169,7 +_,7 @@
                      Bee.this.dropFlower();
                      this.pollinating = false;
                      Bee.this.remainingCooldownBeforeLocatingNewFlower = 200;
@@ -372,7 +356,7 @@
                      Vec3 flowerPos = Vec3.atBottomCenterOf(Bee.this.savedFlowerPos).add(0.0, 0.6F, 0.0);
                      if (flowerPos.distanceTo(Bee.this.position()) > 1.0) {
                          this.hoverPos = flowerPos;
-@@ -1201,6 +_,7 @@
+@@ -1200,6 +_,7 @@
                                  this.setWantedPos();
                              }
  

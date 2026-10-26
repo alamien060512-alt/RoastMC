@@ -134,6 +134,12 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     }
 
     @Override
+    public ItemStack getWeapon() {
+        if (this.getHandle().getWeaponItem() == null) return null; // Paper - fix NPE
+        return CraftItemStack.asBukkitCopy(this.getHandle().getWeaponItem());
+    }
+
+    @Override
     public void setWeapon(ItemStack item) {
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
@@ -142,8 +148,8 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
 
     // Paper start
     @Override
-    public ItemStack getItemStack() {
-        return CraftItemStack.asBukkitMirror(this.getHandle().getPickupItem());
+    public CraftItemStack getItemStack() {
+        return CraftItemStack.asCraftMirror(this.getHandle().getPickupItem());
     }
 
     @Override

@@ -26,7 +26,7 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
         final @Nullable PigVariant internal
     ) {
         if (internal == null) {
-            this.spawnConditions = SpawnPrioritySelectors.EMPTY;
+            spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
         }
 

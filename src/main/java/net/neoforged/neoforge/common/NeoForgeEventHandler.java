@@ -44,6 +44,7 @@ import net.neoforged.neoforge.network.payload.RegistryDataMapSyncPayload;
 import net.neoforged.neoforge.registries.DataMapLoader;
 import net.neoforged.neoforge.registries.RegistryManager;
 import net.neoforged.neoforge.resource.NeoForgeReloadListeners;
+import net.neoforged.neoforge.server.command.ConfigCommand;
 import net.neoforged.neoforge.server.command.NeoForgeCommand;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -145,6 +146,7 @@ public class NeoForgeEventHandler {
     @SubscribeEvent
     public void onCommandsRegister(RegisterCommandsEvent event) {
         NeoForgeCommand.register(event.getDispatcher());
+        ConfigCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent

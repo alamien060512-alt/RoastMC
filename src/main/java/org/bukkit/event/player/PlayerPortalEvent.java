@@ -5,7 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
@@ -14,7 +15,6 @@ import java.util.Set;
  * <p>
  * For other entities see {@link org.bukkit.event.entity.EntityPortalEvent}
  */
-@NullMarked
 public class PlayerPortalEvent extends PlayerTeleportEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,17 +24,17 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
     private int creationRadius = 16;
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(final Player player, final Location from, final Location to) {
+    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player, from, to);
     }
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(Player player, Location from, Location to, TeleportCause cause) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause) {
         super(player, from, to, cause);
     }
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(Player player, Location from, Location to, TeleportCause cause, int searchRadius, boolean canCreatePortal, int creationRadius) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause, int searchRadius, boolean canCreatePortal, int creationRadius) {
         super(player, from, to, cause);
         this.searchRadius = searchRadius;
         this.canCreatePortal = canCreatePortal;
@@ -52,7 +52,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      * @return starting point for search or exact destination
      */
     @Override
-    public Location getTo() {
+    public @NotNull Location getTo() {
         return super.getTo();
     }
 
@@ -62,7 +62,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      * @param to starting point for search or exact destination
      */
     @Override
-    public void setTo(final Location to) {
+    public void setTo(@NotNull final Location to) {
         super.setTo(to);
     }
 
@@ -159,15 +159,17 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      */
     @Deprecated(forRemoval = true)
     @Override
-    public Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
+    public @NotNull Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
         return super.getRelativeTeleportationFlags();
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

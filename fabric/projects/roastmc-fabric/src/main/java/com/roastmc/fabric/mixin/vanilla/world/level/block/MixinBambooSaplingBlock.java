@@ -1,0 +1,19 @@
+package com.roastmc.fabric.mixin.vanilla.world.level.block;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BambooSaplingBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
+
+@Mixin(BambooSaplingBlock.class)
+public class MixinBambooSaplingBlock {
+
+    @Redirect(method = "growBamboo", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z"))
+    private boolean roastmc$growBamboo(Level instance, BlockPos pos, BlockState state, int i, Level level, BlockPos blockPos) {
+        return CraftEventFactory.handleBlockSpreadEvent(level, blockPos, pos, state, i);
+    }
+}

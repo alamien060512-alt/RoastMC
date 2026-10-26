@@ -7,7 +7,7 @@ package net.neoforged.neoforge.client.model.pipeline;
 
 import com.mojang.blaze3d.platform.Transparency;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import java.util.Arrays;
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.Sheets;
@@ -49,12 +49,7 @@ public class QuadBakingVertexConsumer implements VertexConsumer {
     private ChunkSectionLayer chunkLayer;
     @Nullable
     private RenderType itemRenderType;
-    @Nullable
-    private RenderType itemGlintRenderType;
-    @Nullable
-    private RenderType itemGlintSpecialRenderType;
-    @Nullable
-    private Direction shadeOverride;
+    private boolean shade;
     private int lightEmission;
     private boolean ambientOcclusion;
 
@@ -109,11 +104,6 @@ public class QuadBakingVertexConsumer implements VertexConsumer {
     }
 
     @Override
-    public VertexConsumer setUv3(float u, float v) {
-        return this;
-    }
-
-    @Override
     public VertexConsumer misc(VertexFormatElement element, int... rawData) {
         return this;
     }
@@ -138,30 +128,22 @@ public class QuadBakingVertexConsumer implements VertexConsumer {
     @SuppressWarnings("deprecation")
     public void setSprite(Material.Baked material, Transparency transparency) {
         RenderType itemRenderType;
-        RenderType itemGlintRenderType;
-        RenderType itemGlintSpecialRenderType;
         if (material.sprite().atlasLocation().equals(TextureAtlas.LOCATION_BLOCKS)) {
             itemRenderType = transparency.hasTranslucent() ? Sheets.translucentBlockItemSheet() : Sheets.cutoutBlockItemSheet();
-            itemGlintRenderType = transparency.hasTranslucent() ? Sheets.translucentBlockItemGlintSheet() : Sheets.cutoutBlockItemGlintSheet();
-            itemGlintSpecialRenderType = transparency.hasTranslucent() ? Sheets.translucentBlockItemGlintSpecialSheet() : Sheets.cutoutBlockItemGlintSpecialSheet();
         } else {
             itemRenderType = transparency.hasTranslucent() ? Sheets.translucentItemSheet() : Sheets.cutoutItemSheet();
-            itemGlintRenderType = transparency.hasTranslucent() ? Sheets.translucentItemGlintSheet() : Sheets.cutoutItemGlintSheet();
-            itemGlintSpecialRenderType = transparency.hasTranslucent() ? Sheets.translucentItemGlintSpecialSheet() : Sheets.cutoutItemGlintSpecialSheet();
         }
-        setSprite(material.sprite(), ChunkSectionLayer.byTransparency(transparency), itemRenderType, itemGlintRenderType, itemGlintSpecialRenderType);
+        setSprite(material.sprite(), ChunkSectionLayer.byTransparency(transparency), itemRenderType);
     }
 
-    public void setSprite(TextureAtlasSprite sprite, ChunkSectionLayer chunkLayer, RenderType itemRenderType, RenderType itemGlintRenderType, RenderType itemGlintSpecialRenderType) {
+    public void setSprite(TextureAtlasSprite sprite, ChunkSectionLayer chunkLayer, RenderType itemRenderType) {
         this.sprite = sprite;
         this.chunkLayer = chunkLayer;
         this.itemRenderType = itemRenderType;
-        this.itemGlintRenderType = itemGlintRenderType;
-        this.itemGlintSpecialRenderType = itemGlintSpecialRenderType;
     }
 
-    public void setShadeOverride(@Nullable Direction shadeOverride) {
-        this.shadeOverride = shadeOverride;
+    public void setShade(boolean shade) {
+        this.shade = shade;
     }
 
     public void setLightEmission(int lightEmission) {
@@ -188,13 +170,9 @@ public class QuadBakingVertexConsumer implements VertexConsumer {
         }
         if (itemRenderType == null) {
             throw new IllegalStateException("No item RenderType set");
-        } else if (itemGlintRenderType == null) {
-            throw new IllegalStateException("No item glint RenderType set");
-        } else if (itemGlintSpecialRenderType == null) {
-            throw new IllegalStateException("No item glint special RenderType set");
         }
 
-        BakedQuad.MaterialInfo materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, itemGlintRenderType, itemGlintSpecialRenderType, tintIndex, shadeOverride, lightEmission, ambientOcclusion);
+        BakedQuad.MaterialInfo materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, tintIndex, shade, lightEmission, ambientOcclusion);
         BakedNormals bakedNormals = BakedNormals.of(normals[0], normals[1], normals[2], normals[3]);
         BakedColors bakedColors = BakedColors.of(colors[0], colors[1], colors[2], colors[3]);
         if (interner != null) {
@@ -230,9 +208,7 @@ public class QuadBakingVertexConsumer implements VertexConsumer {
         sprite = null;
         chunkLayer = null;
         itemRenderType = null;
-        itemGlintRenderType = null;
-        itemGlintSpecialRenderType = null;
-        shadeOverride = null;
+        shade = true;
         lightEmission = 0;
         ambientOcclusion = true;
     }

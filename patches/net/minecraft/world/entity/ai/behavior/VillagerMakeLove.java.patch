@@ -9,17 +9,15 @@
  
  public class VillagerMakeLove extends Behavior<Villager> {
      private long birthTimestamp;
-@@ -98,18 +_,33 @@
-         return path != null && path.canReach();
+@@ -99,17 +_,32 @@
      }
  
--    private Optional<Villager> breed(ServerLevel level, Villager source, Villager target) {
-+    private Optional<Villager> breed(final ServerLevel level, final Villager source, final Villager target) {
+     private Optional<Villager> breed(ServerLevel level, Villager source, Villager target) {
 +        // Purpur start - Breedable mobs can have multiple babies
 +        return this.breed(level, source, target, 0);
 +    }
 +
-+    private Optional<Villager> breed(final ServerLevel level, final Villager source, final Villager target, int currentBabyCount) {
++    private Optional<Villager> breed(ServerLevel level, Villager source, Villager target, int currentBabyCount) {
 +        if ((currentBabyCount >= source.getBreedingMinOffspring()) && (!source.willHaveAnotherBaby() || currentBabyCount >= source.getBreedingMaxOffspring())) return Optional.empty();
 +        // Purpur end - Breedable mobs can have multiple babies
          Villager child = source.getBreedOffspring(level, target);

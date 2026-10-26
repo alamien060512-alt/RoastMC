@@ -1,22 +1,6 @@
 --- a/net/minecraft/core/BlockPos.java
 +++ b/net/minecraft/core/BlockPos.java
-@@ -14,6 +_,7 @@
- import java.util.stream.IntStream;
- import java.util.stream.Stream;
- import java.util.stream.StreamSupport;
-+import javax.annotation.Nullable;
- import javax.annotation.concurrent.Immutable;
- import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.codec.StreamCodec;
-@@ -25,7 +_,6 @@
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.Vec3;
- import org.apache.commons.lang3.Validate;
--import org.jspecify.annotations.Nullable;
- 
- @Immutable
- public class BlockPos extends Vec3i {
-@@ -44,42 +_,51 @@
+@@ -45,15 +_,23 @@
          }
      };
      public static final BlockPos ZERO = new BlockPos(0, 0, 0);
@@ -48,6 +32,8 @@
  
      public BlockPos(int x, int y, int z) {
          super(x, y, z);
+@@ -63,28 +_,29 @@
+         this(vec3i.getX(), vec3i.getY(), vec3i.getZ());
      }
  
 +    public static long getAdjacent(int baseX, int baseY, int baseZ, Direction direction) { return asLong(baseX + direction.getStepX(), baseY + direction.getStepY(), baseZ + direction.getStepZ()); } // Paper
@@ -81,7 +67,7 @@
      }
  
      public static BlockPos containing(double x, double y, double z) {
-@@ -103,10 +_,7 @@
+@@ -108,10 +_,7 @@
      }
  
      public static long asLong(int x, int y, int z) {
@@ -93,7 +79,22 @@
      }
  
      public static long getFlatIndex(long neighborBlockNode) {
-@@ -134,55 +_,72 @@
+@@ -122,6 +_,14 @@
+         return x == 0 && y == 0 && z == 0 ? this : new BlockPos(this.getX() + x, this.getY() + y, this.getZ() + z);
+     }
+ 
++    public Vec3 getCenter() {
++        return Vec3.atCenterOf(this);
++    }
++
++    public Vec3 getBottomCenter() {
++        return Vec3.atBottomCenterOf(this);
++    }
++
+     public BlockPos offset(Vec3i vec) {
+         return this.offset(vec.getX(), vec.getY(), vec.getZ());
+     }
+@@ -139,55 +_,72 @@
      }
  
      public BlockPos above() {
@@ -179,7 +180,7 @@
      }
  
      public BlockPos relative(Direction direction, int steps) {
-@@ -629,9 +_,9 @@
+@@ -642,9 +_,9 @@
          }
  
          public BlockPos.MutableBlockPos set(int x, int y, int z) {
@@ -192,7 +193,7 @@
              return this;
          }
  
-@@ -688,17 +_,17 @@
+@@ -701,17 +_,17 @@
          }
  
          public BlockPos.MutableBlockPos setX(int x) {

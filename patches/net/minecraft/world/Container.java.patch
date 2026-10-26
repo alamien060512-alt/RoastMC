@@ -3,7 +3,7 @@
 @@ -1,5 +_,7 @@
  package net.minecraft.world;
  
-+import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
++import com.roastmc.neoforge.bukkit.inventory.InventoryOwner;
 +import java.util.Collections;
  import java.util.Iterator;
  import java.util.List;

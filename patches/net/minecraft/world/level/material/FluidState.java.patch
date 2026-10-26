@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/material/FluidState.java
 +++ b/net/minecraft/world/level/material/FluidState.java
-@@ -23,36 +_,65 @@
+@@ -23,13 +_,33 @@
  
  import net.neoforged.neoforge.common.extensions.IFluidStateExtension;
  
@@ -28,24 +28,14 @@
 +        this.isRandomlyTicking = this.getType().isRandomlyTicking();
 +    }
 +    // Paper end - fluid method optimisations
-+
-+    // Paper start - optimise TypedInstance
-+    private final Fluid fluidOwner;
-+    private final Holder.Reference<Fluid> reference;
-+    // Paper end - optimise TypedInstance
  
      public FluidState(Fluid owner, Property<?>[] propertyKeys, Comparable<?>[] propertyValues) {
          super(owner, propertyKeys, propertyValues);
-+        // Paper start - optimise TypedInstance
-+        this.fluidOwner = owner;
-+        this.reference = owner.builtInRegistryHolder();
-+        // Paper end - optimise TypedInstance
 +        this.isEmpty = owner.isEmpty(); // Paper - Perf: moved from isEmpty()
      }
  
      public Fluid getType() {
--        return this.owner;
-+        return this.fluidOwner; // Paper - optimise TypedInstance
+@@ -37,15 +_,15 @@
      }
  
      public boolean isSource() {
@@ -64,15 +54,7 @@
      }
  
      public float getHeight(BlockGetter level, BlockPos pos) {
-         return this.getType().getHeight(this, level, pos);
-     }
- 
--    public float getHeightForCamera(BlockGetter level, BlockPos pos) {
-+    public float getHeightForCamera(final BlockGetter level, final BlockPos pos) {
-         if (this.isSource()) {
-             BlockPos posAbove = pos.above();
-             if (level.getBlockState(posAbove).isFaceSturdy(level, posAbove, Direction.DOWN)) {
-@@ -64,7 +_,7 @@
+@@ -53,7 +_,7 @@
      }
  
      public float getOwnHeight() {
@@ -81,7 +63,7 @@
      }
  
      public boolean isFull() {
-@@ -72,7 +_,7 @@
+@@ -61,7 +_,7 @@
      }
  
      public int getAmount() {
@@ -90,7 +72,7 @@
      }
  
      public boolean shouldRenderBackwardUpFace(BlockGetter level, BlockPos above) {
-@@ -98,7 +_,7 @@
+@@ -87,7 +_,7 @@
      }
  
      public boolean isRandomlyTicking() {
@@ -99,7 +81,7 @@
      }
  
      public void randomTick(ServerLevel level, BlockPos pos, RandomSource random) {
-@@ -110,7 +_,12 @@
+@@ -99,7 +_,12 @@
      }
  
      public BlockState createLegacyBlock() {
@@ -113,48 +95,10 @@
      }
  
      public @Nullable ParticleOptions getDripParticle() {
-@@ -119,9 +_,42 @@
+@@ -111,6 +_,7 @@
+         return this.getType().builtInRegistryHolder();
+     }
  
-     @Override
-     public Holder<Fluid> typeHolder() {
--        return this.getType().builtInRegistryHolder();
--    }
--
-+        return this.reference; // Paper - optimise TypedInstance
-+    }
-+
-+    // Paper start - optimise TypedInstance
-+    @Override
-+    public final java.util.stream.Stream<net.minecraft.tags.TagKey<Fluid>> tags() {
-+        return this.reference.tags();
-+    }
-+
-+    @Override
-+    public final boolean is(final net.minecraft.tags.TagKey<Fluid> tag) {
-+        return this.reference.is(tag);
-+    }
-+
-+    @Override
-+    public final boolean is(final net.minecraft.core.HolderSet<Fluid> set) {
-+        return set.contains(this.reference);
-+    }
-+
-+    @Override
-+    public final boolean is(final Fluid rawType) {
-+        return this.fluidOwner == rawType;
-+    }
-+
-+    @Override
-+    public final boolean is(final Holder<Fluid> type) {
-+        return this.reference == type;
-+    }
-+
-+    @Override
-+    public final boolean is(final net.minecraft.resources.ResourceKey<Fluid> type) {
-+        return this.reference.is(type);
-+    }
-+    // Paper end - optimise TypedInstance
-+
 +    @Deprecated //Forge: Use more sensitive version
      public float getExplosionResistance() {
          return this.getType().getExplosionResistance();

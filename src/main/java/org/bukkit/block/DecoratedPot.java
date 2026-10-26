@@ -4,15 +4,15 @@ import java.util.List;
 import java.util.Map;
 import org.bukkit.Material;
 import org.bukkit.Tag;
+import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.DecoratedPotInventory;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a decorated pot.
  */
-@NullMarked
-public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryHolder, org.bukkit.loot.Lootable {
+public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryHolder, org.bukkit.loot.Lootable { // Paper - expose loot table & TileStateInventoryHolder
 
     /**
      * Set the sherd on the provided side.
@@ -23,7 +23,7 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      * tagged by {@link Tag#ITEMS_DECORATED_POT_SHERDS}, {@link Material#BRICK},
      * or {@code null}
      */
-    void setSherd(Side side, @Nullable Material sherd);
+    public void setSherd(@NotNull Side side, @Nullable Material sherd);
 
     /**
      * Get the sherd on the provided side.
@@ -31,7 +31,8 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      * @param side the side to get
      * @return the sherd on the side or {@link Material#BRICK} if it's blank
      */
-    Material getSherd(Side side);
+    @NotNull
+    public Material getSherd(@NotNull Side side);
 
     /**
      * Gets a Map of all sides on this decorated pot and the sherds on them.
@@ -40,7 +41,8 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      *
      * @return the sherds
      */
-    Map<Side, Material> getSherds();
+    @NotNull
+    public Map<Side, Material> getSherds();
 
     /**
      * Gets the sherds on this decorated pot. For faces without a specific sherd,
@@ -50,13 +52,17 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      * @deprecated in favor of {@link #getSherds()}
      */
     @Deprecated(since = "1.20.1")
-    List<Material> getShards();
+    @NotNull
+    public List<Material> getShards();
 
+    // Paper - move docs to TileStateInventoryHolder
+    @NotNull
     @Override
-    DecoratedPotInventory getInventory();
+    public DecoratedPotInventory getInventory();
 
-    @Override
-    DecoratedPotInventory getSnapshotInventory();
+    @Override // Paper - move docs to TileStateInventoryHolder
+    @NotNull
+    public DecoratedPotInventory getSnapshotInventory();
 
     /**
      * Run the specified animation on the decorated pot.
@@ -64,13 +70,13 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      * @param style the animation style
      * @throws IllegalStateException if this block state is not placed
      */
-    void startWobble(WobbleStyle style);
+    public void startWobble(@NotNull WobbleStyle style);
 
     /**
      * A side on a decorated pot. Sides are relative to the facing state of a
      * {@link org.bukkit.block.data.type.DecoratedPot}.
      */
-    enum Side {
+    public static enum Side {
         BACK,
         LEFT,
         RIGHT,
@@ -80,7 +86,7 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
     /**
      * Style a DecoratedPot can wobble in.
      */
-    enum WobbleStyle {
+    public static enum WobbleStyle {
         POSITIVE,
         NEGATIVE
     }

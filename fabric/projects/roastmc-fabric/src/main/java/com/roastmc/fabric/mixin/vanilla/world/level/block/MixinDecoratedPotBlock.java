@@ -1,0 +1,23 @@
+package com.roastmc.fabric.mixin.vanilla.world.level.block;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.DecoratedPotBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(DecoratedPotBlock.class)
+public class MixinDecoratedPotBlock {
+
+    @Inject(method = "onProjectileHit", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z"), cancellable = true)
+    private void roastmc$onProjectileHit(BlockState state, Level level, BlockPos pos, Projectile projectile, CallbackInfo ci) {
+        if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, pos, ((DecoratedPotBlock) (Object) this).getFluidState(state).createLegacyBlock())) {
+            ci.cancel();
+        }
+    }
+}

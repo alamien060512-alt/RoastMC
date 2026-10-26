@@ -4,6 +4,7 @@ import org.bukkit.Axis;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A position represented with integers.
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Contract;
  * @see FinePosition
  */
 @ApiStatus.Experimental
+@NullMarked
 public interface BlockPosition extends Position {
 
     @Override
@@ -71,7 +73,7 @@ public interface BlockPosition extends Position {
      * multiplied by the amount.
      *
      * @param blockFace the block face to offset towards
-     * @param amount    the number of times to move in that direction
+     * @param amount the number of times to move in that direction
      * @return the offset block position
      */
     @Contract(pure = true)
@@ -83,7 +85,7 @@ public interface BlockPosition extends Position {
      * Returns a block position offset by the amount along
      * the specified axis.
      *
-     * @param axis   the axis to offset along
+     * @param axis the axis to offset along
      * @param amount the amount to offset along that axis
      * @return the offset block position
      */

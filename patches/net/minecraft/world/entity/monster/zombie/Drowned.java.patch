@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/zombie/Drowned.java
 +++ b/net/minecraft/world/entity/monster/zombie/Drowned.java
-@@ -80,6 +_,74 @@
+@@ -78,6 +_,74 @@
          this.setPathfindingMalus(PathType.WATER, 0.0F);
      }
  
@@ -75,7 +75,7 @@
      public static AttributeSupplier.Builder createAttributes() {
          return Zombie.createAttributes().add(Attributes.STEP_HEIGHT, 1.0);
      }
-@@ -96,10 +_,23 @@
+@@ -94,10 +_,23 @@
          this.goalSelector.addGoal(2, new Drowned.DrownedAttackGoal(this, 1.0, false));
          this.goalSelector.addGoal(5, new Drowned.DrownedGoToBeachGoal(this, 1.0));
          this.goalSelector.addGoal(6, new Drowned.DrownedSwimUpGoal(this, 1.0, this.level().getSeaLevel()));
@@ -100,7 +100,7 @@
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Axolotl.class, true, false));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
-@@ -137,7 +_,7 @@
+@@ -135,7 +_,7 @@
      }
  
      public static boolean checkDrownedSpawnRules(
@@ -109,37 +109,11 @@
      ) {
          if (!level.getFluidState(pos.below()).is(FluidTags.WATER) && !EntitySpawnReason.isSpawner(spawnReason)) {
              return false;
-@@ -451,13 +_,13 @@
-         }
+@@ -236,6 +_,7 @@
+ 
+         LivingEntity target = this.getTarget();
+         return target != null && target.isInWater();
++ 
      }
  
--    private static class DrownedMoveControl<T extends Drowned> extends MoveControl<T> {
-+    private static class DrownedMoveControl<T extends Drowned> extends org.purpurmc.purpur.controller.MoveControllerWASD<T> { // Purpur - Ridables
-         public DrownedMoveControl(T drowned) {
-             super(drowned);
-         }
- 
-         @Override
--        public void tick() {
-+        public void vanillaTick() { // Purpur - Ridables
-             LivingEntity target = this.mob.getTarget();
-             if (this.mob.wantsToSwim() && this.mob.isInWater()) {
-                 if (target != null && target.getY() > this.mob.getY() || this.mob.isSearchingForLand()) {
-@@ -477,7 +_,7 @@
-                 float yRotD = (float)(Mth.atan2(zd, xd) * 180.0F / (float)Math.PI) - 90.0F;
-                 this.mob.setYRot(this.rotlerp(this.mob.getYRot(), yRotD, 90.0F));
-                 this.mob.yBodyRot = this.mob.getYRot();
--                float targetSpeed = (float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED));
-+                float targetSpeed = (float)(this.getSpeedModifier() * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)); // Purpur - Ridables
-                 float newSpeed = Mth.lerp(0.125F, this.mob.getSpeed(), targetSpeed);
-                 this.mob.setSpeed(newSpeed);
-                 this.mob.setDeltaMovement(this.mob.getDeltaMovement().add(newSpeed * xd * 0.005, newSpeed * yd * 0.1, newSpeed * zd * 0.005));
-@@ -486,7 +_,7 @@
-                     this.mob.setDeltaMovement(this.mob.getDeltaMovement().add(0.0, -0.008, 0.0));
-                 }
- 
--                super.tick();
-+                super.vanillaTick(); // Purpur - Ridables
-             }
-         }
-     }
+     @Override

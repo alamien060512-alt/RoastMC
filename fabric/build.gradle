@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'net.neoforged.gradleutils' version '4.0.1'
+}
+
+version = project.minecraft_version + "-" + gradleutils.gitInfo.abbreviatedId
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven {
+        name = 'mohistmc'
+        url = 'https://maven.mohistmc.com/'
+    }
+    maven { url "https://maven.fabricmc.net/" }
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+    implementation('com.mohistmc:json:0.5')
+    implementation "com.google.code.gson:gson:2.13.2"
+    compileOnly "net.fabricmc:fabric-loader:${project.loader_version}"
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = 'UTF-8'
+    //it.options.warnings = false
+    options.compilerArgs += "-Xlint:-removal"
+}
+
+jar {
+    archiveClassifier = 'server'
+
+    // Resolve everything at configuration time so the task stays configuration-cache compatible
+    def archivesBase = project.archives_base_name
+    def runtimeCp = configurations.runtimeClasspath
+
+    dependsOn(':server:jar')
+
+    from("LICENSE") {
+        rename { "${it}_${archivesBase}" }
+    }
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.roastmc.launcher.fabric.RoastMCLauncher',
+                'Specification-Title'   : 'RoastMC',
+                'Specification-Vendor'  : 'RoastMC',
+                'Specification-Version' : 'development',
+                'Implementation-Title'  : 'RoastMC',
+                'Implementation-Version': project.version,
+                'Implementation-Vendor' : 'RoastMC'
+        )
+    }
+
+    def serverLibsDir = project(":server").layout.buildDirectory.dir("libs").get().asFile
+    from(serverLibsDir) {
+        include "${project.archives_base_name}-${project.minecraft_version}-${gradleutils.gitInfo.abbreviatedId}-server.jar"
+        into "META-INF/libraries/com/roastmc/fabric/${version}"
+    }
+
+    from {
+        runtimeCp.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

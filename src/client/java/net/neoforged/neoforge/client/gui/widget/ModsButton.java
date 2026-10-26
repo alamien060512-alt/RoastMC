@@ -14,10 +14,11 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.neoforged.fml.VersionChecker;
+import net.neoforged.fml.loading.FMLConfig;
 import net.neoforged.neoforge.client.gui.modlist.ModListScreen;
 import net.neoforged.neoforge.client.loading.ClientModLoader;
 import net.neoforged.neoforge.common.NeoForgeMod;
-import net.neoforged.neoforge.common.VersionChecker;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -26,7 +27,7 @@ import org.jspecify.annotations.Nullable;
  */
 @ApiStatus.Internal
 public class ModsButton extends SpriteIconButton.CenteredIcon {
-    private static final Identifier UPDATE_INDICATOR_ICON = Identifier.fromNamespaceAndPath(NeoForgeMod.MOD_ID, "update_indicator");
+    private static final Identifier VERSION_CHECK_ICONS = Identifier.fromNamespaceAndPath(NeoForgeMod.MOD_ID, "textures/gui/version_check_icons.png");
 
     private VersionChecker.@Nullable Status showNotification;
     private boolean hasCheckedForUpdates = false;
@@ -56,7 +57,7 @@ public class ModsButton extends SpriteIconButton.CenteredIcon {
             hasCheckedForUpdates = true;
         }
 
-        if (showNotification == null || !showNotification.shouldDraw() || !VersionChecker.isEnabled()) {
+        if (showNotification == null || !showNotification.shouldDraw() || !FMLConfig.getBoolConfigValue(FMLConfig.ConfigValue.VERSION_CHECK)) {
             return;
         }
 
@@ -65,13 +66,17 @@ public class ModsButton extends SpriteIconButton.CenteredIcon {
         int w = getWidth();
         int h = getHeight();
 
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-                UPDATE_INDICATOR_ICON,
+        guiGraphics.blit(
+                RenderPipelines.GUI_TEXTURED,
+                VERSION_CHECK_ICONS,
                 x + (w / 2) + 5,
                 y + (h / 2) - 13,
+                showNotification.getSheetOffset() * 8,
+                (showNotification.isAnimated() && ((System.currentTimeMillis() / 800 & 1) == 1)) ? 8 : 0,
                 8,
                 8,
-                this.alpha);
+                64,
+                16);
     }
 
     public static ModsButton create(Screen parentScreen) {

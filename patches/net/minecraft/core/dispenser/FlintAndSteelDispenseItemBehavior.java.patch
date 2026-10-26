@@ -20,7 +20,7 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AABB;
  
-@@ -24,20 +_,37 @@
+@@ -24,17 +_,30 @@
          this.setSuccess(true);
          Direction facing = source.state().getValue(DispenserBlock.FACING);
          BlockPos targetPos = source.pos().relative(facing);
@@ -48,20 +48,13 @@
 +                level.setBlockAndUpdate(targetPos, blockstate2);
                  level.gameEvent(null, GameEvent.BLOCK_CHANGE, targetPos);
 -            } else if (target.getBlock() instanceof TntBlock) {
--                if (TntBlock.prime(level, targetPos, null, dispensed)) {
+-                if (TntBlock.prime(level, targetPos)) {
 -                    level.removeBlock(targetPos, false);
 +            } else if (target.isFlammable(level, targetPos, source.state().getValue(DispenserBlock.FACING).getOpposite())) {
-+                // CraftBukkit start - TNTPrimeEvent
-+                if (target.getBlock() instanceof TntBlock
-+                    && !org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, source.pos())) {
-+                    this.setSuccess(false);
-+                } else if (target.onCaughtFire(level, targetPos, source.state().getValue(DispenserBlock.FACING).getOpposite(), null, dispensed)) {
-+                    if (target.getBlock() instanceof TntBlock)
++                if (target.onCaughtFire(level, targetPos, source.state().getValue(DispenserBlock.FACING).getOpposite(), null)) {
++                    if (target.getBlock() instanceof TntBlock && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, source.pos())) { // CraftBukkit - TNTPrimeEvent
 +                        level.removeBlock(targetPos, false);
++                    }
                  } else {
                      this.setSuccess(false);
                  }
-+                // CraftBukkit end
-             }
-         }
- 

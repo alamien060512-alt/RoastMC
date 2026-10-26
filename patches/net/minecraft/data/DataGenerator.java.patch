@@ -8,7 +8,7 @@
  
      public DataGenerator(Path output) {
          this.vanillaPackOutput = new PackOutput(output);
-@@ -34,6 +_,59 @@
+@@ -34,6 +_,55 @@
          return new DataGenerator.PackGenerator(toRun, packId, new PackOutput(packOutputDir));
      }
  
@@ -30,11 +30,7 @@
 +    }
 +
 +    public PackGenerator getPackGenerator(boolean run, String providerPrefix, String path) {
-+        return getPackGenerator(run, providerPrefix, getPackOutput(path));
-+    }
-+
-+    public PackGenerator getPackGenerator(boolean run, String providerPrefix, PackOutput output) {
-+        return new PackGenerator(run, providerPrefix, output);
++        return new PackGenerator(run, providerPrefix, getPackOutput(path));
 +    }
 +
 +    public <T extends DataProvider> T addProvider(boolean run, DataProvider.Factory<T> factory) {

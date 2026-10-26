@@ -1,0 +1,108 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'net.neoforged.gradleutils' version '4.0.1'
+}
+
+version = project.minecraft_version + "-" + gradleutils.gitInfo.abbreviatedId
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	maven {
+		name = 'mohistmc'
+		url = 'https://maven.mohistmc.com/'
+	}
+	maven { url "https://maven.fabricmc.net/" }
+	mavenCentral()
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"roastmc" {
+			sourceSet sourceSets.main
+		}
+	}
+
+	accessWidenerPath = file("src/main/resources/roastmc.classtweaker")
+
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	compileOnly "org.jetbrains:annotations:24.0.1"
+	include(implementation("org.yaml:snakeyaml:2.6"))
+	include(implementation("org.jline:jline:3.30.4"))
+	include(implementation("org.apache.logging.log4j:log4j-iostreams:2.25.2"))
+	include(implementation("com.mohistmc:mixin-tools:1.2.7"){
+		exclude group: 'org.spongepowered'
+	})
+	include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.3")))
+	// LibraryLoader start
+	implementation 'org.checkerframework:checker-qual:3.33.0'
+	implementation 'org.eclipse.sisu:org.eclipse.sisu.inject:0.9.0.M2'
+	implementation 'org.codehaus.plexus:plexus-interpolation:1.26'
+	implementation 'org.codehaus.plexus:plexus-utils:4.0.3'
+	implementation 'com.google.protobuf:protobuf-java:4.28.2'
+	implementation('org.dom4j:dom4j:2.1.4') {
+		exclude group: 'javax.xml.bind'
+		exclude group: 'javax.xml.stream'
+		exclude group: 'jaxen'
+		exclude group: 'xpp3'
+	}
+	implementation "org.apache.maven:maven-artifact:3.9.14"
+	implementation 'org.apache.maven:maven-builder-support:3.9.14'
+	implementation 'org.apache.maven:maven-model:3.9.14'
+	implementation 'org.apache.maven:maven-model-builder:3.9.14'
+	implementation 'org.apache.maven:maven-repository-metadata:3.9.14'
+	implementation 'org.apache.maven:maven-resolver-provider:3.9.14'
+	implementation 'org.apache.maven.resolver:maven-resolver-api:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-connector-basic:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-impl:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-named-locks:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-spi:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-transport-http:1.9.27'
+	implementation 'org.apache.maven.resolver:maven-resolver-util:1.9.27'
+	// LibraryLoader end
+}
+
+processResources {
+	def modVersion = project.version.toString()
+	inputs.property "version", modVersion
+
+	filesMatching("fabric.mod.json") {
+		expand "version": modVersion
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	//it.options.warnings = false
+	options.compilerArgs += "-Xlint:-removal"
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	archiveClassifier = 'server'
+	def archivesName = project.base.archivesName.get()
+	inputs.property "archivesName", archivesName
+
+	from("LICENSE") {
+		rename { "${it}_${archivesName}"}
+	}
+}

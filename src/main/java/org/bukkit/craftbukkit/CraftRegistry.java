@@ -10,10 +10,10 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
@@ -85,7 +85,27 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                 yield ((CraftRegistry<B, M>) bukkitRegistry).createBukkit(direct);
             }
             case final Holder.Reference<M> reference -> bukkitRegistry.get(CraftNamespacedKey.fromResourceKey(reference.key()));
-            default -> throw new IllegalArgumentException("Unknown holder: " + minecraft);
+            // RoastMC start - convert DeferredHolder / other non-standard holders
+            default -> {
+                final Optional<ResourceKey<M>> key = minecraft.unwrapKey();
+                if (key.isPresent()) {
+                    final B mirrored = bukkitRegistry.get(CraftNamespacedKey.fromResourceKey(key.get()));
+                    if (mirrored != null) {
+                        yield mirrored;
+                    }
+                    // DeferredHolder is not a Holder.Reference; resolve its value from the NMS registry by key
+                    M value = null;
+                    try {
+                        value = CraftRegistry.getMinecraftRegistry(registryKey).get(key.get()).map(Holder.Reference::value).orElse(null);
+                    } catch (final RuntimeException ignored) {
+                    }
+                    if (value != null && bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {
+                        yield ((CraftRegistry<B, M>) craftRegistry).createBukkit(Holder.direct(value));
+                    }
+                }
+                throw new IllegalArgumentException("Unknown holder: " + minecraft);
+            }
+            // RoastMC end
         };
         Preconditions.checkArgument(bukkit != null);
 
@@ -148,12 +168,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     private final Class<?> bukkitClass; // Paper - relax preload class
-    private final Map<NamespacedKey, B> cache = new ConcurrentHashMap<>();
+    private final Map<NamespacedKey, B> cache = new HashMap<>();
     private final net.minecraft.core.Registry<M> minecraftRegistry;
     private final io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit; // Paper - switch to Holder
     private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
     private final InvalidHolderOwner invalidHolderOwner = new InvalidHolderOwner();
-    private volatile boolean lockReferenceHolders;
+    private boolean lockReferenceHolders;
 
     public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
         // Paper start - switch to Holder
@@ -190,10 +210,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     @Override
     public B get(NamespacedKey namespacedKey) {
-        return this.cache.computeIfAbsent(namespacedKey, this::loadBukkit);
-    }
+        B cached = this.cache.get(namespacedKey);
+        if (cached != null) {
+            return cached;
+        }
 
-    private B loadBukkit(final NamespacedKey namespacedKey) {
         // Important to use the ResourceKey<?> "get" method below because it will work before registry is frozen
         final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(CraftNamespacedKey.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         final Holder.Reference<M> holder;
@@ -207,7 +228,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         } else {
             return null;
         }
-        return this.createBukkit(holder);
+        final B bukkit = this.createBukkit(holder);
+
+        this.cache.put(namespacedKey, bukkit);
+
+        return bukkit;
     }
 
     @NotNull
@@ -272,7 +297,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     @Override
     public String toString() {
         return "CraftRegistry{" +
-            "minecraftRegistry=" + minecraftRegistry.key() +
-            '}';
+                "minecraftRegistry=" + minecraftRegistry.key() +
+                '}';
     }
 }

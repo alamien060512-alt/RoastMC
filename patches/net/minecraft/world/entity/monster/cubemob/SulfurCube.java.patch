@@ -8,15 +8,15 @@
  import org.jspecify.annotations.Nullable;
  
  public class SulfurCube extends AbstractCubeMob implements Bucketable, Shearable {
-@@ -94,7 +_,7 @@
-     private SulfurCubeArchetype.KnockbackModifiers knockbackModifier = SulfurCubeArchetype.DEFAULT_KNOCKBACK_MODIFIERS;
+@@ -95,7 +_,7 @@
      private SulfurCubeArchetype.SoundSettings soundSettings = SulfurCubeArchetype.DEFAULT_SOUND_SETTINGS;
      private int fuse = -1;
--    private final List<SulfurCubeArchetype.ContactDamage> contactDamages = new ArrayList<>();
-+    private List<SulfurCubeArchetype.ContactDamage> contactDamages = new ArrayList<>();
-     public static final EntityDataAccessor<Integer> MAX_FUSE = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.INT);
+     private List<SulfurCubeArchetype.ContactDamage> contactDamages = new ArrayList<>();
+-    private static final EntityDataAccessor<Integer> MAX_FUSE = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.INT);
++    public static final EntityDataAccessor<Integer> MAX_FUSE = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.INT);
      private static final EntityDataAccessor<Boolean> FROM_BUCKET = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.BOOLEAN);
      private static final boolean DEFAULT_FROM_BUCKET = false;
+     private static final float HORIZONTAL_HIT_ANGLE_SCALE = 1.6F;
 @@ -129,6 +_,56 @@
          this.goalSelector.addGoal(3, new SulfurCube.SulfurCubeSearchForItemsGoal(this));
      }
@@ -74,6 +74,15 @@
      @Override
      public boolean fromBucket() {
          return this.entityData.get(FROM_BUCKET);
+@@ -142,7 +_,7 @@
+         return this.getFuse() >= 0;
+     }
+ 
+-    private void setFuse(int fuse) {
++    public void setFuse(int fuse) {
+         this.fuse = fuse;
+     }
+ 
 @@ -185,7 +_,7 @@
          super.travelInFluid(input);
          if (this.hasBodyItem() && this.floatsInLiquids) {
@@ -122,7 +131,7 @@
 +                        if (primeEvent.isCancelled()) {
 +                            this.setFuse(PrimedTnt.NO_FUSE);
 +                            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
-+                            this.setPermanentlyInvulnerable(false);
++                            this.setInvulnerable(false);
 +                            return;
 +                        }
 +                        afterEvent.run();
@@ -152,12 +161,12 @@
 -                this.discard();
 +                this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit
              }
-+            // Paper start - properly reset fuse if explosion data was unset by game
++        // Paper start - properly reset fuse if explosion data was unset by game
 +        } else if (this.tickCount > 1 && this.isPrimed()) {
 +            this.setFuse(PrimedTnt.NO_FUSE);
 +            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
-+            this.setPermanentlyInvulnerable(false);
-+            // Paper end - properly reset fuse if explosion data was unset by game
++            this.setInvulnerable(false);
++        // Paper end - properly reset fuse if explosion data was unset by game
          }
      }
  
@@ -171,7 +180,7 @@
 +                return false;
 +            }
 +            // Paper end - call EntityIgniteEvent
-             this.setPermanentlyInvulnerable(true);
+             this.setInvulnerable(true);
              this.setFuse(fuseTime);
              this.entityData.set(MAX_FUSE, fuseTime);
 @@ -455,7 +_,15 @@
@@ -197,10 +206,10 @@
                  } else if (isSwallowableItem(heldItem)) {
 -                    boolean itWorked = this.equipItem(heldItem);
 +                    // Paper start - SulfurCubeSwallowItemEvent
-+                    org.bukkit.inventory.ItemStack craftSwallowedItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(this.getItemBySlot(EquipmentSlot.BODY));
-+                    org.bukkit.inventory.ItemStack craftHeldItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(heldItem);
++                    org.bukkit.inventory.ItemStack craftSwallowedItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.getItemBySlot(EquipmentSlot.BODY));
++                    org.bukkit.inventory.ItemStack craftHeldItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(heldItem);
 +                    io.papermc.paper.event.entity.SulfurCubeSwallowItemEvent event = new io.papermc.paper.event.entity.SulfurCubeSwallowItemEvent(
-+                        (org.bukkit.entity.SulfurCube) this.getBukkitEntity(), (org.bukkit.entity.Player) player.getBukkitEntity(), craftSwallowedItem, craftHeldItem
++                        (org.bukkit.entity.SulfurCube) this.getBukkitLivingEntity(), (org.bukkit.entity.Player) player.getBukkitLivingEntity(), craftSwallowedItem, craftHeldItem
 +                    );
 +                    if (!event.callEvent()) {
 +                        if (player instanceof final ServerPlayer serverPlayer) serverPlayer.containerMenu.forceHeldSlot(hand);
@@ -223,13 +232,13 @@
 @@ -525,7 +_,7 @@
          if (this.level() instanceof ServerLevel serverLevel) {
              for (SulfurCubeArchetype.ContactDamage damage : this.contactDamages) {
-                 Entity damageSource = !damage.attributeToSource() && !(entity instanceof Player) ? null : this;
--                entity.hurtServer(serverLevel, new DamageSource(damage.damageType(), damageSource), damage.amount().sample(this.getRandom()));
-+                entity.hurtServer(serverLevel, new DamageSource(damage.damageType(), damageSource).eventEntityDamager(this).knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.CONTACT), damage.amount().sample(this.getRandom())); // Paper - add damager for EntityDamageEvent
+                 entity.hurtServer(
+-                    serverLevel, new DamageSource(damage.damageType(), damage.attributeToSource() ? this : null), damage.amount().sample(this.getRandom())
++                    serverLevel, new DamageSource(damage.damageType(), damage.attributeToSource() ? this : null).eventEntityDamager(this).knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.CONTACT), damage.amount().sample(this.getRandom()) // Paper - add damager for EntityDamageEvent
+                 );
              }
          }
-     }
-@@ -555,12 +_,12 @@
+@@ -556,12 +_,12 @@
      }
  
      @Override
@@ -244,7 +253,7 @@
          return this.isTiny() ? SoundEvents.SULFUR_CUBE_SMALL_DEATH : SoundEvents.SULFUR_CUBE_DEATH;
      }
  
-@@ -603,11 +_,25 @@
+@@ -604,11 +_,25 @@
      }
  
      @Override
@@ -273,7 +282,7 @@
          this.playSound(this.getEjectSound());
          this.pickupTimer = 100;
      }
-@@ -747,6 +_,10 @@
+@@ -748,6 +_,10 @@
              double sulfurCubeTopPosition = sulfurCubeBottomPosition + this.getBbHeight();
              double pusherTopPosition = pusherFeetPosition + pusher.getBbHeight();
              if (cubeToPusher.horizontalDistance() < 1.3F && pusherFeetPosition <= sulfurCubeTopPosition && pusherTopPosition > sulfurCubeBottomPosition) {
@@ -284,7 +293,7 @@
                  double knockback = Math.max(0.0, 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
                  Vec3 pushDirection = cubeToPusher.horizontal().normalize().scale(knockback);
                  float pushSpeedScale = player.isPassenger() ? 0.16F : 0.3F;
-@@ -826,7 +_,7 @@
+@@ -827,7 +_,7 @@
      }
  
      @Override
@@ -293,7 +302,7 @@
          if (source.getEntity() != null && this.hasBodyItem()) {
              float horizontalHitAngleScale = 1.6F;
              float verticalHitAngleScale = 0.5F;
-@@ -864,16 +_,26 @@
+@@ -865,16 +_,26 @@
              double knockBackResistance = this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
              horizontalPower *= (float)(1.0 - knockBackResistance);
              verticalPower *= (float)(1.0 - knockBackResistance);
@@ -323,7 +332,7 @@
          }
      }
  
-@@ -1008,7 +_,7 @@
+@@ -1009,7 +_,7 @@
          }
  
          @Override

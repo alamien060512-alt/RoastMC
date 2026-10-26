@@ -1,19 +1,11 @@
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -46,6 +_,7 @@
- import net.minecraft.world.level.gameevent.GameEventListenerRegistry;
- import net.minecraft.world.level.levelgen.BelowZeroRetrogen;
- import net.minecraft.world.level.levelgen.Heightmap;
-+import net.minecraft.world.level.levelgen.NoiseChunk;
- import net.minecraft.world.level.levelgen.blending.BlendingData;
- import net.minecraft.world.level.levelgen.structure.Structure;
- import net.minecraft.world.level.levelgen.structure.StructureStart;
-@@ -58,27 +_,91 @@
+@@ -59,14 +_,14 @@
  
  import net.neoforged.neoforge.attachment.IAttachmentHolder;
  
--public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeResolver, IAttachmentHolder {
-+public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeResolver, IAttachmentHolder, ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk { // Paper - rewrite chunk system
+-public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, IAttachmentHolder {
++public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, IAttachmentHolder, ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk { // Paper - rewrite chunk system
      public static final int NO_FILLED_SECTION = -1;
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final LongSet EMPTY_REFERENCE_SET = new LongOpenHashSet();
@@ -25,14 +17,14 @@
      private long inhabitedTime;
      @Deprecated
      private @Nullable BiomeGenerationSettings carverBiomeSettings;
-+    protected @Nullable NoiseChunk noiseChunk;
+@@ -74,13 +_,68 @@
      protected final UpgradeData upgradeData;
      protected final @Nullable BlendingData blendingData;
      public final Map<Heightmap.Types, Heightmap> heightmaps = Maps.newEnumMap(Heightmap.Types.class);
 -    protected ChunkSkyLightSources skyLightSources;
 +    // Paper - rewrite chunk system
      private final Map<Structure, StructureStart> structureStarts = Maps.newHashMap();
-     private final Map<Structure, LongSet> structureReferences = Maps.newHashMap();
+     private final Map<Structure, LongSet> structuresRefences = Maps.newHashMap();
      protected final Map<BlockPos, CompoundTag> pendingBlockEntities = Maps.newHashMap();
      public final Map<BlockPos, BlockEntity> blockEntities = new Object2ObjectOpenHashMap<>();
      protected final LevelHeightAccessor levelHeightAccessor;
@@ -92,30 +84,14 @@
 +    private final int minSection;
 +    private final int maxSection;
 +    // Paper end - get block chunk optimisation
-+    // Paper start - getblock optimisations - cache world height/sections
-+    private final int minY;
-+    private final int height;
-+    private final int maxY;
-+    private final int minSectionY;
-+    private final int maxSectionY;
-+    private final int sectionsCount;
-+    // Paper end - getblock optimisations - cache world height/sections
  
      public ChunkAccess(
          ChunkPos chunkPos,
-@@ -89,14 +_,23 @@
+@@ -91,14 +_,15 @@
          LevelChunkSection @Nullable [] sections,
          @Nullable BlendingData blendingData
      ) {
 -        this.chunkPos = chunkPos;
-+        // Paper start - getblock optimisations - cache world height/sections
-+        this.minY = levelHeightAccessor.getMinY();
-+        this.height = levelHeightAccessor.getHeight();
-+        this.maxY = this.minY + this.height - 1;
-+        this.minSectionY = this.minY >> 4;
-+        this.maxSectionY = this.maxY >> 4;
-+        this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
-+        // Paper end - getblock optimisations - cache world height/sections
 +        this.locX = chunkPos.x(); this.locZ = chunkPos.z(); // Paper - reduce need for field lookups
 +        this.chunkPos = chunkPos; this.coordinateKey = ChunkPos.pack(this.locX, this.locZ); // Paper - cache long key
          this.upgradeData = upgradeData;
@@ -129,7 +105,7 @@
          if (sections != null) {
              if (this.sections.length == sections.length) {
                  System.arraycopy(sections, 0, this.sections, 0, this.sections.length);
-@@ -105,13 +_,23 @@
+@@ -107,13 +_,23 @@
              }
          }
  
@@ -156,7 +132,7 @@
              }
          }
      }
-@@ -120,6 +_,8 @@
+@@ -122,6 +_,8 @@
          return GameEventListenerRegistry.NOOP;
      }
  
@@ -165,7 +141,7 @@
      public @Nullable BlockState setBlockState(BlockPos pos, BlockState state) {
          return this.setBlockState(pos, state, 3);
      }
-@@ -266,6 +_,7 @@
+@@ -268,6 +_,7 @@
      public boolean tryMarkSaved() {
          if (this.unsaved) {
              this.unsaved = false;
@@ -173,7 +149,7 @@
              return true;
          } else {
              return false;
-@@ -273,7 +_,7 @@
+@@ -275,7 +_,7 @@
      }
  
      public boolean isUnsaved() {
@@ -182,107 +158,41 @@
      }
  
      public abstract ChunkStatus getPersistedStatus();
-@@ -318,10 +_,14 @@
+@@ -320,10 +_,14 @@
  
      @Override
      public final void findBlockLightSources(BiConsumer<BlockPos, BlockState> consumer) {
 -        this.findBlocks(state -> state.getLightEmission() != 0, consumer);
-+        this.findBlocks(state -> state.hasDynamicLightEmission() || state.getLightEmission(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO) != 0, (state, pos) -> state.getLightEmission(this, pos) != 0, consumer);
++        this.findBlocks(p_284897_ -> p_284897_.hasDynamicLightEmission() || p_284897_.getLightEmission(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO) != 0, (p_284897_, pos) -> p_284897_.getLightEmission(this, pos) != 0, consumer);
      }
  
      public void findBlocks(Predicate<BlockState> predicate, BiConsumer<BlockPos, BlockState> consumer) {
-+        findBlocks(predicate, (state, _) -> predicate.test(state), consumer);
++        findBlocks(predicate, (state, pos) -> predicate.test(state), consumer);
 +    }
 +
 +    public void findBlocks(Predicate<BlockState> predicate, java.util.function.BiPredicate<BlockState, BlockPos> fineFilter, BiConsumer<BlockPos, BlockState> consumer) {
-         BlockStateConsumer blockStateConsumer = (pos, state) -> {
-             consumer.accept(pos, state);
-             return Continuation.CONTINUE;
-@@ -332,7 +_,7 @@
-             LevelChunkSection section = this.getSection(this.getSectionIndexFromSectionY(sectionY));
-             if (section.maybeHas(predicate)) {
-                 BlockPos origin = SectionPos.of(this.chunkPos, sectionY).origin();
--                BlockScanUtils.findBlocksInSection(section, origin, 0, 0, 0, 15, 15, 15, predicate, blockStateConsumer);
-+                BlockScanUtils.findBlocksInSection(section, origin, 0, 0, 0, 15, 15, 15, predicate, fineFilter, blockStateConsumer);
-             }
-         }
-     }
-@@ -398,13 +_,65 @@
+         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
  
-     @Override
-     public int getMinY() {
--        return this.levelHeightAccessor.getMinY();
-+        return this.minY; // Paper - getblock optimisations - cache world height/sections
-     }
- 
-     @Override
-     public int getHeight() {
--        return this.levelHeightAccessor.getHeight();
--    }
-+        return this.height; // Paper - getblock optimisations - cache world height/sections
-+    }
-+
-+    // Paper start - getblock optimisations - cache world height/sections
-+    @Override
-+    public int getMaxY() {
-+        return this.maxY;
-+    }
-+
-+    @Override
-+    public int getSectionsCount() {
-+        return this.sectionsCount;
-+    }
-+
-+    @Override
-+    public int getMinSectionY() {
-+        return this.minSectionY;
-+    }
-+
-+    @Override
-+    public int getMaxSectionY() {
-+        return this.maxSectionY;
-+    }
-+
-+    @Override
-+    public boolean isInsideBuildHeight(final int blockY) {
-+        return blockY >= this.minY && blockY <= this.maxY;
-+    }
-+
-+    @Override
-+    public boolean isOutsideBuildHeight(final BlockPos pos) {
-+        return this.isOutsideBuildHeight(pos.getY());
-+    }
-+
-+    @Override
-+    public boolean isOutsideBuildHeight(final int blockY) {
-+        return blockY < this.minY || blockY > this.maxY;
-+    }
-+
-+    @Override
-+    public int getSectionIndex(final int blockY) {
-+        return (blockY >> 4) - this.minSectionY;
-+    }
-+
-+    @Override
-+    public int getSectionIndexFromSectionY(final int sectionY) {
-+        return sectionY - this.minSectionY;
-+    }
-+
-+    @Override
-+    public int getSectionYFromSectionIndex(final int sectionIdx) {
-+        return sectionIdx + this.minSectionY;
-+    }
-+    // Paper end - getblock optimisations - cache world height/sections
- 
-     @Deprecated
-     public BiomeGenerationSettings carverBiome(Supplier<BiomeGenerationSettings> source) {
-@@ -417,20 +_,40 @@
+         for (int sectionY = this.getMinSectionY(); sectionY <= this.getMaxSectionY(); sectionY++) {
+@@ -335,8 +_,9 @@
+                     for (int z = 0; z < 16; z++) {
+                         for (int x = 0; x < 16; x++) {
+                             BlockState state = section.getBlockState(x, y, z);
+-                            if (predicate.test(state)) {
+-                                consumer.accept(mutablePos.setWithOffset(origin, x, y, z), state);
++                            mutablePos.setWithOffset(origin, x, y, z);
++                            if (fineFilter.test(state, mutablePos)) {
++                                consumer.accept(mutablePos, state);
+                             }
+                         }
+                     }
+@@ -433,19 +_,40 @@
  
      @Override
      public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ) {
 +        // Paper start - get block chunk optimisation
-+        int sectionY = (quartY >> QuartPos.BITS) - this.minSection;
-+        int rel = quartY & QuartPos.MASK;
++        int sectionY = (quartY >> 2) - this.minSection;
++        int rel = quartY & 3;
 +
 +        final LevelChunkSection[] sections = this.sections;
 +
@@ -291,10 +201,10 @@
 +            rel = 0;
 +        } else if (sectionY >= sections.length) {
 +            sectionY = sections.length - 1;
-+            rel = QuartPos.MASK;
++            rel = 3;
 +        }
 +
-+        return sections[sectionY].getNoiseBiome(quartX & QuartPos.MASK, rel, quartZ & QuartPos.MASK);
++        return sections[sectionY].getNoiseBiome(quartX & 3, rel, quartZ & 3);
 +        // Paper end - get block chunk optimisation
 +    }
 +
@@ -317,12 +227,11 @@
              throw new ReportedException(report);
          }
      }
--
 +    // CraftBukkit end
-     public void fillBiomesFromNoise(BiomeResolver biomeResolver) {
+ 
+     public void fillBiomesFromNoise(BiomeResolver biomeResolver, Climate.Sampler sampler) {
          ChunkPos pos = this.getPos();
-         int quartMinX = QuartPos.fromBlock(pos.getMinBlockX());
-@@ -457,13 +_,90 @@
+@@ -477,13 +_,90 @@
      }
  
      public void initializeLightSources() {

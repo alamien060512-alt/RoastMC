@@ -4,7 +4,6 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.util.StackWalkerUtil;
-import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -87,7 +86,7 @@ public class HorriblePlayerLoginEventHack {
         connection.handledLegacyLoginEvent = true;
 
         CraftPlayer horribleBukkitPlayer = player.getBukkitEntity();
-        PlayerLoginEvent event = new PlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), connection.channel.remoteAddress());
+        PlayerLoginEvent event = new PlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());
         event.disallow(result.result(), PaperAdventure.asAdventure(result.message()));
         event.callEvent();
 

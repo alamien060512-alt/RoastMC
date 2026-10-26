@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.FurnaceRecipe;
@@ -25,14 +26,15 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
     }
 
     @Override
-    public RecipeHolder<?> toMinecraftRecipe() {
-        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.SmeltingRecipe(
+    public void addToRecipeManager() {
+        SmeltingRecipe recipe = new net.minecraft.world.item.crafting.SmeltingRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.AbstractCookingRecipe.CookingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftRecipe.toIngredient(this.getInputChoice(), true),
             CraftItemStack.asTemplate(this.getResult()),
             this.getExperience(),
             this.getCookingTime()
-        ));
+        );
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 }

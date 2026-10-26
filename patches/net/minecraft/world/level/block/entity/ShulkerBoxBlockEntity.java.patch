@@ -9,14 +9,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity implements WorldlyContainer {
-@@ -43,12 +_,43 @@
-     private static final int[] SLOTS = IntStream.range(0, 27).toArray();
-     private static final Component DEFAULT_NAME = Component.translatable("container.shulkerBox");
-     private NonNullList<ItemStack> itemStacks = NonNullList.withSize(27, ItemStack.EMPTY);
--    private int openCount;
-+    public int openCount;
-     private ShulkerBoxBlockEntity.AnimationStatus animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSED;
-     private float progress;
+@@ -49,6 +_,37 @@
      private float progressOld;
      private final @Nullable DyeColor color;
  
@@ -58,7 +51,7 @@
              }
  
              this.openCount++;
-+            if (opened) return; // CraftBukkit - only animate if not already forced open by API
++            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount == 1) {
                  this.level.gameEvent(containerUser.getLivingEntity(), GameEvent.CONTAINER_OPEN, this.worldPosition);
@@ -66,7 +59,7 @@
      public void stopOpen(ContainerUser containerUser) {
          if (!this.remove && !containerUser.getLivingEntity().isSpectator()) {
              this.openCount--;
-+            if (opened) return; // CraftBukkit - only animate if not already forced open by API
++            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount <= 0) {
                  this.level.gameEvent(containerUser.getLivingEntity(), GameEvent.CONTAINER_CLOSE, this.worldPosition);

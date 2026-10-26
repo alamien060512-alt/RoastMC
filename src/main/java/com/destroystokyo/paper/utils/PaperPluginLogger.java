@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.utils;
 
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -45,7 +45,7 @@ public class PaperPluginLogger extends Logger {
         }
     }
 
-    // Youer - Process ColorAPI tags in plugin log messages and serialize to ANSI for terminal rendering
+    // RoastMC - Process ColorAPI tags in plugin log messages and serialize to ANSI for terminal rendering
     @Override
     public void log(final LogRecord record) {
         record.setMessage(ColorAPI.ansi(record.getMessage()));

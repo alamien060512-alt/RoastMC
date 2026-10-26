@@ -1,16 +1,13 @@
 --- a/net/minecraft/world/item/BucketItem.java
 +++ b/net/minecraft/world/item/BucketItem.java
-@@ -31,9 +_,17 @@
+@@ -29,9 +_,14 @@
  import net.minecraft.world.level.material.Fluids;
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.HitResult;
 +import net.neoforged.neoforge.common.SoundActions;
 +import net.neoforged.neoforge.fluids.FluidStack;
 +import net.neoforged.neoforge.transfer.fluid.FluidUtil;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.player.PlayerBucketEmptyEvent;
-+import org.bukkit.event.player.PlayerBucketFillEvent;
  import org.jspecify.annotations.Nullable;
  
  public class BucketItem extends Item implements DispensibleContainerItem {
@@ -18,19 +15,19 @@
      public final Fluid content;
  
      public BucketItem(Fluid content, Item.Properties properties) {
-@@ -58,8 +_,9 @@
+@@ -56,8 +_,9 @@
          BlockPos directionOffsetPos = pos.relative(direction);
          if (level.mayInteract(player, pos) && player.mayUseItemAt(directionOffsetPos, direction, itemStack)) {
              BlockState clicked = level.getBlockState(pos);
 -            BlockPos placePos = clicked.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? pos : directionOffsetPos;
 -            if (this.emptyContents(player, level, placePos, hitResult)) {
-+            BlockPos placePos = canBlockContainFluid(player, level, pos, clicked) ? pos : directionOffsetPos;
++            BlockPos placePos = canBlockContainFluid(player, level, pos, clicked) && this.content == Fluids.WATER ? pos : directionOffsetPos;
 +            initBUkkit(direction, pos, hand);
 +            if (this.emptyContents(player, level, placePos, hitResult, itemStack)) {
                  this.checkExtraContent(player, level, itemStack, placePos);
                  if (player instanceof ServerPlayer serverPlayer && this.content != Fluids.EMPTY) {
                      CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, placePos, itemStack);
-@@ -72,12 +_,22 @@
+@@ -70,12 +_,22 @@
                  if (this.content == Fluids.EMPTY) {
                      BlockState blockState = level.getBlockState(pos);
                      if (blockState.getBlock() instanceof BucketPickup bucketPickupBlock) {
@@ -55,7 +52,7 @@
                              if (!level.isClientSide()) {
                                  CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, taken);
                              }
-@@ -99,6 +_,13 @@
+@@ -97,6 +_,13 @@
      }
  
      public static ItemStack getEmptySuccessItem(ItemStack itemStack, Player player) {
@@ -69,7 +66,7 @@
          return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : itemStack;
      }
  
-@@ -107,7 +_,21 @@
+@@ -105,7 +_,20 @@
      }
  
      @Override
@@ -86,12 +83,11 @@
 +        emptyContents$interactionhand = interactionhand;
 +    }
 +
-+    @Override
 +    public boolean emptyContents(@Nullable LivingEntity user, Level level, BlockPos pos, @Nullable BlockHitResult hitResult, @Nullable ItemStack containerItem) {
          if (!(this.content instanceof FlowingFluid flowingFluid)) {
              return false;
          } else {
-@@ -117,9 +_,26 @@
+@@ -115,12 +_,29 @@
              boolean shiftKeyDown = user != null && user.isShiftKeyDown();
              boolean placeLiquid = mayReplace
                  || block instanceof LiquidBlockContainer container && container.canPlaceLiquid(user, level, pos, blockState, this.content);
@@ -105,45 +101,36 @@
 +                    player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
 +                    return false;
 +                }
-+                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.inventory.ItemStack.of(org.bukkit.Material.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
++                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
 +            }
 +            // CraftBukkit end
-             if (canPlaceFluidInsideBlock) {
--                if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) && this.content.is(FluidTags.WATER)) {
-+                if (!containedFluidStack.isEmpty() && this.content.getFluidType().isVaporizedOnPlacement(level, pos, containedFluidStack)) {
-+                    this.content.getFluidType().onVaporize(user, level, pos, containedFluidStack);
-+                    return true;
-+                }
+             if (!canPlaceFluidInsideBlock) {
+-                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null);
+-            }
+-
+-            if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) && this.content.is(FluidTags.WATER)) {
++                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null, containerItem);
++            }
++
++            if (!containedFluidStack.isEmpty() && this.content.getFluidType().isVaporizedOnPlacement(level, pos, containedFluidStack)) {
++                this.content.getFluidType().onVaporize(user, level, pos, containedFluidStack);
++                return true;
++            }
 +
 +            if ((level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) || (level.isTheEnd() && !org.purpurmc.purpur.PurpurConfig.allowWaterPlacementInTheEnd)) && this.content.is(FluidTags.WATER)) { // Purpur - Add allow water in end world option
-                     int x = pos.getX();
-                     int y = pos.getY();
-                     int z = pos.getZ();
+                 int x = pos.getX();
+                 int y = pos.getY();
+                 int z = pos.getZ();
 @@ -132,7 +_,7 @@
-                     }
- 
-                     return true;
--                } else if (block instanceof LiquidBlockContainer container && this.content == Fluids.WATER) {
-+                } else if (block instanceof LiquidBlockContainer container && container.canPlaceLiquid(user, level, pos, blockState, this.content)) {
-                     container.placeLiquid(level, pos, blockState, flowingFluid.getSource(false));
-                     this.playEmptySound(user, level, pos);
-                     return true;
-@@ -142,6 +_,7 @@
-                     }
- 
-                     if (!level.setBlock(pos, this.content.defaultFluidState().createLegacyBlock(), 11) && !blockState.getFluidState().isSource()) {
-+                        itemLeftInHandAfterPlayerBucketEmptyEvent = null; // Paper - Fix PlayerBucketEmptyEvent result itemstack
-                         return false;
-                     }
- 
-@@ -149,15 +_,20 @@
-                     return true;
                  }
-             } else {
--                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null);
-+                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null, containerItem);
-             }
-         }
+ 
+                 return true;
+-            } else if (block instanceof LiquidBlockContainer container && this.content == Fluids.WATER) {
++            } else if (block instanceof LiquidBlockContainer container && container.canPlaceLiquid(user, level, pos, blockState, content)) {
+                 container.placeLiquid(level, pos, blockState, flowingFluid.getSource(false));
+                 this.playEmptySound(user, level, pos);
+                 return true;
+@@ -152,9 +_,15 @@
      }
  
      protected void playEmptySound(@Nullable LivingEntity user, LevelAccessor level, BlockPos pos) {
@@ -154,8 +141,9 @@
          level.gameEvent(user, GameEvent.FLUID_PLACE, pos);
 +    }
 +
-+    protected boolean canBlockContainFluid(@Nullable Player player, Level level, BlockPos pos, BlockState clicked) {
-+        return clicked.getBlock() instanceof LiquidBlockContainer container && container.canPlaceLiquid(player, level, pos, clicked, this.content);
++    protected boolean canBlockContainFluid(@Nullable Player player, Level worldIn, BlockPos posIn, BlockState blockstate)
++    {
++        return blockstate.getBlock() instanceof LiquidBlockContainer && ((LiquidBlockContainer)blockstate.getBlock()).canPlaceLiquid(player, worldIn, posIn, blockstate, this.content);
      }
  
      public Fluid getContent() {

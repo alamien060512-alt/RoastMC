@@ -8,6 +8,7 @@ public class CraftInventoryChiseledBookshelf extends CraftInventory implements C
 
     public CraftInventoryChiseledBookshelf(ChiseledBookShelfBlockEntity inventory) {
         super(inventory);
+
     }
 
     @Override

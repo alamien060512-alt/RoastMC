@@ -1,5 +1,6 @@
 {
   "values": [
-    "#minecraft:mushrooms"
+    "minecraft:brown_mushroom",
+    "minecraft:red_mushroom"
   ]
 }

@@ -5,29 +5,18 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.registry.HolderableBase;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.random.Weighted;
-import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.component.Compostable;
-import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
-import net.minecraft.world.level.storage.loot.providers.number.ints.NumberDispatcher;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
-import net.minecraft.world.level.storage.loot.providers.number.ints.WeightedListValue;
+import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.block.entity.FuelValues;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -54,12 +43,12 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     private final Supplier<CraftItemMetas.ItemMetaData<M>> itemMetaData;
 
-    public static Material minecraftToBukkit(Item minecraft) {
-        return CraftMagicNumbers.getMaterial(minecraft);
+    public static Material minecraftToBukkit(Item item) {
+        return CraftMagicNumbers.getMaterial(item);
     }
 
-    public static Item bukkitToMinecraft(Material bukkit) {
-        return CraftMagicNumbers.getItem(bukkit);
+    public static Item bukkitToMinecraft(Material material) {
+        return CraftMagicNumbers.getItem(material);
     }
 
     public static ItemType minecraftToBukkitNew(Item minecraft) {
@@ -114,7 +103,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     @Override
     public ItemStack createItemStack(final int amount, final @Nullable Consumer<? super M> metaConfigurator) {
         final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle(), amount);
-        final ItemStack mirror = CraftItemStack.asBukkitMirror(stack);
+        final CraftItemStack mirror = CraftItemStack.asCraftMirror(stack);
         if (metaConfigurator != null) {
             mirror.editMeta(this.getItemMetaClass(), metaConfigurator);
         }
@@ -153,7 +142,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public int getMaxStackSize() {
-        return this.getHandle().components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
+        return this.getHandle().getDefaultInstance().getMaxStackSize();
     }
 
     @Override
@@ -173,70 +162,30 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isFuel() {
-        return this.getHandle().components().has(DataComponents.COOKING_FUEL);
+        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.getHandle()));
     }
 
     @Override
     public int getBurnDuration() {
-        CookingFuel cookingFuel = this.getHandle().components().get(DataComponents.COOKING_FUEL);
-        if (cookingFuel == null) {
+        FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
+        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
+
+        if (!fuelValues.isFuel(stack)) {
             return 0;
         }
 
-        // this is cursed but given the future API require a ton of rework not ready it's the best compromise
-        if (cookingFuel.burnTime() instanceof ResolvableInt.Reference burnTime) {
-            if (MinecraftServer.getServer() == null) {
-                throw new IllegalArgumentException("Too early to call this method");
-            }
-
-            Holder.Reference<ContextIntProvider> provider = MinecraftServer.getServer().reloadableRegistries().lookup().getOrThrow(burnTime.key());
-            LootContext fakeContext = new LootContext.Builder(new LootParams.Builder(null).create(LootContextParamSets.EMPTY))
-                .withOptionalRandomSeed(42L)
-                .createWithoutLevel();
-            return provider.value().getInt(fakeContext);
-        }
-        return 0;
+        return fuelValues.burnDuration(stack);
     }
 
     @Override
     public boolean isCompostable() {
-        return this.getHandle().components().has(DataComponents.COMPOSTABLE);
+        return ComposterBlock.COMPOSTABLES.containsKey(this.getHandle());
     }
 
     @Override
     public float getCompostChance() {
-        Compostable compostable = this.getHandle().components().get(DataComponents.COMPOSTABLE);
-        Preconditions.checkArgument(compostable != null, "The item type " + this.getKey() + " is not compostable");
-
-        // this is cursed but given the future API require a ton of rework not ready it's the best compromise
-        if (compostable.layers() instanceof ResolvableInt.Reference reference) {
-            if (MinecraftServer.getServer() == null) {
-                throw new IllegalArgumentException("Too early to call this method");
-            }
-
-            Holder.Reference<ContextIntProvider> provider = MinecraftServer.getServer().reloadableRegistries().lookup().getOrThrow(reference.key());
-            ConstantValue oneLayerValue = new ConstantValue(1);
-            if (provider.value().equals(oneLayerValue)) {
-                return 1.0F;
-            }
-            if (provider.value() instanceof NumberDispatcher dispatcher) {
-                if (dispatcher.defaultValue().value() instanceof WeightedListValue(WeightedList<Holder<ContextIntProvider>> distribution)) {
-                    List<Weighted<Holder<ContextIntProvider>>> weightedList = distribution.unwrap();
-                    int total = 0;
-                    int current = 0;
-                    for (Weighted<Holder<ContextIntProvider>> weighted : weightedList) {
-                        total += weighted.weight();
-                        if (weighted.value().value().equals(oneLayerValue)) {
-                            current = weighted.weight();
-                        }
-                    }
-
-                    return (float) current / total;
-                }
-            }
-        }
-
-        return 0.0F;
+        Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
+        return ComposterBlock.COMPOSTABLES.getFloat(this.getHandle());
     }
 
     @Override

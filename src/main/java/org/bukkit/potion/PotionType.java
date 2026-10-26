@@ -71,7 +71,7 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
         this(NamespacedKey.minecraft(key));
     }
 
-    // Youer - dynamic modded potion types keep their real namespace:path
+    // RoastMC - dynamic modded potion types keep their real namespace:path
     PotionType(NamespacedKey key) {
         this.key = key;
         this.internalPotionDataSupplier = Suppliers.memoize(() -> Bukkit.getUnsafe().getInternalPotionData(this.key));

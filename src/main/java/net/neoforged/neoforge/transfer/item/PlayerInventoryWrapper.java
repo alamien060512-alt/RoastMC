@@ -7,7 +7,6 @@ package net.neoforged.neoforge.transfer.item;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
@@ -51,13 +50,6 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
     PlayerInventoryWrapper(Inventory inventory) {
         super(inventory);
         this.inventory = inventory;
-    }
-
-    /**
-     * Returns the player inventory wrapped by this handler.
-     */
-    public Inventory getInventory() {
-        return inventory;
     }
 
     @Override
@@ -194,7 +186,7 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
         // Drop in the world on the server side (will be synced by the game with the client).
         // Dropping items is server-side only because it involves randomness.
         if (!inventory.player.level().isClientSide()) {
-            droppedItems.addDrop(resource, amount, dropAround, Prediction.SERVER_ONLY, transaction);
+            droppedItems.addDrop(resource, amount, dropAround, includeThrowerName, transaction);
         }
     }
 
@@ -206,9 +198,9 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
     private class DroppedItems extends SnapshotJournal<Integer> {
         final Deque<DropInfo> entries = new ArrayDeque<>();
 
-        void addDrop(ItemResource resource, int amount, boolean dropAround, Prediction prediction, TransactionContext transaction) {
+        void addDrop(ItemResource resource, int amount, boolean dropAround, boolean includeThrowerName, TransactionContext transaction) {
             updateSnapshots(transaction);
-            entries.add(new DropInfo(resource, amount, dropAround, prediction));
+            entries.add(new DropInfo(resource, amount, dropAround, includeThrowerName));
         }
 
         @Override
@@ -238,13 +230,13 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
                 while (remainder > 0) {
                     int dropped = Math.min(maxStackSize, remainder);
                     // This takes care of firing ItemTossEvent + dropping the entity if the event is not canceled
-                    CommonHooks.onPlayerTossEvent(inventory.player, dropInfo.resource.toStack(dropped), dropInfo.dropAround, dropInfo.prediction);
+                    CommonHooks.onPlayerTossEvent(inventory.player, dropInfo.resource.toStack(dropped), dropInfo.dropAround, dropInfo.includeThrowerName);
                     remainder -= dropped;
                 }
             }
         }
 
-        private record DropInfo(ItemResource resource, int amount, boolean dropAround, Prediction prediction) {}
+        private record DropInfo(ItemResource resource, int amount, boolean dropAround, boolean includeThrowerName) {}
     }
 
     /**

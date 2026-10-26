@@ -325,7 +325,7 @@ public final class ItemResource implements DataComponentHolderResource<Item> {
     }
 
     @Override
-    public boolean equals(@Nullable Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || this.getClass() != obj.getClass()) return false;
         ItemResource other = (ItemResource) obj;

@@ -5,7 +5,7 @@
 
 package net.neoforged.neoforge.client.stencil;
 
-import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.blaze3d.platform.CompareOp;
 
 /**
  * Describes the stencil test and writing state for the front or back face.

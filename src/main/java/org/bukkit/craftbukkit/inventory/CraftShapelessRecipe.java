@@ -39,18 +39,19 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
     }
 
     @Override
-    public RecipeHolder<?> toMinecraftRecipe() {
+    public void addToRecipeManager() {
         List<org.bukkit.inventory.RecipeChoice> choices = this.getChoiceList();
         List<Ingredient> ingredients = new ArrayList<>(choices.size());
         for (org.bukkit.inventory.RecipeChoice choice : choices) {
             ingredients.add(CraftRecipe.toIngredient(choice, true));
         }
 
-        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.ShapelessRecipe(
+        net.minecraft.world.item.crafting.ShapelessRecipe recipe = new net.minecraft.world.item.crafting.ShapelessRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftItemStack.asTemplate(this.getResult()),
             ingredients
-        ));
+        );
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 }

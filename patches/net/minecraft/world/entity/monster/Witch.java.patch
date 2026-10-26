@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Witch.java
 +++ b/net/minecraft/world/entity/monster/Witch.java
-@@ -58,6 +_,45 @@
+@@ -57,6 +_,28 @@
          super(type, level);
      }
  
@@ -26,46 +26,16 @@
 +    }
 +    // Purpur end - Configurable entity base attributes
 +
-+    // Purpur start - Ridables
-+    @Override
-+    public boolean isRidable() {
-+        return level().purpurConfig.witchRidable;
-+    }
-+
-+    @Override
-+    public boolean dismountsUnderwater() {
-+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.witchRidableInWater;
-+    }
-+
-+    @Override
-+    public boolean isControllable() {
-+        return level().purpurConfig.witchControllable;
-+    }
-+    // Purpur end - Ridables
-+
      @Override
      protected void registerGoals() {
          super.registerGoals();
-@@ -66,10 +_,12 @@
-         );
-         this.attackPlayersGoal = new NearestAttackableWitchTargetGoal<>(this, Player.class, 10, true, false, null);
-         this.goalSelector.addGoal(1, new FloatGoal(this));
-+        this.goalSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur - Ridables
-         this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.0, 60, 10.0F));
-         this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 1.0));
-         this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
-+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur - Ridables
-         this.targetSelector.addGoal(1, new HurtByTargetGoal(this, Raider.class));
-         this.targetSelector.addGoal(2, this.healRaidersGoal);
-         this.targetSelector.addGoal(3, this.attackPlayersGoal);
-@@ -124,8 +_,14 @@
+@@ -123,8 +_,14 @@
                      ItemStack itemStack = this.getMainHandItem();
                      this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
                      PotionContents potion = itemStack.get(DataComponents.POTION_CONTENTS);
 +                    // Paper start - WitchConsumePotionEvent
 +                    if (itemStack.is(Items.POTION)) {
-+                        com.destroystokyo.paper.event.entity.WitchConsumePotionEvent event = new com.destroystokyo.paper.event.entity.WitchConsumePotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(itemStack));
++                        com.destroystokyo.paper.event.entity.WitchConsumePotionEvent event = new com.destroystokyo.paper.event.entity.WitchConsumePotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack));
 +                        potion = event.callEvent() ? org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getPotion()).get(DataComponents.POTION_CONTENTS) : null;
 +                    }
 +                    // Paper end - WitchConsumePotionEvent
@@ -75,7 +45,7 @@
                      }
  
                      this.gameEvent(GameEvent.DRINK);
-@@ -133,7 +_,7 @@
+@@ -132,7 +_,7 @@
                  }
              } else {
                  Holder<Potion> potion = null;
@@ -84,7 +54,7 @@
                      potion = Potions.WATER_BREATHING;
                  } else if (this.random.nextFloat() < 0.15F
                      && (this.isOnFire() || this.getLastDamageSource() != null && this.getLastDamageSource().is(DamageTypeTags.IS_FIRE))
-@@ -149,26 +_,7 @@
+@@ -148,26 +_,7 @@
                  }
  
                  if (potion != null) {
@@ -112,7 +82,7 @@
                  }
              }
  
-@@ -180,6 +_,23 @@
+@@ -179,6 +_,23 @@
          super.aiStep();
      }
  
@@ -136,7 +106,7 @@
      @Override
      public SoundEvent getCelebrateSound() {
          return SoundEvents.WITCH_CELEBRATE;
-@@ -206,13 +_,14 @@
+@@ -205,13 +_,14 @@
      }
  
      @Override
@@ -155,17 +125,17 @@
              damage *= 0.15F;
          }
  
-@@ -246,6 +_,13 @@
+@@ -245,6 +_,13 @@
  
              if (this.level() instanceof ServerLevel serverLevel) {
                  ItemStack itemStack = PotionContents.createItemStack(Items.SPLASH_POTION, potion);
 +                // Paper start - WitchThrowPotionEvent
-+                com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) target.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(itemStack));
++                com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) target.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack));
 +                if (!event.callEvent()) {
 +                    return;
 +                }
 +                itemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
 +                // Paper end - WitchThrowPotionEven
                  Projectile.spawnProjectileUsingShoot(
-                     ThrownSplashPotion::new,
-                     serverLevel,
+                     ThrownSplashPotion::new, serverLevel, itemStack, this, xd, yd + dist * 0.2, zd, dist <= 2.0 ? 0.45F : 0.75F, 8.0F
+                 );

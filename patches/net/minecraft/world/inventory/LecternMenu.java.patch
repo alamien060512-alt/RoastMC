@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/inventory/LecternMenu.java
 +++ b/net/minecraft/world/inventory/LecternMenu.java
-@@ -3,8 +_,10 @@
- import net.minecraft.util.Prediction;
+@@ -2,8 +_,10 @@
+ 
  import net.minecraft.world.Container;
  import net.minecraft.world.SimpleContainer;
 +import net.minecraft.world.entity.player.Inventory;
@@ -11,11 +11,10 @@
  
  public class LecternMenu extends AbstractContainerMenu {
      private static final int DATA_COUNT = 1;
-@@ -15,7 +_,23 @@
+@@ -14,6 +_,23 @@
      public static final int BUTTON_PAGE_JUMP_RANGE_START = 100;
      private final Container lectern;
      private final ContainerData lecternData;
--
 +    // CraftBukkit start
 +    private org.bukkit.craftbukkit.inventory.view.@org.jspecify.annotations.Nullable CraftLecternView view = null;
 +    private org.bukkit.entity.Player player;
@@ -33,14 +32,14 @@
 +    // CraftBukkit end
 +
 +    // CraftBukkit start - add player inventory
+ 
      public LecternMenu(int containerId) {
          this(containerId, new SimpleContainer(1), new SimpleContainerData(1));
-     }
-@@ -36,39 +_,83 @@
+@@ -35,39 +_,83 @@
          this.addDataSlots(lecternData);
      }
  
-+    // Youer start
++    // RoastMC start
 +    public LecternMenu player(Inventory playerinventory) {
 +        player = (org.bukkit.entity.Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
 +        return this;
@@ -61,7 +60,7 @@
 +        this.addDataSlots(pLecternData);
 +        player = (org.bukkit.entity.Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
 +    }
-+    // Youer end
++    // RoastMC end
 +
      @Override
      public boolean clickMenuButton(Player player, int buttonId) {
@@ -125,7 +124,7 @@
 +                    ItemStack book = this.lectern.removeItemNoUpdate(0);
 +                    this.lectern.setChanged();
 +                    if (!player.getInventory().add(book)) {
-+                        player.drop(book, false, Prediction.PREDICTED);
++                        player.drop(book, false);
 +                    }
 +
 +                    return true;
@@ -136,7 +135,7 @@
 -                ItemStack book = this.lectern.removeItemNoUpdate(0);
 -                this.lectern.setChanged();
 -                if (!player.getInventory().add(book)) {
--                    player.drop(book, false, Prediction.PREDICTED);
+-                    player.drop(book, false);
 -                }
 -
 -                return true;
@@ -146,7 +145,7 @@
          }
      }
  
-@@ -85,6 +_,8 @@
+@@ -84,6 +_,8 @@
  
      @Override
      public boolean stillValid(Player player) {

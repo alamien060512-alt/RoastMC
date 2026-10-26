@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/fish/Pufferfish.java
 +++ b/net/minecraft/world/entity/animal/fish/Pufferfish.java
-@@ -48,6 +_,39 @@
+@@ -48,6 +_,27 @@
          this.refreshDimensions();
      }
  
@@ -24,18 +24,6 @@
 +        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.pufferfishMaxHealth);
 +    }
 +    // Purpur end - Configurable entity base attributes
-+
-+    // Purpur start - Ridables
-+    @Override
-+    public boolean isRidable() {
-+        return level().purpurConfig.pufferfishRidable;
-+    }
-+
-+    @Override
-+    public boolean isControllable() {
-+        return level().purpurConfig.pufferfishControllable;
-+    }
-+    // Purpur end - Ridables
 +
      @Override
      protected void defineSynchedData(SynchedEntityData.Builder entityData) {
@@ -88,12 +76,21 @@
                  this.deflateTimer++;
              }
          }
-@@ -157,7 +_,7 @@
-                     serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PUFFER_FISH_STING, 0.0F));
-                 }
- 
--                player.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this);
-+            player.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
-             }
+@@ -139,7 +_,7 @@
+     private void touch(ServerLevel level, Mob mob) {
+         int puffState = this.getPuffState();
+         if (mob.hurtServer(level, this.damageSources().mobAttack(this), 1 + puffState)) {
+-            mob.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this);
++            mob.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+             this.playSound(SoundEvents.PUFFER_FISH_STING, 1.0F, 1.0F);
          }
      }
+@@ -154,7 +_,7 @@
+                 serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PUFFER_FISH_STING, 0.0F));
+             }
+ 
+-            player.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this);
++            player.addEffect(new MobEffectInstance(MobEffects.POISON, 60 * puffState, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+         }
+     }
+ 

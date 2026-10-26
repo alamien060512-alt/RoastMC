@@ -16,17 +16,7 @@
              )
              .apply(i, MerchantOffer::new)
      );
-@@ -29,14 +_,29 @@
-     );
-     public ItemCost baseCostA;
-     public Optional<ItemCost> costB;
--    private final ItemStack result;
-+    public final ItemStack result;
-     public int uses;
-     public int maxUses;
-     public boolean rewardExp;
--    private int specialPriceDiff;
-+    public int specialPriceDiff;
+@@ -37,6 +_,21 @@
      public int demand;
      public float priceMultiplier;
      public int xp;

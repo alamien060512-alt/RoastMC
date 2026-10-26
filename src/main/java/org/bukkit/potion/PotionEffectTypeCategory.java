@@ -2,10 +2,7 @@ package org.bukkit.potion;
 
 /**
  * Represents a category of {@link PotionEffectType} and its effect on an entity.
- *
- * @deprecated use {@link PotionEffectType.Category}
  */
-@Deprecated(since = "26.3", forRemoval = true)
 public enum PotionEffectTypeCategory {
 
     /**

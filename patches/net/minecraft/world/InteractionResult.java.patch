@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/InteractionResult.java
 +++ b/net/minecraft/world/InteractionResult.java
-@@ -30,7 +_,28 @@
+@@ -30,18 +_,38 @@
      record Pass() implements InteractionResult {
      }
  
@@ -26,11 +26,9 @@
 +            this(swingSource, itemContext, PaperSuccessContext.DEFAULT);
 +        }
 +        // Paper end - track more context in interaction result
-+
-         public boolean shouldSwing() {
-             return this.swingSource != InteractionResult.SwingSource.NONE;
-         }
-@@ -41,11 +_,11 @@
+         @Override
+         public boolean consumesAction() {
+             return true;
          }
  
          public InteractionResult.Success heldItemTransformedTo(ItemStack itemStack) {

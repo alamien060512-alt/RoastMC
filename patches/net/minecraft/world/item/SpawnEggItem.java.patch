@@ -1,15 +1,9 @@
 --- a/net/minecraft/world/item/SpawnEggItem.java
 +++ b/net/minecraft/world/item/SpawnEggItem.java
-@@ -59,14 +_,25 @@
+@@ -59,6 +_,24 @@
  
                      return InteractionResult.FAIL;
                  } else {
--                    Player player = context.getPlayer();
--                    TypedEntityData<EntityType<?>> entityData = itemStack.get(DataComponents.ENTITY_DATA);
--                    if (player != null && entityData != null && level.getServer().getPlayerList().isOp(player.nameAndId())) {
--                        spawnerHolder.setEntityData(entityData, level.getRandom());
--                    } else {
--                        spawnerHolder.setEntityId(type, level.getRandom());
 +                    if (level.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
 +                    // Purpur start - PlayerSetSpawnerTypeWithEggEvent
 +                    if (spawnerHolder instanceof net.minecraft.world.level.block.entity.SpawnerBlockEntity) {
@@ -26,14 +20,12 @@
 +                            return InteractionResult.FAIL;
 +                        }
 +                        type = EntityType.getFromBukkitType(event.getEntityType());
-                     }
--
++                    }
 +                    // Purpur end - PlayerSetSpawnerTypeWithEggEvent
-+                    spawnerHolder.setEntityId(type, level.getRandom());
+                     spawnerHolder.setEntityId(type, level.getRandom());
                      level.sendBlockUpdated(pos, blockState, blockState, 3);
                      level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, pos);
-                     itemStack.shrink(1);
-@@ -171,6 +_,7 @@
+@@ -164,6 +_,7 @@
  
          offspring.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
          offspring.applyComponentsFromItemStack(spawnEggStack);
@@ -41,3 +33,29 @@
          level.addFreshEntityWithPassengers(offspring);
          spawnEggStack.consume(1, player);
          return Optional.of(offspring);
+@@ -179,5 +_,25 @@
+         }
+ 
+         return false;
++    }
++
++    /**
++     * {@return the dispense behavior to register or null to register the default}
++     */
++    protected net.minecraft.core.dispenser.@Nullable DispenseItemBehavior createDispenseBehavior() {
++        return null;
++    }
++
++    // TODO 26.1: It's questionable that this is even needed anymore
++    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
++    private static void registerDispenseBehavior(final net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) {
++        event.enqueueWork(() -> BuiltInRegistries.ITEM.forEach(item -> {
++            if (item instanceof SpawnEggItem egg && !net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.containsKey(egg)) {
++                var beh = egg.createDispenseBehavior();
++                if (beh != null) {
++                    net.minecraft.world.level.block.DispenserBlock.registerBehavior(egg, beh);
++                }
++            }
++        }));
+     }
+ }

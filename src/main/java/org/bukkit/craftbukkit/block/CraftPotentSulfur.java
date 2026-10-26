@@ -7,8 +7,8 @@ import org.bukkit.block.PotentSulfur;
 
 public class CraftPotentSulfur extends CraftBlockEntityState<PotentSulfurBlockEntity> implements PotentSulfur {
 
-    public CraftPotentSulfur(World world, PotentSulfurBlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftPotentSulfur(World world, PotentSulfurBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftPotentSulfur(CraftPotentSulfur state, Location location) {

@@ -30,7 +30,7 @@ public interface Jigsaw extends BlockData {
      * {@link org.bukkit.block.Orientation} instead. All references
      * to this enum will be redirected to that enum at runtime.
      */
-    @Deprecated(since = "1.21.5", forRemoval = true)
+    @Deprecated
     public enum Orientation {
 
         DOWN_EAST,

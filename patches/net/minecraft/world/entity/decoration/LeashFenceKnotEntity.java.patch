@@ -1,14 +1,10 @@
 --- a/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
 +++ b/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
-@@ -25,6 +_,12 @@
+@@ -25,6 +_,8 @@
  import net.minecraft.world.level.storage.ValueOutput;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
-+
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRemoveEvent;
-+// CraftBukkit end
 +
  import org.jspecify.annotations.Nullable;
  

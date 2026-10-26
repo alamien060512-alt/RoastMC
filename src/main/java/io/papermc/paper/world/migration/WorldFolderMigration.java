@@ -1,6 +1,5 @@
 package io.papermc.paper.world.migration;
 
-import com.mojang.logging.LogUtils;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import io.papermc.paper.world.saveddata.PaperWorldMetadata;
 import java.io.IOException;
@@ -24,7 +23,7 @@ import org.slf4j.Logger;
 @NullMarked
 public final class WorldFolderMigration {
     private static final Logger LOGGER = com.mojang.logging.LogUtils.getClassLogger();
-    private static final boolean DISABLE_MIGRATION_DELAY = Boolean.getBoolean("paper.disableMigrationDelay");
+    private static final boolean DISABLE_MIGRATION_DELAY = true;
     public static boolean didInitialLoad;
     private static boolean startupMigrationWarningShown;
 
@@ -103,7 +102,7 @@ public final class WorldFolderMigration {
         if (!Files.isDirectory(context.rootAccess().getDimensionPath(context.dimensionKey()))) {
             try {
                 final CompoundTag rawLevelData = NbtIo.readCompressed(
-                    context.rootAccess().getLevelDirectory().dataFile(), NbtAccounter.uncompressedQuota()
+                        context.rootAccess().getLevelDirectory().dataFile(), NbtAccounter.uncompressedQuota()
                 );
                 final int dataVersion = NbtUtils.getDataVersion(rawLevelData.getCompoundOrEmpty("Data"));
                 if (dataVersion >= FileFixerUpper.FILE_FIXER_INTRODUCTION_VERSION) {

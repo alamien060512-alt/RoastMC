@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/level/block/entity/CreakingHeartBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/CreakingHeartBlockEntity.java
+@@ -17,7 +_,6 @@
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.util.SpawnUtil;
+ import net.minecraft.util.Util;
+-import net.minecraft.world.Difficulty;
+ import net.minecraft.world.attribute.EnvironmentAttributes;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.Entity;
 @@ -108,8 +_,8 @@
  
                  if (entity.creakingInfo == null) {

@@ -1,8 +1,8 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        maven { url = 'https://maven.neoforged.net/releases' }
         mavenLocal()
+        maven { url = 'https://maven.neoforged.net/releases' }
     }
 }
 
@@ -28,20 +28,38 @@ dependencyResolutionManagement {
         maven { url = 'https://mohistmc.github.io/maven/'}
         maven { url = "https://repo.papermc.io/repository/maven-public/" }
         maven { url = "https://jitpack.io" }
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "Modrinth"
+                    url = "https://api.modrinth.com/maven"
+                }
+            }
+            // forRepositories(fg.repository) // Uncomment when using ForgeGradle
+            filter {
+                includeGroup "maven.modrinth"
+            }
+        }
     }
 }
 
-if (rootProject.name.toLowerCase(Locale.ROOT) == "youer") {
+if (rootProject.name.toLowerCase(Locale.ROOT) == "roastmc") {
     // Solve name clashes between projects/neoforge and the rootProject for Eclipse.
-    rootProject.name = "Youer-Root"
+    rootProject.name = "RoastMC-Root"
 }
 
 include ':base'
 project(':base').projectDir = file('projects/base')
 include ':neoforge'
-project(':neoforge').projectDir = file('projects/youer')
+project(':neoforge').projectDir = file('projects/roastmc')
 
-include 'youerlauncher'
+include 'roastmclauncher'
+
+// Unified launcher that embeds the NeoForge and Fabric editions
+include ':multiloader'
+
+// Fabric loader support (standalone Loom build, kept separate because Loom and NeoGradle can't share a build)
+includeBuild 'fabric'
 
 include ':coremods'
 // Ensure a unique artifact id within JIJ that does not conflict with net.neoforged:coremods, which is

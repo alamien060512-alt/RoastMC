@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/BaseSpawner.java
 +++ b/net/minecraft/world/level/BaseSpawner.java
-@@ -60,9 +_,11 @@
+@@ -59,13 +_,16 @@
      public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
@@ -11,10 +11,6 @@
 +        this.spawnPotentials = WeightedList.of(); // CraftBukkit - SPIGOT-3496, MC-92282
      }
  
-     public void setEntityData(TypedEntityData<EntityType<?>> entityData, @Nullable Level level, RandomSource random, BlockPos pos) {
-@@ -71,7 +_,8 @@
-     }
- 
      public boolean isNearPlayer(Level level, BlockPos pos) {
 -        return level.hasNearbyAlivePlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, this.requiredPlayerRange);
 +        if (level.purpurConfig.spawnerDeactivateByRedstone && level.hasNeighborSignal(pos)) return false; // Purpur - Redstone deactivates spawners
@@ -22,7 +18,7 @@
      }
  
      public void clientTick(Level level, BlockPos pos) {
-@@ -94,13 +_,19 @@
+@@ -88,13 +_,19 @@
      }
  
      public void serverTick(ServerLevel level, BlockPos pos) {
@@ -44,7 +40,7 @@
              } else {
                  boolean delay = false;
                  RandomSource random = level.getRandom();
-@@ -138,6 +_,21 @@
+@@ -132,6 +_,21 @@
                                  continue;
                              }
  
@@ -66,7 +62,7 @@
                              Entity entity = EntityType.loadEntityRecursive(input, level, EntitySpawnReason.SPAWNER, e -> {
                                  e.snapTo(spawnPos.x, spawnPos.y, spawnPos.z, e.getYRot(), e.getXRot());
                                  return e;
-@@ -160,21 +_,33 @@
+@@ -154,21 +_,33 @@
  
                              entity.snapTo(entity.getX(), entity.getY(), entity.getZ(), random.nextFloat() * 360.0F, 0.0F);
                              if (entity instanceof Mob mob) {
@@ -106,7 +102,7 @@
                                  this.delay(level, pos);
                                  return;
                              }
-@@ -185,7 +_,7 @@
+@@ -179,7 +_,7 @@
                                  mob.spawnAnim();
                              }
  
@@ -115,7 +111,7 @@
                          }
                      }
                  }
-@@ -212,12 +_,14 @@
+@@ -206,12 +_,14 @@
      }
  
      public void load(@Nullable Level level, BlockPos pos, ValueInput input) {
@@ -133,7 +129,7 @@
          this.spawnCount = input.getIntOr("SpawnCount", 4);
          this.maxNearbyEntities = input.getIntOr("MaxNearbyEntities", 6);
          this.requiredPlayerRange = input.getIntOr("RequiredPlayerRange", 16);
-@@ -226,9 +_,19 @@
+@@ -220,9 +_,19 @@
      }
  
      public void save(ValueOutput output) {
@@ -156,7 +152,7 @@
          output.putShort("SpawnCount", (short)this.spawnCount);
          output.putShort("MaxNearbyEntities", (short)this.maxNearbyEntities);
          output.putShort("RequiredPlayerRange", (short)this.requiredPlayerRange);
-@@ -287,5 +_,11 @@
+@@ -281,5 +_,11 @@
  
      public double getOSpin() {
          return this.oSpin;

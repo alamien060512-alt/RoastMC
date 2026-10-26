@@ -25,10 +25,10 @@
  import org.jspecify.annotations.Nullable;
  
  public class ExperienceOrb extends Entity {
-@@ -42,13 +_,58 @@
-     private int health = 5;
+@@ -43,13 +_,58 @@
      public int count = 1;
      private @Nullable Player followingPlayer;
+     private final InterpolationHandler interpolation = new InterpolationHandler(this);
 -
 -    public ExperienceOrb(Level level, double x, double y, double z, int value) {
 -        this(level, new Vec3(x, y, z), Vec3.ZERO, value);
@@ -90,16 +90,7 @@
          this.setPos(pos);
          if (!level.isClientSide()) {
              this.setYRot(this.random.nextFloat() * 360.0F);
-@@ -93,7 +_,7 @@
-     }
- 
-     @Override
--    protected double getDefaultGravity() {
-+    public double getDefaultGravity() {
-         return 0.03;
-     }
- 
-@@ -104,7 +_,7 @@
+@@ -106,7 +_,7 @@
          } else {
              super.tick();
              boolean colliding = !this.level().noCollision(this.getBoundingBox());
@@ -108,7 +99,7 @@
                  this.setUnderwaterMovement();
              } else if (!colliding) {
                  this.applyGravity();
-@@ -134,7 +_,8 @@
+@@ -136,7 +_,8 @@
              this.applyEffectsFromBlocks();
              float friction = this.getAirDrag();
              if (this.onGround()) {
@@ -118,7 +109,7 @@
              }
  
              this.setDeltaMovement(this.getDeltaMovement().scale(friction));
-@@ -144,19 +_,20 @@
+@@ -146,7 +_,7 @@
  
              this.age++;
              if (this.age >= 6000) {
@@ -127,11 +118,7 @@
              }
          }
      }
- 
-     @Override
--    protected float getAirDrag() {
-+    public float getAirDrag() {
-         return 0.98F;
+@@ -157,8 +_,9 @@
      }
  
      private void followNearbyPlayer() {
@@ -142,7 +129,7 @@
              if (nearestPlayer != null && !nearestPlayer.isSpectator() && !nearestPlayer.isDeadOrDying()) {
                  this.followingPlayer = nearestPlayer;
              } else {
-@@ -164,7 +_,22 @@
+@@ -166,7 +_,22 @@
              }
          }
  
@@ -166,7 +153,7 @@
              Vec3 delta = new Vec3(
                  this.followingPlayer.getX() - this.getX(),
                  this.followingPlayer.getY() + this.followingPlayer.getEyeHeight() / 2.0 - this.getY(),
-@@ -189,23 +_,34 @@
+@@ -191,23 +_,34 @@
          }
      }
  
@@ -203,7 +190,7 @@
          List<ExperienceOrb> orbs = level.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), box, orbx -> canMerge(orbx, id, value));
          if (!orbs.isEmpty()) {
              ExperienceOrb orb = orbs.get(0);
-@@ -222,13 +_,18 @@
+@@ -224,13 +_,13 @@
      }
  
      private static boolean canMerge(ExperienceOrb orb, int id, int value) {
@@ -212,11 +199,6 @@
      }
  
      private void merge(ExperienceOrb orb) {
-+        // Paper start - call orb merge event
-+        if (!new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) this.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) orb.getBukkitEntity()).callEvent()) {
-+            return;
-+        }
-+        // Paper end - call orb merge event
          this.count = this.count + orb.count;
          this.age = Math.min(this.age, orb.age);
 -        orb.discard();
@@ -224,7 +206,7 @@
      }
  
      private void setUnderwaterMovement() {
-@@ -254,7 +_,7 @@
+@@ -256,7 +_,7 @@
          this.markHurt();
          this.health = (int)(this.health - damage);
          if (this.health <= 0) {
@@ -233,17 +215,12 @@
          }
  
          return true;
-@@ -280,31 +_,49 @@
+@@ -282,31 +_,44 @@
      public void playerTouch(Player player) {
          if (player instanceof ServerPlayer serverPlayer) {
              if (player.takeXpDelay == 0) {
 -                player.takeXpDelay = 2;
 +                if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerXpEvent.PickupXp(player, this)).isCanceled()) return;
-+                // Paper start - PlayerPickupExperienceEvent
-+                if (!new com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent(serverPlayer.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) this.getBukkitEntity()).callEvent()) {
-+                    return;
-+                }
-+                // Paper end - PlayerPickupExperienceEvent
 +                player.takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(serverPlayer, this.level().purpurConfig.playerExpPickupDelay, PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entityhuman.takeXpDelay = 2;
                  player.take(this, 1);
                  int remaining = this.repairPlayerItems(serverPlayer, this.getValue());
@@ -288,7 +265,7 @@
                      return this.repairPlayerItems(player, remaining);
                  }
              }
-@@ -349,6 +_,24 @@
+@@ -351,6 +_,24 @@
      }
  
      public static int getExperienceValue(int maxValue) {

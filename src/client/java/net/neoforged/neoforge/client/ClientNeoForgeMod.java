@@ -13,7 +13,6 @@ import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.data.metadata.PackMetadataGenerator;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -31,6 +30,7 @@ import net.neoforged.fml.config.ConfigTracker;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.config.ModConfigs;
 import net.neoforged.neoforge.client.color.item.FluidContentsTint;
+import net.neoforged.neoforge.client.command.ClientConfigCommand;
 import net.neoforged.neoforge.client.config.NeoForgeClientConfig;
 import net.neoforged.neoforge.client.data.internal.NeoForgeSpriteSourceProvider;
 import net.neoforged.neoforge.client.data.internal.VanillaModelProvider;
@@ -45,7 +45,6 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterFeatureRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
 import net.neoforged.neoforge.client.event.RegisterItemModelsEvent;
-import net.neoforged.neoforge.client.event.RegisterRecipeBookSearchCategoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterSpriteSourcesEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -59,8 +58,6 @@ import net.neoforged.neoforge.client.model.block.CompositeBlockModel;
 import net.neoforged.neoforge.client.model.item.DynamicFluidContainerModel;
 import net.neoforged.neoforge.client.model.item.TrimmedArmorModel;
 import net.neoforged.neoforge.client.model.obj.ObjLoader;
-import net.neoforged.neoforge.client.recipebook.RecipeDisplayResultIdExtractor;
-import net.neoforged.neoforge.client.recipebook.RecipeDisplayResultTooltipExtractor;
 import net.neoforged.neoforge.client.resources.VanillaClientListeners;
 import net.neoforged.neoforge.client.submit.ExtendedBlockModelFeatureRenderer;
 import net.neoforged.neoforge.client.textures.DirectoryPalettedPermutations;
@@ -78,17 +75,14 @@ import net.neoforged.neoforge.common.data.internal.NeoForgeEntityTypeTagsProvide
 import net.neoforged.neoforge.common.data.internal.NeoForgeFluidTagsProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgeItemTagsProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgeLanguageProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeLootDataProvider;
+import net.neoforged.neoforge.common.data.internal.NeoForgeLootTableProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgePotionTagsProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgeRecipeProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgeRegistryOrderReportProvider;
 import net.neoforged.neoforge.common.data.internal.NeoForgeStructureTagsProvider;
 import net.neoforged.neoforge.common.data.internal.VanillaSoundDefinitionsProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
-import net.neoforged.neoforge.data.event.GatherDataRegistryEntriesEvent;
 import net.neoforged.neoforge.event.DefaultDataComponentsBoundEvent;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.crafting.display.FluidStackContentsFactory;
 import net.neoforged.neoforge.internal.BrandingControl;
 import net.neoforged.neoforge.resource.NeoForgeReloadListeners;
 import org.jetbrains.annotations.ApiStatus;
@@ -121,10 +115,14 @@ public class ClientNeoForgeMod {
                 }
             });
 
-            // Unload SYNCED configs only when disconnecting from a remote server
+            // Unload SERVER configs only when disconnecting from a remote server
             if (event.getConnection() != null && !event.getConnection().isMemoryConnection()) {
-                ConfigTracker.INSTANCE.unloadConfigs(ModConfig.Type.SYNCED);
+                ConfigTracker.INSTANCE.unloadConfigs(ModConfig.Type.SERVER);
             }
+        });
+
+        NeoForge.EVENT_BUS.addListener(RegisterClientCommandsEvent.class, event -> {
+            ClientConfigCommand.register(event.getDispatcher());
         });
 
         NeoForge.EVENT_BUS.addListener(ClientResourceLoadFinishedEvent.class, event -> {
@@ -162,14 +160,6 @@ public class ClientNeoForgeMod {
     }
 
     @SubscribeEvent
-    static void onGatherRegistries(GatherDataRegistryEntriesEvent event) {
-        event.gatherFor("minecraft")
-                .add(Registries.ADVANCEMENT, new NeoForgeAdvancementProvider())
-                .recipe(NeoForgeRecipeProvider::new)
-                .add(Registries.PREDICATE, NeoForgeLootDataProvider::overrideLootPredicates);
-    }
-
-    @SubscribeEvent
     static void onGatherData(GatherDataEvent.Client event) {
         // We perform client and server datagen in a single clientData run to avoid
         // having to juggle two generated resources folders and two runs for no additional benefit.
@@ -179,11 +169,14 @@ public class ClientNeoForgeMod {
                         Component.translatable("pack.neoforge.description"),
                         new InclusiveRange<>(DetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)))));
 
+        event.createProvider(NeoForgeAdvancementProvider::new);
         event.createBlockAndItemTags(NeoForgeBlockTagsProvider::new, NeoForgeItemTagsProvider::new);
         event.createProvider(NeoForgeEntityTypeTagsProvider::new);
         event.createProvider(NeoForgeFluidTagsProvider::new);
         event.createProvider(NeoForgeEnchantmentTagsProvider::new);
         event.createProvider(NeoForgePotionTagsProvider::new);
+        event.createProvider(NeoForgeRecipeProvider.Runner::new);
+        event.createProvider(NeoForgeLootTableProvider::new);
         event.createProvider(NeoForgeBiomeTagsProvider::new);
         event.createProvider(NeoForgeStructureTagsProvider::new);
         event.createProvider(NeoForgeDamageTypeTagsProvider::new);
@@ -216,13 +209,6 @@ public class ClientNeoForgeMod {
         event.addListener(NeoForgeReloadListeners.ENTITY_ANIMATIONS, AnimationLoader.INSTANCE);
         // Animations need to be loaded before entity renderers are instantiated
         event.addDependency(NeoForgeReloadListeners.ENTITY_ANIMATIONS, VanillaClientListeners.ENTITY_RENDERER);
-    }
-
-    @SubscribeEvent
-    static void onRegisterRecipeSearch(RegisterRecipeBookSearchCategoriesEvent event) {
-        //As many mods might add recipes that produce fluids, register a result search provider for fluid displays
-        event.registerResultIndexer(RecipeDisplayResultTooltipExtractor.forStack(FluidStackContentsFactory.INSTANCE, FluidStack::getTooltipLines),
-                RecipeDisplayResultIdExtractor.forRegisteredType(FluidStackContentsFactory.INSTANCE, Registries.FLUID));
     }
 
     @SubscribeEvent

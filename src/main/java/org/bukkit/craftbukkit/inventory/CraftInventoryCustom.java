@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -145,7 +145,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(slot, ItemStack.EMPTY);
                 result = stack;
             } else {
-                result = stack.copyWithCount(amount);
+                result = CraftItemStack.copyNMSStack(stack, amount);
                 stack.shrink(amount);
             }
             this.setChanged();
@@ -161,7 +161,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(slot, null);
                 result = stack;
             } else {
-                result = stack.copyWithCount(1);
+                result = CraftItemStack.copyNMSStack(stack, 1);
                 stack.shrink(1);
             }
             return result;

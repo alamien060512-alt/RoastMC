@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/TntBlock.java
 +++ b/net/minecraft/world/level/block/TntBlock.java
-@@ -32,6 +_,11 @@
+@@ -30,6 +_,11 @@
  import net.minecraft.world.phys.BlockHitResult;
  import org.jspecify.annotations.Nullable;
  
@@ -10,95 +10,85 @@
 +// CraftBukkit end
 +
  public class TntBlock extends Block {
+     public static final MapCodec<TntBlock> CODEC = simpleCodec(TntBlock::new);
      public static final BooleanProperty UNSTABLE = BlockStateProperties.UNSTABLE;
- 
-@@ -43,7 +_,9 @@
+@@ -47,7 +_,7 @@
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
          if (!oldState.is(state.getBlock())) {
 -            if (level.hasNeighborSignal(pos) && prime(level, pos)) {
-+            if (level.hasNeighborSignal(pos)
-+                && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.REDSTONE, null, null) // CraftBukkit - TNTPrimeEvent
-+                && onCaughtFire(state, level, pos, null, null, ItemStack.EMPTY)) {
++            if (level.hasNeighborSignal(pos) && CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.REDSTONE, null, null) && onCaughtFire(state, level, pos, null, null)) { // CraftBukkit - TNTPrimeEvent
                  level.removeBlock(pos, false);
              }
          }
-@@ -51,7 +_,9 @@
+@@ -55,15 +_,15 @@
  
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, @Nullable Orientation orientation, boolean movedByPiston) {
 -        if (level.hasNeighborSignal(pos) && prime(level, pos)) {
-+        if (level.hasNeighborSignal(pos)
-+            && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.REDSTONE, null, null) // CraftBukkit - TNTPrimeEvent
-+            && onCaughtFire(state, level, pos, null, null, ItemStack.EMPTY)) {
++        if (level.hasNeighborSignal(pos) && CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.REDSTONE, null, null) && onCaughtFire(state, level, pos, null, null)) { // CraftBukkit - TNTPrimeEvent
              level.removeBlock(pos, false);
          }
      }
-@@ -59,7 +_,11 @@
+ 
      @Override
      public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-         if (!level.isClientSide() && !player.getAbilities().instabuild && state.getValue(UNSTABLE)) {
+-        if (!level.isClientSide() && !player.getAbilities().instabuild && state.getValue(UNSTABLE)) {
 -            prime(level, pos);
-+            // CraftBukkit start - TNTPrimeEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.BLOCK_BREAK, player, null)) {
-+                onCaughtFire(state, level, pos, null, null, ItemStack.EMPTY);
-+            }
-+            // CraftBukkit end
++        if (!level.isClientSide() && !player.getAbilities().instabuild && state.getValue(UNSTABLE) && CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.BLOCK_BREAK, player, null)) { // CraftBukkit - TNTPrimeEvent
++            onCaughtFire(state, level, pos, null, player);
          }
  
          return super.playerWillDestroy(level, pos, state, player);
-@@ -74,10 +_,14 @@
+@@ -78,10 +_,14 @@
          }
      }
  
-+    /// @deprecated Neo: use [net.neoforged.neoforge.common.extensions.IBlockStateExtension#onCaughtFire(Level,BlockPos,net.minecraft.core.Direction,LivingEntity,ItemStack)] instead
++    /** @deprecated Neo: use {@link net.neoforged.neoforge.common.extensions.IBlockStateExtension#onCaughtFire(Level,BlockPos,net.minecraft.core.Direction,LivingEntity)} instead */
 +    @Deprecated
      public static boolean prime(Level level, BlockPos pos) {
-         return prime(level, pos, null, ItemStack.EMPTY);
+         return prime(level, pos, null);
      }
  
-+    /// @deprecated Neo: use [net.neoforged.neoforge.common.extensions.IBlockStateExtension#onCaughtFire(Level,BlockPos,net.minecraft.core.Direction,LivingEntity,ItemStack)] instead
++    /** @deprecated Neo: use {@link net.neoforged.neoforge.common.extensions.IBlockStateExtension#onCaughtFire(Level,BlockPos,net.minecraft.core.Direction,LivingEntity)} instead */
 +    @Deprecated
-     public static boolean prime(Level level, BlockPos pos, @Nullable LivingEntity source, ItemStack itemStack) {
-         if (!(level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES))) {
-             return false;
-@@ -102,7 +_,10 @@
+     private static boolean prime(Level level, BlockPos pos, @Nullable LivingEntity source) {
+         if (level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES)) {
+             PrimedTnt tnt = new PrimedTnt(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, source);
+@@ -101,8 +_,12 @@
+         if (!itemStack.is(Items.FLINT_AND_STEEL) && !itemStack.is(Items.FIRE_CHARGE)) {
              return super.useItemOn(itemStack, state, level, pos, player, hand, hitResult);
          }
- 
--        if (prime(level, pos, player, itemStack)) {
+-
+-        if (prime(level, pos, player)) {
 +        // CraftBukkit start - TNTPrimeEvent
-+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.PLAYER, player, null)
-+            && onCaughtFire(state, level, pos, hitResult.getDirection(), player, itemStack)) {
++        if (!CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.PLAYER, player, null)) {
++            return InteractionResult.CONSUME;
++        }
 +        // CraftBukkit end
++        if (onCaughtFire(state, level, pos, hitResult.getDirection(), player)) {
              level.setBlock(pos, Blocks.AIR.defaultBlockState(), 11);
              Item item = itemStack.getItem();
              if (itemStack.is(Items.FLINT_AND_STEEL)) {
-@@ -127,9 +_,15 @@
+@@ -127,7 +_,9 @@
              Entity owner = projectile.getOwner();
              if (projectile.isOnFire()
                  && projectile.mayInteract(serverLevel, pos)
--                && prime(
-+                // CraftBukkit start - TNTPrimeEvent
-+                && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, pos, state.getFluidState().createLegacyBlock())
-+                && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.PROJECTILE, projectile, null)
-+                // CraftBukkit end
-+                && onCaughtFire(
-+                    state,
-                     level,
-                     pos,
-+                    blockHit.getDirection(),
-                     owner instanceof LivingEntity livingEntity ? livingEntity : null,
-                     projectile instanceof AbstractArrow arr ? arr.getPickupItemStackOrigin() : ItemStack.EMPTY
-                 )) {
-@@ -146,5 +_,10 @@
+-                && prime(level, pos, owner instanceof LivingEntity livingEntity ? livingEntity : null)) {
++                && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, pos, Blocks.AIR.defaultBlockState())
++                && CraftEventFactory.callTNTPrimeEvent(level, pos, PrimeCause.PROJECTILE, projectile, null) // CraftBukkit - TNTPrimeEvent
++                && onCaughtFire(state, level, pos, null, owner instanceof LivingEntity ? (LivingEntity)owner : null)) {
+                 level.removeBlock(pos, false);
+             }
+         }
+@@ -141,5 +_,10 @@
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
          builder.add(UNSTABLE);
 +    }
 +
 +    @Override
-+    public boolean onCaughtFire(BlockState state, Level world, BlockPos pos, net.minecraft.core.@Nullable Direction face, @Nullable LivingEntity igniter, ItemStack ignitionItem) {
-+        return prime(world, pos, igniter, ignitionItem);
++    public boolean onCaughtFire(BlockState state, Level world, BlockPos pos, net.minecraft.core.@Nullable Direction face, @Nullable LivingEntity igniter) {
++        return prime(world, pos, igniter);
      }
  }

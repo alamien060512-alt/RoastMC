@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum LootTables implements Keyed {
 
-    // Chests/Dispensers/Barrels - treasure chests
+    // Chests/Dispensers - treasure chests
     ABANDONED_MINESHAFT("chests/abandoned_mineshaft"),
     BURIED_TREASURE("chests/buried_treasure"),
     DESERT_PYRAMID("chests/desert_pyramid"),
@@ -79,9 +79,6 @@ public enum LootTables implements Keyed {
     VILLAGE_TOOLSMITH("chests/village/village_toolsmith"),
     VILLAGE_WEAPONSMITH("chests/village/village_weaponsmith"),
     WOODLAND_MANSION("chests/woodland_mansion"),
-    ABANDONED_CAMP_COMMON_CHEST("chests/abandoned_camp_common_chest"),
-    ABANDONED_CAMP_SECRET_CHEST("chests/abandoned_camp_secret_chest"),
-    ABANDONED_CAMP_BARREL("barrels/abandoned_camp_barrel"),
     // Entities
     ARMOR_STAND("entities/armor_stand"),
     AXOLOTL("entities/axolotl"),
@@ -221,8 +218,6 @@ public enum LootTables implements Keyed {
     SHEARING_SHEEP_RED("shearing/sheep/red"),
     SHEARING_SHEEP_WHITE("shearing/sheep/white"),
     SHEARING_SHEEP_YELLOW("shearing/sheep/yellow"),
-    // tilling
-    TILL_ROOTED_DIRT("till/rooted_dirt"),
     // Carving
     CARVE_PUMPKIN("carve/pumpkin"),
     // Harvest
@@ -260,7 +255,7 @@ public enum LootTables implements Keyed {
 
     private final String location;
 
-    LootTables(/*@NotNull*/ String location) {
+    private LootTables(/*@NotNull*/ String location) {
         this.location = location;
     }
 

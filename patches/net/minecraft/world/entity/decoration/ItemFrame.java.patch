@@ -1,16 +1,5 @@
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -43,8 +_,8 @@
- import org.jspecify.annotations.Nullable;
- 
- public class ItemFrame extends HangingEntity {
--    private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(ItemFrame.class, EntityDataSerializers.ITEM_STACK);
--    private static final EntityDataAccessor<Integer> DATA_ROTATION = SynchedEntityData.defineId(ItemFrame.class, EntityDataSerializers.INT);
-+    public static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(ItemFrame.class, EntityDataSerializers.ITEM_STACK);
-+    public static final EntityDataAccessor<Integer> DATA_ROTATION = SynchedEntityData.defineId(ItemFrame.class, EntityDataSerializers.INT);
-     public static final int NUM_ROTATIONS = 8;
-     private static final float DEPTH = 0.0625F;
-     private static final float WIDTH = 0.75F;
 @@ -55,6 +_,7 @@
      private static final boolean DEFAULT_FIXED = false;
      public float dropChance = 1.0F;
@@ -19,29 +8,6 @@
  
      public ItemFrame(EntityType<? extends ItemFrame> type, Level level) {
          super(type, level);
-@@ -79,7 +_,7 @@
-     }
- 
-     @Override
--    protected void setDirection(Direction direction) {
-+    public void setDirection(Direction direction) {
-         Objects.requireNonNull(direction);
-         super.setDirectionRaw(direction);
-         if (direction.getAxis().isHorizontal()) {
-@@ -101,6 +_,13 @@
-         this.syncPacketPositionCodec(this.getX(), this.getY(), this.getZ());
-     }
- 
-+    // Paper start - MC-311788 workaround
-+    @Override
-+    public boolean getRequiresPrecisePosition() {
-+        return true; // Fix client bug that applies stale position data on relative moves by forcing absolute positions
-+    }
-+    // Paper end - MC-311788 workaround
-+
-     @Override
-     protected AABB calculateBoundingBox(BlockPos blockPos, Direction direction) {
-         return this.createBoundingBox(blockPos, direction, this.hasFramedMap());
 @@ -111,7 +_,12 @@
          return this.createBoundingBox(this.pos, this.getDirection(), false);
      }
@@ -68,7 +34,7 @@
          }
      }
  
-@@ -175,6 +_,18 @@
+@@ -176,6 +_,18 @@
              if (this.isInvulnerableToBase(source)) {
                  return false;
              } else if (this.shouldDamageDropItem(source)) {
@@ -79,24 +45,28 @@
 +                // CraftBukkit end
 +                // Paper start - Add PlayerItemFrameChangeEvent
 +                if (source.getEntity() instanceof Player player) {
-+                    var event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(this.getItem()), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
++                    var event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
 +                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
-+                    this.setItem(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()), false);
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
 +                }
 +                // Paper end - Add PlayerItemFrameChangeEvent
                  this.dropItem(level, source.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -230,7 +_,7 @@
+@@ -231,7 +_,11 @@
                  this.removeFramedMap(itemStack);
              } else {
                  if (withFrame) {
--                    this.spawnAtLocation(level, this.getFrameItemStackWithData());
-+                    this.spawnAtLocation(level, level.purpurConfig.persistentDroppableEntityDisplayNames ? this.getFrameItemStackWithData() : this.getFrameItemStack()); // Purpur - Apply display names from item forms of entities to entities and vice versa
+-                    this.spawnAtLocation(level, this.getFrameItemStack());
++                    // Purpur start - Apply display names from item forms of entities to entities and vice versa
++                    final ItemStack itemFrame = this.getFrameItemStack();
++                    if (!level.purpurConfig.persistentDroppableEntityDisplayNames) itemFrame.set(DataComponents.CUSTOM_NAME, null);
++                    this.spawnAtLocation(level, itemFrame);
++                    // Purpur end - Apply display names from item forms of entities to entities and vice versa
                  }
  
                  if (!itemStack.isEmpty()) {
-@@ -247,7 +_,7 @@
+@@ -248,7 +_,7 @@
      private void removeFramedMap(ItemStack itemStack) {
          MapId mapId = this.getFramedMapId(itemStack);
          if (mapId != null) {
@@ -105,7 +75,7 @@
              if (mapItemSavedData != null) {
                  mapItemSavedData.removedFromFrame(this.pos, this.getId());
              }
-@@ -258,6 +_,13 @@
+@@ -259,6 +_,13 @@
          return this.getEntityData().get(DATA_ITEM);
      }
  
@@ -119,7 +89,7 @@
      public @Nullable MapId getFramedMapId(ItemStack itemStack) {
          return itemStack.get(DataComponents.MAP_ID);
      }
-@@ -271,13 +_,19 @@
+@@ -272,13 +_,19 @@
      }
  
      public void setItem(ItemStack itemStack, boolean updateNeighbours) {
@@ -140,7 +110,7 @@
              this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
          }
  
-@@ -304,6 +_,7 @@
+@@ -305,6 +_,7 @@
      }
  
      private void onItemChanged(ItemStack item) {
@@ -148,31 +118,31 @@
          this.recalculateBoundingBox();
      }
  
-@@ -371,7 +_,13 @@
+@@ -372,7 +_,13 @@
                          return InteractionResult.FAIL;
                      }
  
 -                    this.setItem(itemStack);
 +                    // Paper start - Add PlayerItemFrameChangeEvent
-+                    io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemStack), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                    io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemStack.asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
 +                    if (!event.callEvent()) {
 +                        return InteractionResult.FAIL;
 +                    }
-+                    this.setItem(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()));
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
 +                    // Paper end - Add PlayerItemFrameChangeEvent
                      this.gameEvent(GameEvent.BLOCK_CHANGE, player);
                      itemStack.consume(1, player);
                      return InteractionResult.SUCCESS;
-@@ -379,6 +_,13 @@
+@@ -380,6 +_,13 @@
                      return InteractionResult.PASS;
                  }
              } else {
 +                // Paper start - Add PlayerItemFrameChangeEvent
-+                io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(this.getItem()), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
++                io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
 +                if (!event.callEvent()) {
 +                    return InteractionResult.FAIL;
 +                }
-+                setItem(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()), false, false);
++                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
 +                // Paper end - Add PlayerItemFrameChangeEvent
                  this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
                  this.setRotation(this.getRotation() + 1);

@@ -26,6 +26,4 @@ public interface CollisionBlockState {
     public int moonrise$uniqueId2();
 
     public VoxelShape moonrise$getConstantContextCollisionShape();
-
-    public boolean moonrise$isSpecialCollidingBlock();
 }

@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DynamicOps;
 import io.papermc.paper.registry.RegistryKey;
@@ -52,16 +52,13 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.component.Removed;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
-import net.minecraft.nbt.NbtException;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.ReportedNbtException;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -497,7 +494,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             this.rarity = ItemRarity.valueOf(rarity.name());
         });
         getOrEmpty(patch, CraftMetaItem.USE_REMAINDER).ifPresent((useRemainder) -> {
-            this.useRemainder = CraftItemStack.asBukkitCopy(useRemainder.convertInto());
+            this.useRemainder = CraftItemStack.asCraftMirror(useRemainder.convertInto().create());
         });
         getOrEmpty(patch, CraftMetaItem.USE_COOLDOWN).ifPresent((useCooldown) -> {
             this.useCooldown = new CraftUseCooldownComponent(useCooldown);
@@ -548,16 +545,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             extraHandledComponents.addAll(handledComponents);
             handledComponents = extraHandledComponents;
         }
-        Set<Map.Entry<DataComponentType<?>, Object>> keys = patch.map.entrySet();
-        for (Map.Entry<DataComponentType<?>, Object> key : keys) {
-            final Object value = key.getValue();
+        Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = patch.entrySet();
+        for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
             if (!handledComponents.contains(key.getKey())) {
-                if (Removed.isNotRemoved(value)) {
+                key.getValue().ifPresent((value) -> {
                     this.unhandledTags.set((DataComponentType) key.getKey(), value);
-                }
+                });
             }
 
-            if (Removed.isRemoved(value)) {
+            if (key.getValue().isEmpty()) {
                 this.removedTags.add(key.getKey());
             }
         }
@@ -757,7 +753,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             try {
                 CompoundTag internalTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
                 this.deserializeInternal(internalTag, map);
-            } catch (IOException | ReportedNbtException | NbtException ex) {
+            } catch (IOException ex) {
                 LOGGER.error("Failed to read internal tag from object", ex);
             }
         }
@@ -777,16 +773,16 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                 });
                 this.unhandledTags.copy(unhandledPatch.forget(type -> type == CraftMetaItem.CAN_PLACE_ON.TYPE || type == CraftMetaItem.CAN_BREAK.TYPE));
 
-                for (Entry<DataComponentType<?>, Object> entry : unhandledPatch.map.entrySet()) {
+                for (Entry<DataComponentType<?>, Optional<?>> entry : unhandledPatch.entrySet()) {
                     // Move removed unhandled tags to dedicated removedTags
-                    if (Removed.isRemoved(entry.getValue())) {
+                    if (entry.getValue().isEmpty()) {
                         DataComponentType<?> key = entry.getKey();
 
                         this.unhandledTags.clear(key);
                         this.removedTags.add(key);
                     }
                 }
-            } catch (IOException | ReportedNbtException | NbtException ex) {
+            } catch (IOException ex) {
                 LOGGER.error("Failed to read unhandled tag for item", ex);
             }
         }
@@ -816,7 +812,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(custom));
             try {
                 this.customTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
-            } catch (IOException | ReportedNbtException | NbtException ex) {
+            } catch (IOException ex) {
                 LOGGER.error("Failed to read custom tag for item", ex);
             }
         }
@@ -1054,11 +1050,10 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             tag.put(CraftMetaItem.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates));
         }
 
-        for (Map.Entry<DataComponentType<?>, Object> e : this.unhandledTags.build().map.entrySet()) {
-            final Object value = e.getValue();
-            if (Removed.isNotRemoved(value)) {
+        for (Map.Entry<DataComponentType<?>, Optional<?>> e : this.unhandledTags.build().entrySet()) {
+            e.getValue().ifPresent((value) -> {
                 tag.builder.set((DataComponentType) e.getKey(), value);
-            }
+            });
         }
 
         for (DataComponentType<?> removed : this.removedTags) {
@@ -1878,17 +1873,17 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
         DynamicOps<net.minecraft.nbt.Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
         StringJoiner componentString = new StringJoiner(",", "[", "]");
 
-        for (Entry<DataComponentType<?>, Object> entry : patch.map.entrySet()) {
+        for (Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
             DataComponentType<?> type = entry.getKey();
             if (type.isTransient()) {
                 continue;
             }
 
-            Object componentValue = entry.getValue();
+            Optional<?> componentValue = entry.getValue();
             String componentKey = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).toString();
 
-            if (Removed.isNotRemoved(componentValue)) {
-                net.minecraft.nbt.Tag componentValueAsNBT = (net.minecraft.nbt.Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, componentValue).getOrThrow();
+            if (componentValue.isPresent()) {
+                net.minecraft.nbt.Tag componentValueAsNBT = (net.minecraft.nbt.Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, componentValue.get()).getOrThrow();
                 String componentValueAsNBTString = new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(componentValueAsNBT);
                 componentString.add(componentKey + "=" + componentValueAsNBTString);
             } else {
@@ -2493,7 +2488,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                 map.put(CraftMetaFirework.class, Set.of(CraftMetaFirework.FIREWORKS.TYPE));
                 map.put(CraftMetaKnowledgeBook.class, Set.of(CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE));
                 map.put(CraftMetaLeatherArmor.class, Set.of(CraftMetaLeatherArmor.COLOR.TYPE));
-                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
+                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
                 map.put(CraftMetaMusicInstrument.class, Set.of(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE));
                 map.put(CraftMetaOminousBottle.class, Set.of(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE));
                 map.put(CraftMetaPotion.class, Set.of(CraftMetaPotion.POTION_CONTENTS.TYPE));

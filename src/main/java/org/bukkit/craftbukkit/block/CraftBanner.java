@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +20,8 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
     private DyeColor base;
     private List<Pattern> patterns;
 
-    public CraftBanner(World world, BannerBlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftBanner(World world, BannerBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBanner(CraftBanner state, Location location) {

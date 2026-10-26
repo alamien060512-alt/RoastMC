@@ -1,25 +1,14 @@
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
-@@ -2,6 +_,8 @@
- 
- import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-+import java.util.ArrayList;
-+import java.util.List;
- import java.util.Map;
- import java.util.function.Predicate;
+@@ -7,7 +_,6 @@
  import net.minecraft.CrashReport;
-@@ -26,6 +_,9 @@
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.storage.ValueInput;
- import net.minecraft.world.level.storage.ValueOutput;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.entity.HumanEntity;
- 
- public class Inventory implements Container, Nameable {
-     public static final int POP_TIME_DURATION = 5;
-@@ -60,6 +_,81 @@
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.ReportedException;
+-import net.minecraft.core.Holder;
+ import net.minecraft.core.NonNullList;
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.network.chat.Component;
+@@ -58,6 +_,81 @@
      public final EntityEquipment equipment;
      private int timesChanged;
  
@@ -101,7 +90,7 @@
      public Inventory(Player player, EntityEquipment equipment) {
          this.player = player;
          this.equipment = equipment;
-@@ -95,10 +_,39 @@
+@@ -93,10 +_,32 @@
  
      private boolean hasRemainingSpaceForItem(ItemStack slotItemStack, ItemStack newItemStack) {
          return !slotItemStack.isEmpty()
@@ -114,63 +103,56 @@
 +    }
 +
 +    // CraftBukkit start - Watch method above! :D
-+    public int canHold(ItemStack itemStack) {
-+        int remains = itemStack.getCount();
-+        for (int slot = 0; slot < this.items.size(); ++slot) {
-+            ItemStack itemInSlot = this.getItem(slot);
-+            if (itemInSlot.isEmpty()) {
-+                return itemStack.getCount();
-+            }
++    public int canHold(ItemStack itemstack) {
++        int remains = itemstack.getCount();
++        for (int i = 0; i < this.items.size(); ++i) {
++            ItemStack itemstack1 = this.getItem(i);
++            if (itemstack1.isEmpty()) return itemstack.getCount();
 +
-+            if (this.hasRemainingSpaceForItem(itemInSlot, itemStack)) {
-+                remains -= (itemInSlot.getMaxStackSize() < this.getMaxStackSize() ? itemInSlot.getMaxStackSize() : this.getMaxStackSize()) - itemInSlot.getCount();
++            if (this.hasRemainingSpaceForItem(itemstack1, itemstack)) {
++                remains -= (itemstack1.getMaxStackSize() < this.getMaxStackSize() ? itemstack1.getMaxStackSize() : this.getMaxStackSize()) - itemstack1.getCount();
 +            }
-+            if (remains <= 0) {
-+                return itemStack.getCount();
-+            }
++            if (remains <= 0) return itemstack.getCount();
 +        }
++        ItemStack offhandItemStack = this.equipment.get(EquipmentSlot.OFFHAND);
++        if (this.hasRemainingSpaceForItem(offhandItemStack, itemstack)) {
++            remains -= (offhandItemStack.getMaxStackSize() < this.getMaxStackSize() ? offhandItemStack.getMaxStackSize() : this.getMaxStackSize()) - offhandItemStack.getCount();
++        }
++        if (remains <= 0) return itemstack.getCount();
 +
-+        ItemStack itemInOffhand = this.equipment.get(EquipmentSlot.OFFHAND);
-+        if (this.hasRemainingSpaceForItem(itemInOffhand, itemStack)) {
-+            remains -= (itemInOffhand.getMaxStackSize() < this.getMaxStackSize() ? itemInOffhand.getMaxStackSize() : this.getMaxStackSize()) - itemInOffhand.getCount();
-+        }
-+        if (remains <= 0) {
-+            return itemStack.getCount();
-+        }
-+
-+        return itemStack.getCount() - remains;
++        return itemstack.getCount() - remains;
 +    }
 +    // CraftBukkit end
  
      public int getFreeSlot() {
          for (int i = 0; i < this.items.size(); i++) {
-@@ -110,8 +_,10 @@
+@@ -108,8 +_,10 @@
          return -1;
      }
  
 -    public void addAndPickItem(ItemStack itemStack) {
 -        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
-+    public void addAndPickItem(ItemStack itemStack, final int targetSlot) {
++    public void addAndPickItem(final ItemStack itemStack, final int targetSlot) {
 +        this.setSelectedSlot(targetSlot);
 +        // Paper end - Add PlayerPickItemEvent
          if (!this.items.get(this.selected).isEmpty()) {
              int freeSlot = this.getFreeSlot();
              if (freeSlot != -1) {
-@@ -122,8 +_,10 @@
+@@ -120,8 +_,10 @@
          this.items.set(this.selected, itemStack);
      }
  
 -    public void pickSlot(int slot) {
 -        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
-+    public void pickSlot(int slot, final int targetSlot) {
++    public void pickSlot(final int slot, final int targetSlot) {
 +        this.setSelectedSlot(targetSlot);
 +        // Paper end - Add PlayerPickItemEvent
          ItemStack tmp = this.items.get(this.selected);
          this.items.set(this.selected, this.items.get(slot));
          this.items.set(slot, tmp);
-@@ -147,12 +_,12 @@
+@@ -145,12 +_,12 @@
          return !item.isDamaged() && !item.isEnchanted() && !item.has(DataComponents.CUSTOM_NAME);
      }
  
@@ -186,7 +168,7 @@
                  && (existingItem.isEmpty() || ItemStack.isSameItemSameComponents(existingItem, inventoryItemStack))) {
                  return i;
              }
-@@ -294,6 +_,8 @@
+@@ -293,6 +_,8 @@
          } catch (Throwable t) {
              CrashReport report = CrashReport.forThrowable(t, "Adding item to inventory");
              CrashReportCategory category = report.addCategory("Item being added");
@@ -195,12 +177,3 @@
              category.setDetail("Item ID", Item.getId(itemStack.getItem()));
              category.setDetail("Item data", itemStack.getDamageValue());
              category.setDetail("Item name", () -> itemStack.getHoverName().getString());
-@@ -448,6 +_,8 @@
-             if (!itemStack.isEmpty()) {
-                 ItemEntity drop = this.player.createItemStackToDrop(itemStack, true, false);
-                 if (drop != null) {
-+                    if (player.captureDrops() != null) player.captureDrops().add(drop);
-+                    else
-                     this.player.level().addFreshEntity(drop);
-                 }
- 

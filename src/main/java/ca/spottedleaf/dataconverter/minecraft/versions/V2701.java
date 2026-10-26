@@ -1,11 +1,11 @@
 package ca.spottedleaf.dataconverter.minecraft.versions;
 
 import ca.spottedleaf.converter.DataConverter;
-import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import ca.spottedleaf.converter.types.ListType;
 import ca.spottedleaf.converter.types.MapType;
 import ca.spottedleaf.converter.types.ObjectType;
+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import com.google.common.collect.Sets;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -48,12 +48,12 @@ public final class V2701 {
                         continue;
                     }
 
-                    final MapType poolElement = child.getMap("pool_element");
-                    if (poolElement == null || !"minecraft:feature_pool_element".equals(poolElement.getString("element_type"))) {
+                    final String poolElement = child.getString("pool_element");
+                    if (!"minecraft:feature_pool_element".equals(poolElement)) {
                         continue;
                     }
 
-                    final MapType feature = poolElement.getMap("feature");
+                    final MapType feature = child.getMap("feature");
                     if (feature == null) {
                         continue;
                     }
@@ -61,7 +61,7 @@ public final class V2701 {
                     final String replacement = convertToString(feature);
 
                     if (replacement != null) {
-                        poolElement.setString("feature", replacement);
+                        child.setString("feature", replacement);
                     }
                 }
 

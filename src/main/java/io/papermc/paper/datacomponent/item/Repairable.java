@@ -4,11 +4,13 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds if this item is repairable, and what item types it can be repaired with.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#REPAIRABLE
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface Repairable {
 

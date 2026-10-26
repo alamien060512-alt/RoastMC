@@ -5,7 +5,6 @@
 
 package net.neoforged.neoforge.client;
 
-import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
 import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
@@ -28,7 +27,7 @@ public interface CustomSkyboxRenderer {
      *
      * @return true to prevent vanilla sky rendering
      */
-    default boolean renderSky(LevelRenderState levelRenderState, SkyRenderState skyRenderState, Matrix4fc modelViewMatrix, GpuBufferSlice skyFog) {
+    default boolean renderSky(LevelRenderState levelRenderState, SkyRenderState skyRenderState, Matrix4fc modelViewMatrix, Runnable setupFog) {
         return false;
     }
 }

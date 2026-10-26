@@ -1,6 +1,5 @@
 package io.papermc.paper.event.block;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Raider;
 import org.bukkit.event.Cancellable;
@@ -15,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link org.bukkit.event.block.BellResonateEvent}
  */
 @Deprecated(since = "1.19.4")
-@Warning(propagate = false)
 public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

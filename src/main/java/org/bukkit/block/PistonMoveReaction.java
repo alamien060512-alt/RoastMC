@@ -15,25 +15,24 @@ public enum PistonMoveReaction {
      */
     MOVE(0),
     /**
-     * Indicates that the block can only be pushed by pistons, not pulled.
-     */
-    PUSH_ONLY(1),
-    /**
      * Indicates the block is fragile and will break if pushed on.
      */
-    BREAK(2),
+    BREAK(1),
     /**
      * Indicates that the block will resist being pushed or pulled.
      */
-    BLOCK(3),
+    BLOCK(2),
     /**
      * Indicates that the entity will ignore any interaction(s) with
      * pistons.
      * <br>
      * Blocks should use {@link PistonMoveReaction#BLOCK}.
      */
-    IGNORE(4),
-    ;
+    IGNORE(3),
+    /**
+     * Indicates that the block can only be pushed by pistons, not pulled.
+     */
+    PUSH_ONLY(4);
 
     private int id;
     private static Map<Integer, PistonMoveReaction> byId = new HashMap<Integer, PistonMoveReaction>();

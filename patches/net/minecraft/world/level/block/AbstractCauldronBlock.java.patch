@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/AbstractCauldronBlock.java
 +++ b/net/minecraft/world/level/block/AbstractCauldronBlock.java
-@@ -53,7 +_,7 @@
+@@ -57,7 +_,7 @@
          ItemStack itemStack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult
      ) {
          CauldronInteraction behavior = this.interactions.get(itemStack);
@@ -9,7 +9,7 @@
      }
  
      @Override
-@@ -94,5 +_,23 @@
+@@ -98,5 +_,23 @@
      }
  
      protected void receiveStalactiteDrip(BlockState state, Level level, BlockPos pos, Fluid fluid) {

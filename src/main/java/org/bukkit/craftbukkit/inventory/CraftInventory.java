@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.util.BoundChecker;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -35,14 +34,14 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftInventory implements Inventory {
     protected final Container inventory;
-    private InventoryType inventoryType; // Youer - mod menu type override
+    private InventoryType inventoryType; // RoastMC - mod menu type override
 
     public CraftInventory(Container inventory) {
         this.inventory = inventory;
     }
 
     /**
-     * Youer - overrides the inventory type reported by {@link #getType()}.
+     * RoastMC - overrides the inventory type reported by {@link #getType()}.
      */
     public void setInventoryType(InventoryType inventoryType) {
         this.inventoryType = inventoryType;
@@ -60,7 +59,7 @@ public class CraftInventory implements Inventory {
     @Override
     public ItemStack getItem(int index) {
         net.minecraft.world.item.ItemStack item = this.getInventory().getItem(index);
-        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 
     protected ItemStack[] asCraftMirror(List<net.minecraft.world.item.ItemStack> mcItems) {
@@ -69,7 +68,7 @@ public class CraftInventory implements Inventory {
 
         for (int i = 0; i < size; i++) {
             net.minecraft.world.item.ItemStack mcItem = mcItems.get(i);
-            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asBukkitMirror(mcItem);
+            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asCraftMirror(mcItem);
         }
 
         return items;
@@ -272,7 +271,10 @@ public class CraftInventory implements Inventory {
 
     private int firstPartial(ItemStack item) {
         ItemStack[] inventory = this.getStorageContents();
-        ItemStack filteredItem = item.clone();
+        ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
+        if (item == null) {
+            return -1;
+        }
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
             if (cItem != null && cItem.getAmount() < this.getMaxItemStack(cItem) && cItem.isSimilar(filteredItem)) {
@@ -313,7 +315,7 @@ public class CraftInventory implements Inventory {
                         // More than a single stack!
                         int maxAmount = this.getMaxItemStack(item);
                         if (item.getAmount() > maxAmount) {
-                            ItemStack stack = item.clone();
+                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
                             stack.setAmount(maxAmount);
                             this.setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - maxAmount);
@@ -475,11 +477,11 @@ public class CraftInventory implements Inventory {
 
     @Override
     public InventoryType getType() {
-        // Youer start - expose modded menu types
+        // RoastMC start - expose modded menu types
         if (this.inventoryType != null) {
             return this.inventoryType;
         }
-        // Youer end
+        // RoastMC end
         // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
         if (this.inventory instanceof CraftingContainer) {
             if (this.inventory instanceof CrafterBlockEntity) {
@@ -571,7 +573,6 @@ public class CraftInventory implements Inventory {
 
     @Override
     public void setMaxStackSize(int size) {
-        BoundChecker.requireNonNegative(size, "size");
         this.inventory.setMaxStackSize(size);
     }
 

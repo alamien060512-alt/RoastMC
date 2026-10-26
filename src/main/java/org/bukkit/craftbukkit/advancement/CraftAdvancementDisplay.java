@@ -21,36 +21,46 @@ public class CraftAdvancementDisplay implements org.bukkit.advancement.Advanceme
 
     @Override
     public String getTitle() {
-        return CraftChatMessage.fromComponent(this.handle.title());
+        return CraftChatMessage.fromComponent(this.handle.getTitle());
     }
 
     @Override
     public String getDescription() {
-        return CraftChatMessage.fromComponent(this.handle.description());
+        return CraftChatMessage.fromComponent(this.handle.getDescription());
     }
 
     @Override
     public ItemStack getIcon() {
-        return CraftItemStack.asBukkitCopy(this.handle.icon());
+        return CraftItemStack.asBukkitCopy(this.handle.getIcon());
     }
 
     @Override
     public boolean shouldShowToast() {
-        return this.handle.showToast();
+        return this.handle.shouldShowToast();
     }
 
     @Override
     public boolean shouldAnnounceChat() {
-        return this.handle.announceToChat();
+        return this.handle.shouldAnnounceChat();
     }
 
     @Override
     public boolean isHidden() {
-        return this.handle.hidden();
+        return this.handle.isHidden();
+    }
+
+    @Override
+    public float getX() {
+        return this.handle.getX();
+    }
+
+    @Override
+    public float getY() {
+        return this.handle.getY();
     }
 
     @Override
     public AdvancementDisplayType getType() {
-        return AdvancementDisplayType.values()[this.handle.type().ordinal()];
+        return AdvancementDisplayType.values()[this.handle.getType().ordinal()];
     }
 }

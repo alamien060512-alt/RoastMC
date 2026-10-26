@@ -5,13 +5,8 @@
 
 package net.neoforged.neoforge.common.crafting;
 
-import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderGetter;
-import net.minecraft.core.Registry;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.crafting.Recipe;
@@ -20,12 +15,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-/// Wrapper around a [RecipeOutput] that adds conditions to all received recipes.
-/// Do not use directly, obtain via [RecipeOutput#withConditions(ICondition...)].
-///
-/// @deprecated Use [RecipeOutput#withConditions(ICondition...)] or [RecipeOutput#withContext(UnaryOperator)]
-///             instead.
-@Deprecated(forRemoval = true, since = "26.3")
+/**
+ * Wrapper around a {@link RecipeOutput} that adds conditions to all received recipes.
+ * Do not use directly, obtain via {@link RecipeOutput#withConditions(ICondition...)}.
+ */
 @ApiStatus.Internal
 public class ConditionalRecipeOutput implements RecipeOutput {
     private final RecipeOutput inner;
@@ -55,13 +48,7 @@ public class ConditionalRecipeOutput implements RecipeOutput {
     }
 
     @Override
-    public <S> HolderGetter<S> lookup(ResourceKey<? extends Registry<? extends S>> key) {
-        return inner.lookup(key);
-    }
-
-    @Override
-    @Deprecated
-    public <S> Stream<Holder.Reference<S>> listContextElements(ResourceKey<? extends Registry<? extends S>> key) {
-        return inner.listContextElements(key);
+    public void includeRootAdvancement() {
+        inner.includeRootAdvancement();
     }
 }

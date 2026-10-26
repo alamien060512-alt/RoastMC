@@ -14,8 +14,8 @@ import org.bukkit.entity.Entity;
 
 public class CraftBell extends CraftBlockEntityState<BellBlockEntity> implements Bell {
 
-    public CraftBell(World world, BellBlockEntity blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftBell(World world, BellBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBell(CraftBell state, Location location) {

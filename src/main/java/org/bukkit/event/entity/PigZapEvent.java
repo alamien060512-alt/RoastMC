@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link EntityZapEvent}
  */
 @Deprecated(since = "26.2")
-@Warning(propagate = false)
+@Warning(reason = "This event has become obsolete, the more generic EntityZapEvent should be used instead.")
 public class PigZapEvent extends EntityZapEvent {
 
     @ApiStatus.Internal

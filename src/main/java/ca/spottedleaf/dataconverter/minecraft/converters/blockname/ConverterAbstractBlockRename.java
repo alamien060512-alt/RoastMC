@@ -1,9 +1,9 @@
 package ca.spottedleaf.dataconverter.minecraft.converters.blockname;
 
 import ca.spottedleaf.converter.DataConverter;
+import ca.spottedleaf.converter.types.MapType;
 import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
 import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-import ca.spottedleaf.converter.types.MapType;
 import java.util.function.Function;
 
 public final class ConverterAbstractBlockRename {
@@ -18,11 +18,7 @@ public final class ConverterAbstractBlockRename {
         ConverterAbstractStringValueTypeRename.register(version, subVersion, MCTypeRegistry.BLOCK_NAME, renamer);
         MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(version, subVersion) {
             @Override
-            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
-                if (!(input instanceof MapType data)) {
-                    return null;
-                }
-
+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
                 final String name = data.getString("Name");
                 if (name != null) {
                     final String converted = renamer.apply(name);

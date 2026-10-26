@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/Vec3i.java
 +++ b/net/minecraft/core/Vec3i.java
-@@ -22,13 +_,13 @@
+@@ -22,9 +_,9 @@
          ByteBufCodecs.VAR_INT, Vec3i::getX, ByteBufCodecs.VAR_INT, Vec3i::getY, ByteBufCodecs.VAR_INT, Vec3i::getZ, Vec3i::new
      );
      public static final Vec3i ZERO = new Vec3i(0, 0, 0);
@@ -13,29 +13,22 @@
  
      public static Codec<Vec3i> offsetCodec(int maxOffsetPerAxis) {
          return CODEC.validate(
--            value -> Math.abs(value.getX()) <= maxOffsetPerAxis && Math.abs(value.getY()) <= maxOffsetPerAxis && Math.abs(value.getZ()) <= maxOffsetPerAxis
-+            value -> Math.abs(value.getX()) < maxOffsetPerAxis && Math.abs(value.getY()) < maxOffsetPerAxis && Math.abs(value.getZ()) < maxOffsetPerAxis
-                 ? DataResult.success(value)
-                 : DataResult.error(() -> "Position out of range, expected at most " + maxOffsetPerAxis + ": " + value)
-         );
-@@ -41,7 +_,7 @@
+@@ -41,6 +_,7 @@
      }
  
      @Override
--    public boolean equals(Object o) {
-+    public boolean equals(Object o) { // Paper - Perf: Final for inline
++    // Paper - Perf: Final for inline (disabled for Create mod compatibility - TrackNodeLocation overrides equals)
+     public boolean equals(Object o) {
          if (this == o) {
              return true;
-         } else {
-@@ -50,7 +_,7 @@
+@@ -50,6 +_,7 @@
      }
  
      @Override
--    public int hashCode() {
-+    public int hashCode() { // Paper - Perf: Final for inline
++    // Paper - Perf: Final for inline (disabled for Create mod compatibility)
+     public int hashCode() {
          return (this.getY() + this.getZ() * 31) * 31 + this.getX();
      }
- 
 @@ -62,15 +_,15 @@
          }
      }
@@ -55,7 +48,7 @@
          return this.z;
      }
  
-@@ -254,4 +_,11 @@
+@@ -250,4 +_,11 @@
      public String toShortString() {
          return this.getX() + ", " + this.getY() + ", " + this.getZ();
      }

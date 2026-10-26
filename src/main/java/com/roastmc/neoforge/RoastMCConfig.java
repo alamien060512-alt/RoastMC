@@ -1,0 +1,354 @@
+package com.roastmc.neoforge;
+
+import com.google.common.base.Throwables;
+import com.roastmc.neoforge.api.ColorAPI;
+import com.roastmc.neoforge.commands.DumpCommand;
+import com.roastmc.neoforge.commands.InfoCommand;
+import com.roastmc.neoforge.commands.ItemsCommand;
+import com.roastmc.neoforge.commands.PermissionCommand;
+import com.roastmc.neoforge.commands.ShowsCommand;
+import com.roastmc.neoforge.commands.RoastMCCommand;
+import com.roastmc.neoforge.feature.RoastMCPlugin;
+import com.roastmc.neoforge.feature.ban.BansCommand;
+import com.roastmc.neoforge.feature.entitylimits.EntityLimitsConfig;
+import gg.pufferfish.pufferfish.simd.SIMDDetection;
+import com.roastmc.neoforge.util.I18n;
+import com.roastmc.neoforge.util.YamlUtils;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Level;
+import net.minecraft.server.MinecraftServer;
+import net.neoforged.neoforge.common.NeoForgeVersion;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+public class RoastMCConfig {
+
+    private static final List<String> HEADER = Arrays.asList("""
+            This is the main configuration file for RoastMC.
+            As you can see, there's tons to configure. Some options may impact gameplay, so use
+            with caution, and make sure you know what each option does before configuring.
+            For a reference for any variable inside this file, check out the RoastMC wiki at
+            - [English Documentation](https://github.com/alamien060512-alt/RoastMC)
+            - [中文文档](https://github.com/alamien060512-alt/RoastMC)
+            
+            If you need help with the configuration or have any questions related to Spigot,
+            join us at the Discord or drop by our forums and leave a post.
+            
+            Discord: https://discord.gg/mohistmc
+            Forums: https://mohistmc.com/
+            Forums (中文): https://www.mohistmc.cn/
+            
+            """.split("\\n"));
+    /*========================================================================*/
+    public static YamlConfiguration config;
+    public static File roastmcyml = new File("roastmc-config", "roastmc.yml");
+    public static YamlConfiguration yml = YamlConfiguration.loadConfiguration(roastmcyml);
+    public static boolean show_logo;
+    public static String roastmc_lang;
+    public static int maximumRepairCost;
+    public static boolean enchantment_fix;
+    public static int max_enchantment_level;
+    public static int maxBees;
+    public static boolean bookAnimationTick;
+    public static boolean networkmanager_debug;
+    public static List<String> networkmanager_intercept;
+    public static boolean keepinventory_global;
+    public static boolean keepinventory_inventory;
+    public static boolean keepinventory_permission_enable;
+    public static String keepinventory_inventory_permission;
+    public static boolean keepinventory_exp;
+    public static String keepinventory_exp_permission;
+    // Thread Priority
+    public static int server_thread;
+    public static boolean clear_item;
+    public static List<String> clear_item_whitelist;
+    public static String clear_item_msg;
+    public static int clear_item_time;
+    public static boolean clear_monster;
+    public static List<String> clear_monster_whitelist;
+    public static String clear_monster_msg;
+    public static int clear_monster_time;
+    // Ban
+    public static boolean ban_item_enable;
+    public static boolean ban_block_enable;
+    public static boolean ban_entity_enable;
+    public static boolean no_vanilla_entity_enable;
+    public static List<String> no_vanilla_entity_whitelist;
+    public static boolean ban_enchantment_enable;
+    public static boolean ban_recipe_enable;
+    public static boolean ban_world_enable;
+    public static boolean ban_structure_enable;
+    public static boolean ban_effect_enable;
+    public static String pingCommandOutput;
+    // Ban events
+    public static boolean doFireTick;
+    public static boolean explosion;
+    public static boolean farmlandTrample;
+    public static boolean join_message;
+    public static boolean quit_message;
+    public static boolean bukkitpermissionshandler;
+    public static boolean recipe_warn;
+    public static boolean permissions_debug_console;
+    public static boolean permissions_send_player;
+    public static boolean pluginchannel_debug;
+    public static boolean custom_no_villager;
+    public static boolean custom_entity_tp_end;
+    public static boolean custom_entity_tp_nether;
+    public static boolean custom_raid_no_emerald;
+    public static int custom_lava_speed_normal;
+    public static int custom_lava_speed_nether;
+    public static boolean custom_fix_flat;
+    public static boolean custom_fix_cmi_tempban;
+    public static boolean custom_disabled_spawner;
+    public static boolean custom_disabled_sign_commands;
+    public static boolean player_modlist_blacklist_enable;
+    public static boolean player_modlist_blacklist_use_real_feedback;
+    public static String player_modlist_blacklist_failurereasons;
+    public static List<String> player_modlist_blacklist;
+    public static boolean fakeplayer_callbukkitevent = false;
+    public static String message_require_neoforge;
+    public static boolean no_damage_particle;
+    public static boolean backup_world_enable;
+    public static int backup_world_interval;
+    public static int backup_world_max_backups;
+    public static boolean backup_world_use_zstd;
+
+    static int version;
+    static Map<String, Command> commands;
+    private static File CONFIG_FILE;
+
+    public static void init(File configFile) {
+        CONFIG_FILE = configFile;
+        config = new YamlConfiguration();
+        try {
+            if (!CONFIG_FILE.exists()) {
+                File parent = CONFIG_FILE.getParentFile();
+                if (parent != null) {
+                    parent.mkdirs();
+                }
+                CONFIG_FILE.createNewFile();
+            }
+            config.load(CONFIG_FILE);
+        } catch (IOException | InvalidConfigurationException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Could not load roastmc.yml, please correct your syntax errors", ex);
+            Throwables.throwIfUnchecked(ex);
+        }
+
+        // Attempt to detect vectorization
+        try {
+            SIMDDetection.isEnabled = SIMDDetection.canEnable();
+        } catch (NoClassDefFoundError | Exception e) {
+            RoastMC.LOGGER.error(e.getMessage());
+        }
+
+        if (SIMDDetection.isEnabled) {
+            RoastMC.LOGGER.info("SIMD operations detected as functional. Will replace some operations with faster versions.");
+        } else {
+            RoastMC.LOGGER.warn("SIMD operations are available for your server, but are not configured!");
+            RoastMC.LOGGER.warn("To enable additional optimizations, add \"--add-modules=jdk.incubator.vector\" to your startup flags, BEFORE the \"-jar\".");
+            RoastMC.LOGGER.warn("If you have already added this flag, then SIMD operations are not supported on your JVM or CPU.");
+        }
+
+        config.options().setHeader(HEADER);
+        config.options().copyDefaults(true);
+
+        commands = new HashMap<>();
+        commands.put("roastmc", new RoastMCCommand("roastmc"));
+        commands.put("dump", new DumpCommand("dump"));
+        commands.put("items", new ItemsCommand("items"));
+        commands.put("permission", new PermissionCommand("permission"));
+        commands.put("bans", new BansCommand("bans"));
+        commands.put("shows", new ShowsCommand("shows"));
+        commands.put("infos", new InfoCommand("infos"));
+        EntityLimitsConfig.init();
+        RoastMCPlugin.registerCommands(commands);
+
+        version = getInt("config-version", 1);
+        set("config-version", 1);
+        readConfig();
+
+        try {
+            Class.forName("org.sqlite.JDBC");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (Throwable t) {
+            throw new RuntimeException("Error initializing RoastMC", t);
+        }
+    }
+
+    public static void save() {
+        YamlUtils.save(roastmcyml, yml);
+    }
+
+    public static void registerCommands() {
+        for (Map.Entry<String, Command> entry : commands.entrySet()) {
+            MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "RoastMC", entry.getValue());
+        }
+    }
+
+    static void readConfig() {
+        for (Method method : RoastMCConfig.class.getDeclaredMethods()) {
+            if (Modifier.isPrivate(method.getModifiers())) {
+                if (method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE) {
+                    try {
+                        method.setAccessible(true);
+                        method.invoke(null);
+                    } catch (InvocationTargetException ex) {
+                        Throwables.throwIfUnchecked(ex.getCause());
+                    } catch (Exception ex) {
+                        Bukkit.getLogger().log(Level.SEVERE, "Error invoking " + method, ex);
+                    }
+                }
+            }
+        }
+
+        try {
+            config.save(CONFIG_FILE);
+        } catch (IOException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + CONFIG_FILE, ex);
+        }
+    }
+
+    private static void set(String path, Object val) {
+        config.set(path, val);
+    }
+
+    private static boolean getBoolean(String path, boolean def) {
+        config.addDefault(path, def);
+        return config.getBoolean(path, def);
+    }
+
+    private static int getInt(String path, int def) {
+        config.addDefault(path, def);
+        return config.getInt(path, def);
+    }
+
+    private static <T> List<String> getStringList(String path, T def) {
+        config.addDefault(path, def);
+        return config.getStringList(path);
+    }
+
+    private static String getString(String path, String def) {
+        config.addDefault(path, def);
+        return config.getString(path, def);
+    }
+
+    private static double getDouble(String path, double def) {
+        config.addDefault(path, def);
+        return config.getDouble(path, def);
+    }
+
+    public static String roastmc_lang() {
+        return yml.getString("roastmc.lang", Locale.getDefault().toString());
+    }
+
+    private static void roastmc() {
+        show_logo = getBoolean("roastmc.show_logo", true);
+        roastmc_lang = getString("roastmc.lang", Locale.getDefault().toString());
+        maximumRepairCost = getInt("anvilfix.maximumrepaircost", 40);
+        enchantment_fix = getBoolean("anvilfix.enchantment_fix", false);
+        max_enchantment_level = getInt("anvilfix.max_enchantment_level", 32767);
+        maxBees = getInt("max-bees-in-hive", 3);
+        bookAnimationTick = getBoolean("enchantment-table-book-animation-tick", false);
+        networkmanager_debug = getBoolean("networkmanager.debug", false);
+        networkmanager_intercept = getStringList("networkmanager.intercept", new ArrayList<>());
+        keepinventory_global = getBoolean("keepinventory.global.enable", false);
+        keepinventory_permission_enable = getBoolean("keepinventory.permission.enable", false);
+        keepinventory_inventory = getBoolean("keepinventory.global.inventory", true);
+        keepinventory_inventory_permission = getString("keepinventory.permission.inventory", "roastmc.keepinventory.inventory");
+        keepinventory_exp = getBoolean("keepinventory.global.exp", true);
+        keepinventory_exp_permission = getString("keepinventory.permission.exp", "roastmc.keepinventory.exp");
+        server_thread = getInt("threadpriority.server_thread", 5);
+
+        clear_item = getBoolean("entity.clear.item.enable", false);
+        clear_item_whitelist = getStringList("entity.clear.item.whitelist", new ArrayList<>());
+        clear_item_msg = getString("entity.clear.item.msg", "[Server] Cleaned up %size% drop item");
+        clear_item_time = getInt("entity.clear.item.time", 1800);
+
+        clear_monster = getBoolean("entity.clear.monster.enable", false);
+        clear_monster_whitelist = getStringList("entity.clear.monster.whitelist", new ArrayList<>());
+        clear_monster_msg = getString("entity.clear.monster.msg", "[Server] Cleaned up %size% monster");
+        clear_monster_time = getInt("entity.clear.monster.time", 1800);
+
+        ban_item_enable = getBoolean("bans.item", false);
+        ban_block_enable = getBoolean("bans.block", false);
+        ban_entity_enable = getBoolean("bans.entity.enable", false);
+        no_vanilla_entity_enable = getBoolean("bans.entity.vanilla_entity.enable", false);
+        no_vanilla_entity_whitelist = getStringList("bans.entity.vanilla_entity.whitelist", new ArrayList<>());
+        ban_enchantment_enable = getBoolean("bans.enchantment", false);
+        ban_recipe_enable = getBoolean("bans.recipe", false);
+        ban_world_enable = getBoolean("bans.world", false);
+        ban_structure_enable = getBoolean("bans.structure", false);
+        ban_effect_enable = getBoolean("bans.effect", false);
+
+        pingCommandOutput = getString("settings.messages.ping-command-output", "§2%s's ping is %sms");
+
+        doFireTick = getBoolean("events.fire_tick", false);
+        explosion = getBoolean("events.explosion", false);
+        farmlandTrample = getBoolean("events.farmlandTrample", false);
+        join_message = getBoolean("events.join_message", true);
+        quit_message = getBoolean("events.quit_message", true);
+
+        bukkitpermissionshandler = getBoolean("neoforge.bukkitpermissionshandler", true);
+
+        recipe_warn = getBoolean("recipe.warn", false);
+
+        permissions_debug_console = getBoolean("permissions.debug.console", false);
+        permissions_send_player = getBoolean("permissions.debug.player", false);
+        pluginchannel_debug = getBoolean("pluginchannel.debug", false);
+
+        custom_no_villager = getBoolean("custom.no_villager", false);
+        custom_entity_tp_end = getBoolean("custom.entity_tp_end", true);
+        custom_entity_tp_nether = getBoolean("custom.entity_tp_nether", true);
+        custom_raid_no_emerald = getBoolean("custom.raid_no_emerald", false);
+        custom_lava_speed_normal = getInt("custom.lava_speed.normal", 30);
+        custom_lava_speed_nether = getInt("custom.lava_speed.nether", 10);
+        custom_fix_flat = getBoolean("custom.fix_flat", false);
+        custom_fix_cmi_tempban = getBoolean("custom.fix_cmi_tempban", false);
+        custom_disabled_spawner = getBoolean("custom.disabled_spawner", false);
+        custom_disabled_sign_commands = getBoolean("custom.disabled_signblock_commands", true);
+        no_damage_particle = getBoolean("custom.no_damage_particle", false);
+
+        backup_world_enable = getBoolean("backup_world.enable", false);
+        backup_world_interval = getInt("backup_world.interval", 3600);
+        backup_world_max_backups = getInt("backup_world.max_backups", 5);
+        backup_world_use_zstd = getBoolean("backup_world.use_zstd", false);
+
+        player_modlist_blacklist_enable = getBoolean("player_modlist_blacklist.enable", false);
+        player_modlist_blacklist_use_real_feedback = getBoolean("player_modlist_blacklist.use_real_feedback", false);
+        player_modlist_blacklist_failurereasons = getString("player_modlist_blacklist.failurereasons", "<gradient:#00FF00:#0000FF>Do not install mods privately</gradient>");
+        player_modlist_blacklist = getStringList("player_modlist_blacklist.list", new ArrayList<>());
+
+        fakeplayer_callbukkitevent = getBoolean("fakeplayer.callbukkitevent", fakeplayer_callbukkitevent);
+        message_require_neoforge = getString("message.require_neoforge", I18n.as("neoforge.network.negotiation.failure.vanilla.client.not_supported"));
+
+        getBoolean("keepinventory.world.inventory", false);
+        getBoolean("keepinventory.world.exp", false);
+    }
+
+    public static boolean isCN() {
+        return yml.getString("roastmc.lang", Locale.getDefault().toString()).contains("CN");
+    }
+
+    public static int getThreadPriority() {
+        int priority = RoastMCConfig.yml.getInt("threadpriority.server_thread", 5);
+        priority = Math.clamp(priority, Thread.MIN_PRIORITY, Thread.MAX_PRIORITY);
+        return priority;
+    }
+
+    public static String getMessage_require_neoforge() {
+        return ColorAPI.string(message_require_neoforge.formatted(NeoForgeVersion.getVersion()));
+    }
+}

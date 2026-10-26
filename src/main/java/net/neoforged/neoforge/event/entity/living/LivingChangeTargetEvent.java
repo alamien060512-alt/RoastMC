@@ -37,7 +37,7 @@ public class LivingChangeTargetEvent extends LivingEvent implements ICancellable
     private final LivingEntity originalAboutToBeSetTarget;
     @Nullable
     private LivingEntity newAboutToBeSetTarget;
-    // Youer start
+    // RoastMC start
     private EntityTargetEvent.TargetReason reason;
     private boolean fireCBEvent;
 
@@ -66,7 +66,7 @@ public class LivingChangeTargetEvent extends LivingEvent implements ICancellable
         this.fireCBEvent = cancel;
     }
 
-    // Youer end
+    // RoastMC end
 
     /**
      * {@return the new target that this entity will begin to track.}

@@ -18,23 +18,15 @@ public interface BiomeParameterPoint {
      * Gets the maximum temperature that is possible.
      *
      * @return The maximum temperature
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxTemperature() {
-        return this.getTemperature();
-    }
+    double getMaxTemperature();
 
     /**
      * Gets the minimum temperature that is possible.
      *
      * @return The minimum temperature
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinTemperature() {
-        return this.getTemperature();
-    }
+    double getMinTemperature();
 
     /**
      * Gets the humidity of the biome at this point that is suggested by the
@@ -48,23 +40,15 @@ public interface BiomeParameterPoint {
      * Gets the maximum humidity that is possible.
      *
      * @return The maximum humidity
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxHumidity() {
-        return this.getHumidity();
-    }
+    double getMaxHumidity();
 
     /**
      * Gets the minimum humidity that is possible.
      *
      * @return The minimum humidity
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinHumidity() {
-        return this.getHumidity();
-    }
+    double getMinHumidity();
 
     /**
      * Gets the continentalness of the biome at this point that is suggested by
@@ -78,23 +62,15 @@ public interface BiomeParameterPoint {
      * Gets the maximum continentalness that is possible.
      *
      * @return The maximum continentalness
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxContinentalness() {
-        return this.getContinentalness();
-    }
+    double getMaxContinentalness();
 
     /**
      * Gets the minimum continentalness that is possible.
      *
      * @return The minimum continentalness
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinContinentalness() {
-        return this.getContinentalness();
-    }
+    double getMinContinentalness();
 
     /**
      * Gets the erosion of the biome at this point that is suggested by the
@@ -108,23 +84,15 @@ public interface BiomeParameterPoint {
      * Gets the maximum erosion that is possible.
      *
      * @return The maximum erosion
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxErosion() {
-        return this.getErosion();
-    }
+    double getMaxErosion();
 
     /**
      * Gets the minimum erosion that is possible.
      *
      * @return The minimum erosion
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinErosion() {
-        return this.getErosion();
-    }
+    double getMinErosion();
 
     /**
      * Gets the depth of the biome at this point that is suggested by the
@@ -138,23 +106,15 @@ public interface BiomeParameterPoint {
      * Gets the maximum depth that is possible.
      *
      * @return The maximum depth
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxDepth() {
-        return this.getDepth();
-    }
+    double getMaxDepth();
 
     /**
      * Gets the minimum depth that is possible.
      *
      * @return The minimum depth
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinDepth() {
-        return this.getDepth();
-    }
+    double getMinDepth();
 
     /**
      * Gets the weirdness of the biome at this point that is suggested by the
@@ -168,21 +128,13 @@ public interface BiomeParameterPoint {
      * Gets the maximum weirdness that is possible.
      *
      * @return The maximum weirdness
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMaxWeirdness() {
-        return this.getWeirdness();
-    }
+    double getMaxWeirdness();
 
     /**
      * Gets the minimum weirdness that is possible.
      *
      * @return The minimum weirdness
-     * @deprecated no longer available
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default double getMinWeirdness() {
-        return this.getWeirdness();
-    }
+    double getMinWeirdness();
 }

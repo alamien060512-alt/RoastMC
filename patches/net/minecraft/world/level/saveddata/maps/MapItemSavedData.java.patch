@@ -8,26 +8,15 @@
  import java.util.function.Predicate;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Holder;
-@@ -24,6 +_,7 @@
- import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
- import net.minecraft.resources.Identifier;
- import net.minecraft.resources.ResourceKey;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.tags.ItemTags;
- import net.minecraft.util.Mth;
- import net.minecraft.util.datafix.DataFixTypes;
-@@ -37,6 +_,10 @@
+@@ -38,6 +_,7 @@
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.saveddata.SavedData;
  import net.minecraft.world.level.saveddata.SavedDataType;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.map.CraftMapCursor;
 +import org.bukkit.craftbukkit.map.CraftMapView;
  import org.jspecify.annotations.Nullable;
  
  public class MapItemSavedData extends SavedData {
-@@ -47,7 +_,7 @@
+@@ -48,7 +_,7 @@
      private static final String FRAME_PREFIX = "frame-";
      public static final Codec<MapItemSavedData> CODEC = RecordCodecBuilder.create(
          i -> i.group(
@@ -36,7 +25,7 @@
                  Codec.INT.fieldOf("xCenter").forGetter(m -> m.centerX),
                  Codec.INT.fieldOf("zCenter").forGetter(m -> m.centerZ),
                  Codec.BYTE.optionalFieldOf("scale", (byte)0).forGetter(m -> m.scale),
-@@ -68,12 +_,20 @@
+@@ -69,12 +_,20 @@
      public byte scale;
      public byte[] colors = new byte[16384];
      public boolean locked;
@@ -57,7 +46,7 @@
  
      public static SavedDataType<MapItemSavedData> type(MapId id) {
          return new SavedDataType<>(Identifier.withDefaultNamespace(id.key()), () -> {
-@@ -91,7 +_,28 @@
+@@ -92,7 +_,28 @@
          this.trackingPosition = trackingPosition;
          this.unlimitedTracking = unlimitedTracking;
          this.locked = locked;
@@ -87,7 +76,7 @@
  
      private MapItemSavedData(
          ResourceKey<Level> dimension,
-@@ -119,6 +_,8 @@
+@@ -120,6 +_,8 @@
              this.frameMarkers.put(frame.getId(), frame);
              this.addDecoration(MapDecorationTypes.FRAME, null, getFrameKey(frame.entityId()), frame.pos().getX(), frame.pos().getZ(), frame.rotation(), null);
          }
@@ -96,13 +85,11 @@
      }
  
      public static MapItemSavedData createFresh(
-@@ -345,15 +_,20 @@
-         return holdingPlayer == null ? null : holdingPlayer.nextUpdatePacket(id);
+@@ -350,7 +_,12 @@
      }
  
--    private void setColorsDirty(int x, int y) {
+     public void setColorsDirty(int x, int y) {
 -        this.setDirty();
-+    public void setColorsDirty(int x, int y) {
 +        // Paper start - Fix unnecessary map data saves
 +        this.setColorsDirty(x, y, true);
 +    }
@@ -112,15 +99,7 @@
  
          for (MapItemSavedData.HoldingPlayer holdingPlayer : this.carriedBy) {
              holdingPlayer.markColorsDirty(x, y);
-         }
-     }
- 
--    private void setDecorationsDirty() {
-+    public void setDecorationsDirty() {
-         this.carriedBy.forEach(MapItemSavedData.HoldingPlayer::markDecorationsDirty);
-     }
- 
-@@ -387,7 +_,7 @@
+@@ -391,7 +_,7 @@
                  return true;
              }
  
@@ -129,7 +108,7 @@
                  this.bannerMarkers.put(banner.getId(), banner);
                  this.addDecoration(banner.getDecoration(), level, banner.getId(), xPos, zPos, 180.0, banner.name().orElse(null));
                  this.setDirty();
-@@ -479,7 +_,7 @@
+@@ -493,7 +_,7 @@
              this.player = player;
          }
  
@@ -138,7 +117,7 @@
              int startX = this.minDirtyX;
              int startY = this.minDirtyY;
              int width = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -488,7 +_,7 @@
+@@ -502,7 +_,7 @@
  
              for (int x = 0; x < width; x++) {
                  for (int y = 0; y < height; y++) {
@@ -147,7 +126,7 @@
                  }
              }
  
-@@ -497,17 +_,38 @@
+@@ -511,17 +_,38 @@
  
          private @Nullable Packet<?> nextUpdatePacket(MapId id) {
              MapItemSavedData.MapPatch patch;
@@ -189,7 +168,7 @@
              } else {
                  decorations = null;
              }
-@@ -535,6 +_,23 @@
+@@ -549,6 +_,23 @@
          private void markDecorationsDirty() {
              this.dirtyDecorations = true;
          }
@@ -213,7 +192,7 @@
      }
  
      private record MapDecorationLocation(Holder<MapDecorationType> type, byte x, byte y, byte rot) {
-@@ -579,4 +_,71 @@
+@@ -593,4 +_,71 @@
              }
          }
      }

@@ -19,6 +19,6 @@
  
          for (BlockPos blockPos : positionsToTransform) {
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
-             level.setBlockAndUpdate(blockPos, Blocks.COBWEB.defaultBlockState());
+             level.setBlock(blockPos, Blocks.COBWEB.defaultBlockState(), 3);
              level.levelEvent(3018, blockPos, 0);
          }

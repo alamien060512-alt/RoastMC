@@ -18,7 +18,7 @@
          super(EntityTypes.SMALL_FIREBALL, mob, direction, level);
 +        // CraftBukkit start
 +        if (this.getOwner() != null && this.getOwner() instanceof Mob) {
-+            isIncendiary = (level instanceof ServerLevel serverlevel) && serverlevel.getGameRules().get(GameRules.MOB_GRIEFING, serverlevel.purpurConfig.fireballsMobGriefingOverride); // Purpur - Add mobGriefing override to everything affected
++            isIncendiary = (level instanceof ServerLevel serverlevel) && serverlevel.getGameRules().get(GameRules.MOB_GRIEFING);
 +        }
 +        // CraftBukkit end
      }
@@ -45,7 +45,7 @@
          if (this.level() instanceof ServerLevel serverLevel) {
              Entity owner = this.getOwner();
 -            if (!(owner instanceof Mob) || serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
-+            if (!(owner instanceof Mob) || net.neoforged.neoforge.event.EventHooks.canEntityGrief(serverLevel, owner)) {
++            if (isIncendiary || net.neoforged.neoforge.event.EventHooks.canEntityGrief(serverLevel, owner)) {
                  BlockPos pos = hitResult.getBlockPos().relative(hitResult.getDirection());
 -                if (this.level().isEmptyBlock(pos)) {
 +                if (this.level().isEmptyBlock(pos) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), pos, this).isCancelled()) { // CraftBukkit

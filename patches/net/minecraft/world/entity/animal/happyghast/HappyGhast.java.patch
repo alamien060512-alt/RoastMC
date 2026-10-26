@@ -47,25 +47,11 @@
      private void setServerStillTimeout(int serverStillTimeout) {
          if (this.serverStillTimeout <= 0 && serverStillTimeout > 0 && this.level() instanceof ServerLevel serverLevel) {
              this.syncPacketPositionCodec(this.getX(), this.getY(), this.getZ());
-@@ -137,6 +_,13 @@
-         this.removeAllGoals(goal -> true);
-     }
- 
-+    // Purpur start - Ridables
-+    @Override
-+    public boolean dismountsUnderwater() {
-+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.happyGhastRidableInWater;
-+    }
-+    // Purpur end - Ridables
-+
-     @Override
-     protected void ageBoundaryReached() {
-         if (this.isBaby()) {
 @@ -308,7 +_,7 @@
      @Override
      protected void addPassenger(Entity passenger) {
          if (!this.isVehicle()) {
--            this.playSound(SoundEvents.HARNESS_GOGGLES_DOWN);
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.HARNESS_GOGGLES_DOWN, this.getSoundSource(), 1.0F, 1.0F);
 +            this.playSound(SoundEvents.HARNESS_GOGGLES_DOWN, 1.0F, 1.0F); // Paper - don't play sound if silenced (Fixes MC-297169)
          }
  
@@ -88,7 +74,7 @@
  
          if (!this.isVehicle()) {
              this.clearHome();
--            this.playSound(SoundEvents.HARNESS_GOGGLES_UP);
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.HARNESS_GOGGLES_UP, this.getSoundSource(), 1.0F, 1.0F);
 +            this.playSound(SoundEvents.HARNESS_GOGGLES_UP, 1.0F, 1.0F); // Paper - don't play sound if silenced (Fixes MC-297169)
          }
 +        return true; // Paper - cancellable passengers

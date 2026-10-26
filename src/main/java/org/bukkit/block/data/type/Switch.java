@@ -1,10 +1,11 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.AttachableDirectional;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
-public interface Switch extends AttachableDirectional, Powerable {
+public interface Switch extends Directional, FaceAttachable, Powerable {
 
     @NotNull
     AttachedFace getAttachedFace();

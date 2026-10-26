@@ -10,14 +10,12 @@ import ca.spottedleaf.moonrise.patches.chunk_system.level.poi.ChunkSystemPoiMana
 import ca.spottedleaf.moonrise.patches.chunk_system.level.poi.PoiChunk;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
-import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.status.ChunkStatusTasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.VarHandle;
@@ -77,11 +75,11 @@ public final class ChunkFullTask extends ChunkProgressionTask implements Runnabl
             chunk.setFullStatus(chunkHolder::getChunkStatus);
             try {
                 platformHooks.setCurrentlyLoading(this.chunkHolder.vanillaChunkHolder, chunk);
+                chunk.runPostLoad();
                 // Unlike Vanilla, we load the entity chunk here, as we load the NBT in empty status (unlike Vanilla)
                 // This brings entity addition back in line with older versions of the game
                 // Since we load the NBT in the empty status, this will never block for I/O
-                ((ChunkSystemServerLevel)this.world).moonrise$getChunkTaskScheduler().chunkHolderManager.fullTaskLoadEntityChunk(this.chunkX, this.chunkZ);
-                chunk.runPostLoad();
+                ((ChunkSystemServerLevel)this.world).moonrise$getChunkTaskScheduler().chunkHolderManager.getOrCreateEntityChunk(this.chunkX, this.chunkZ, false);
                 chunk.setLoaded(true);
                 chunk.registerAllBlockEntitiesAfterLevelLoad();
                 chunk.registerTickContainerInLevel(this.world);

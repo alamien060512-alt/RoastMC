@@ -18,11 +18,10 @@ import org.jetbrains.annotations.NotNull;
  * This is done at Plugin Enable time after commands have been registered, but may also
  * run at a later point in the server lifetime due to plugins, a server reload, etc.</p>
  *
- * @deprecated this event has been superseded by the Commands API and will be removed in a future release.
- * Listen to {@link io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS} instead
+ * @deprecated For removal, use the new brigadier api.
  */
 @Deprecated(since = "1.20.6")
-@Warning(value = true, propagate = false)
+@Warning(reason = "This event has been superseded by the Commands API and will be removed in a future release. Listen to LifecycleEvents.COMMANDS instead.", value = true)
 public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

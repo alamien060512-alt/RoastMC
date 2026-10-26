@@ -4,7 +4,7 @@
  import com.google.gson.JsonElement;
  import com.google.gson.JsonObject;
  import com.google.gson.JsonParseException;
-+import com.mohistmc.youer.YouerConfig;
++import com.roastmc.neoforge.RoastMCConfig;
  import com.mojang.logging.LogUtils;
  import java.io.IOException;
  import java.io.InputStream;
@@ -57,7 +57,7 @@
 +    }
 +
 +    private static void parseTranslations(BiConsumer<String, String> output, BiConsumer<String, net.minecraft.network.chat.Component> componentConsumer, String path) {
-+        try (InputStream stream = YouerConfig.class.getResourceAsStream("/assets/minecraft/lang/%s.json".formatted(YouerConfig.youer_lang().toLowerCase(Locale.ROOT)))) {
++        try (InputStream stream = RoastMCConfig.class.getResourceAsStream("/assets/minecraft/lang/%s.json".formatted(RoastMCConfig.roastmc_lang().toLowerCase(Locale.ROOT)))) {
 +            loadFromJson(stream, output, componentConsumer);
 +        } catch (Exception e) {
 +            try (InputStream stream = Language.class.getResourceAsStream(path)) {

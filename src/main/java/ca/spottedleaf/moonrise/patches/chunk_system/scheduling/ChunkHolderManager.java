@@ -21,7 +21,6 @@ import ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicket;
 import ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketType;
 import ca.spottedleaf.moonrise.patches.chunk_system.util.ChunkSystemSortedArraySet;
 import ca.spottedleaf.moonrise.patches.chunk_system.util.stream.TicketSet;
-import ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemServerChunkCache;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
@@ -76,11 +75,11 @@ public final class ChunkHolderManager {
     private static final long NO_TIMEOUT_MARKER = Long.MIN_VALUE;
     public final ReentrantAreaLock ticketLockArea;
 
-    private final ConcurrentChainedLong2ReferenceHashTable<TicketSet> tickets = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+    private final ConcurrentChainedLong2ReferenceHashTable<TicketSet> tickets = new ConcurrentChainedLong2ReferenceHashTable<>();
     private final ConcurrentChainedLong2ReferenceHashTable<Long2IntOpenHashMap> sectionToChunkToExpireCount = new ConcurrentChainedLong2ReferenceHashTable<>();
     final ChunkUnloadQueue unloadQueue;
 
-    private final ConcurrentChainedLong2ReferenceHashTable<NewChunkHolder> chunkHolders = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+    private final ConcurrentChainedLong2ReferenceHashTable<NewChunkHolder> chunkHolders = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(16384, 0.25f);
     private final ServerLevel world;
     private final ChunkTaskScheduler taskScheduler;
     private long currentTick;
@@ -109,7 +108,7 @@ public final class ChunkHolderManager {
     });
 
     // mapping of counter id -> (mapping of pos->count)
-    private final ConcurrentChainedLong2ReferenceHashTable<ConcurrentChainedLong2LongHashTable> ticketCounters = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.5f);
+    private final ConcurrentChainedLong2ReferenceHashTable<ConcurrentChainedLong2LongHashTable> ticketCounters = new ConcurrentChainedLong2ReferenceHashTable<>();
 
     public ChunkHolderManager(final ServerLevel world, final ChunkTaskScheduler taskScheduler) {
         this.world = world;
@@ -173,11 +172,11 @@ public final class ChunkHolderManager {
     }
 
     public Iterable<ChunkHolder> getOldChunkHoldersIterable() {
-        return new Iterable<>() {
+        return new Iterable<ChunkHolder>() {
             @Override
             public Iterator<ChunkHolder> iterator() {
                 final Iterator<NewChunkHolder> iterator = ChunkHolderManager.this.chunkHolders.valueIterator();
-                return new Iterator<>() {
+                return new Iterator<ChunkHolder>() {
                     @Override
                     public boolean hasNext() {
                         return iterator.hasNext();
@@ -733,32 +732,19 @@ public final class ChunkHolderManager {
     // atomic with respect to all add/remove/addandremove ticket calls for the given chunk
     public <T, V> void addAndRemoveTickets(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
                                            final TicketType removeType, final int removeLevel, final V removeIdentifier) {
-        this.addAndRemoveTickets(chunk, addType, addLevel, addIdentifier, removeType, removeLevel, removeIdentifier, true);
-    }
-
-    private <T, V> void addAndRemoveTickets(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
-                                           final TicketType removeType, final int removeLevel, final V removeIdentifier, final boolean lock) {
-        final ReentrantAreaLock.Node ticketLock = !lock ? null : this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
+        final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
         try {
             this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier, false);
             this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier, false);
         } finally {
-            if (ticketLock != null) {
-                this.ticketLockArea.unlock(ticketLock);
-            }
+            this.ticketLockArea.unlock(ticketLock);
         }
     }
 
     // atomic with respect to all add/remove/addandremove ticket calls for the given chunk
     public <T, V> boolean addIfRemovedTicket(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
                                              final TicketType removeType, final int removeLevel, final V removeIdentifier) {
-        return this.addIfRemovedTicket(chunk, addType, addLevel, addIdentifier, removeType, removeLevel, removeIdentifier, true);
-    }
-
-    private <T, V> boolean addIfRemovedTicket(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
-                                              final TicketType removeType, final int removeLevel, final V removeIdentifier,
-                                              final boolean lock) {
-        final ReentrantAreaLock.Node ticketLock = !lock ? null : this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
+        final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
         try {
             if (this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier, false)) {
                 this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier, false);
@@ -766,9 +752,7 @@ public final class ChunkHolderManager {
             }
             return false;
         } finally {
-            if (ticketLock != null) {
-                this.ticketLockArea.unlock(ticketLock);
-            }
+            this.ticketLockArea.unlock(ticketLock);
         }
     }
 
@@ -995,29 +979,6 @@ public final class ChunkHolderManager {
         return current;
     }
 
-    // note: only call from the ChunkFullTask
-    // this allows us to avoid checking if the entity NBT is loaded which avoids entering the ticket/scheduling lock
-    public ChunkEntitySlices fullTaskLoadEntityChunk(final int chunkX, final int chunkZ) {
-        TickThread.ensureTickThread(this.world, chunkX, chunkZ, "Cannot create entity chunk off-main");
-        ChunkEntitySlices ret;
-
-        NewChunkHolder current = this.getChunkHolder(chunkX, chunkZ);
-
-        if (current != null && (ret = current.getEntityChunk()) != null && !ret.isTransient()) {
-            LOGGER.error("Unexpected non-transient entity chunk at "  + new ChunkPos(chunkX, chunkZ));
-            return ret;
-        }
-
-        if (current == null || !current.isEntityChunkNBTLoaded()) {
-            LOGGER.error("NBT for entity chunk is unexpectedly not loaded at "  + new ChunkPos(chunkX, chunkZ));
-            return this.getOrCreateEntityChunk(chunkX, chunkZ, false);
-        }
-
-        ret = current.loadInEntityChunk(false);
-
-        return ret;
-    }
-
     public ChunkEntitySlices getOrCreateEntityChunk(final int chunkX, final int chunkZ, final boolean transientChunk) {
         TickThread.ensureTickThread(this.world, chunkX, chunkZ, "Cannot create entity chunk off-main");
         ChunkEntitySlices ret;
@@ -1183,7 +1144,6 @@ public final class ChunkHolderManager {
     private void removeChunkHolder(final NewChunkHolder holder) {
         holder.onUnload();
         this.autoSaveQueue.remove(holder);
-        ((ChunkSystemServerChunkCache)this.world.getChunkSource()).moonrise$chunkHolderUnload(holder);
         PlatformHooks.get().onChunkHolderDelete(this.world, holder.vanillaChunkHolder);
         this.chunkHolders.remove(CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ));
     }
@@ -1402,67 +1362,42 @@ public final class ChunkHolderManager {
         }
     }
 
-    private <T, V> boolean processTicketOp(final TicketOperation<T, V> operation, final boolean lock) {
+    private <T, V> boolean processTicketOp(TicketOperation<T, V> operation) {
+        boolean ret = false;
         switch (operation.op) {
             case ADD: {
-                return this.addTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier, lock);
+                ret |= this.addTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier);
+                break;
             }
             case REMOVE: {
-                return this.removeTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier, lock);
+                ret |= this.removeTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier);
+                break;
             }
             case ADD_IF_REMOVED: {
-                return this.addIfRemovedTicket(
+                ret |= this.addIfRemovedTicket(
                     operation.chunkCoord,
                     operation.ticketType, operation.ticketLevel, operation.identifier,
-                    operation.ticketType2, operation.ticketLevel2, operation.identifier2,
-                    lock
+                    operation.ticketType2, operation.ticketLevel2, operation.identifier2
                 );
+                break;
             }
             case ADD_AND_REMOVE: {
+                ret = true;
                 this.addAndRemoveTickets(
                     operation.chunkCoord,
                     operation.ticketType, operation.ticketLevel, operation.identifier,
-                    operation.ticketType2, operation.ticketLevel2, operation.identifier2,
-                    lock
+                    operation.ticketType2, operation.ticketLevel2, operation.identifier2
                 );
-                return true;
-            }
-            default: {
-                throw new IllegalStateException("Unknown operation: " + operation.op);
+                break;
             }
         }
+
+        return ret;
     }
 
     public void performTicketUpdates(final Collection<TicketOperation<?, ?>> operations) {
-        final Long2ObjectOpenHashMap<List<TicketOperation<?, ?>>> operationsBySection = new Long2ObjectOpenHashMap<>();
-        final int sectionShift = this.ticketLockArea.coordinateShift;
-
         for (final TicketOperation<?, ?> operation : operations) {
-            final int sectionX = CoordinateUtils.getChunkX(operation.chunkCoord) >> sectionShift;
-            final int sectionZ = CoordinateUtils.getChunkZ(operation.chunkCoord) >> sectionShift;
-
-            final long key = CoordinateUtils.getChunkKey(sectionX, sectionZ);
-
-            operationsBySection.computeIfAbsent(key, (k) -> new ArrayList<>())
-                .add(operation);
-        }
-
-        for (final Iterator<Long2ObjectMap.Entry<List<TicketOperation<?, ?>>>> iterator = operationsBySection.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
-            final Long2ObjectMap.Entry<List<TicketOperation<?, ?>>> entry = iterator.next();
-
-            final long key = entry.getLongKey();
-            final List<TicketOperation<?, ?>> sectionOps = entry.getValue();
-
-            final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(
-                CoordinateUtils.getChunkX(key) << sectionShift, CoordinateUtils.getChunkZ(key) << sectionShift
-            );
-            try {
-                for (final TicketOperation<?, ?> operation : sectionOps) {
-                    this.processTicketOp(operation, false);
-                }
-            } finally {
-                this.ticketLockArea.unlock(ticketLock);
-            }
+            this.processTicketOp(operation);
         }
     }
 
@@ -1486,7 +1421,7 @@ public final class ChunkHolderManager {
         }
         final boolean isTickThread = TickThread.isTickThread();
 
-        if (!PlatformHooks.get().allowAsyncTicketUpdates() && !isTickThread) {
+        if (!PlatformHooks.get().allowAsyncTicketUpdates() && isTickThread) {
             TickThread.ensureTickThread("Cannot asynchronously process ticket updates");
         }
 

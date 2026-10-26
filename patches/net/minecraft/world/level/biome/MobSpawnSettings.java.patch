@@ -1,13 +1,46 @@
 --- a/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/net/minecraft/world/level/biome/MobSpawnSettings.java
-@@ -84,7 +_,32 @@
+@@ -44,6 +_,8 @@
+     private final float creatureGenerationProbability;
+     private final Map<MobCategory, WeightedList<MobSpawnSettings.SpawnerData>> spawners;
+     private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts;
++    private final java.util.Set<MobCategory> typesView;
++    private final java.util.Set<EntityType<?>> costView;
+ 
+     private MobSpawnSettings(
+         float creatureGenerationProbability,
+@@ -53,24 +_,58 @@
+         this.creatureGenerationProbability = creatureGenerationProbability;
+         this.spawners = ImmutableMap.copyOf(spawners);
+         this.mobSpawnCosts = ImmutableMap.copyOf(mobSpawnCosts);
++        this.typesView = java.util.Collections.unmodifiableSet(this.spawners.keySet());
++        this.costView = java.util.Collections.unmodifiableSet(this.mobSpawnCosts.keySet());
+     }
+ 
+     public WeightedList<MobSpawnSettings.SpawnerData> getMobs(MobCategory category) {
+         return this.spawners.getOrDefault(category, EMPTY_MOB_LIST);
+     }
+ 
++    public java.util.Set<MobCategory> getSpawnerTypes() {
++         return this.typesView;
++    }
++
+     public MobSpawnSettings.@Nullable MobSpawnCost getMobSpawnCost(EntityType<?> type) {
+         return this.mobSpawnCosts.get(type);
+     }
+ 
++    public java.util.Set<EntityType<?>> getEntityTypes() {
++         return this.costView;
++    }
++
+     public float getCreatureProbability() {
+         return this.creatureGenerationProbability;
      }
  
      public static class Builder {
--        protected final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class);
+-        protected final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
+-            MobCategory.class, c -> WeightedList.builder()
 +        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
-+        public final Map<MobCategory, MobListBuilder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class); // Paper - explict MobListBuilder
-+
 +        public static class MobListBuilder<E> extends WeightedList.Builder<E> {
 +            @Override
 +            public WeightedList<E> build() {
@@ -30,25 +63,10 @@
 +                return this.spawnerDataSet.contains(element);
 +            }
 +        }
++        public final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
++                MobCategory.class, c -> new MobListBuilder<>()
+         );
 +        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          protected final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
- 
-         public MobSpawnSettings.Builder addSpawn(EntityType<?> type, int weight, int minCount, int maxCount) {
-@@ -116,7 +_,7 @@
-         }
- 
-         public MobSpawnSettings.Builder noSpawns(MobCategory category) {
--            this.spawnsByCategory.put(category, WeightedList.builder());
-+            this.spawnsByCategory.put(category, new MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
-             return this;
-         }
- 
-@@ -143,7 +_,7 @@
-         }
- 
-         protected WeightedList.Builder<MobSpawnSettings.SpawnerData> forCategory(MobCategory category) {
--            return this.spawnsByCategory.computeIfAbsent(category, var0 -> WeightedList.builder());
-+            return this.spawnsByCategory.computeIfAbsent(category, var0 -> new MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
-         }
-     }
+         protected float creatureGenerationProbability = 0.1F;
  

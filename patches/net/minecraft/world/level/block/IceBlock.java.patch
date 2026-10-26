@@ -1,22 +1,12 @@
 --- a/net/minecraft/world/level/block/IceBlock.java
 +++ b/net/minecraft/world/level/block/IceBlock.java
-@@ -14,7 +_,6 @@
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.state.BlockBehaviour;
- import net.minecraft.world.level.block.state.BlockState;
--import net.minecraft.world.level.gameevent.GameEvent;
- import org.jspecify.annotations.Nullable;
- 
- public class IceBlock extends HalfTransparentBlock {
-@@ -27,12 +_,15 @@
+@@ -33,10 +_,15 @@
      }
  
      @Override
--    public void playerDestroy(
--        ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack destroyedWith
--    ) {
+-    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack destroyedWith) {
 -        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith);
-+    public void playerDestroy(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack destroyedWith, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
++    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack destroyedWith, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
 +        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
 +        // Paper start - Improve Block#breakNaturally API
 +        this.afterDestroy(level, pos, destroyedWith);
@@ -29,7 +19,7 @@
                  level.removeBlock(pos, false);
                  return;
              }
-@@ -52,12 +_,17 @@
+@@ -56,7 +_,13 @@
      }
  
      protected void melt(BlockState state, Level level, BlockPos pos) {
@@ -44,8 +34,3 @@
              level.removeBlock(pos, false);
          } else {
              level.setBlockAndUpdate(pos, meltsInto());
-             level.neighborChanged(pos, meltsInto().getBlock(), null);
--            level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
-         }
-     }
- }

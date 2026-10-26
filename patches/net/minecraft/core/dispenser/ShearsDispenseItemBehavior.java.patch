@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -15,14 +_,39 @@
+@@ -15,14 +_,40 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AABB;
@@ -15,7 +15,7 @@
          ServerLevel level = source.level();
 +        // CraftBukkit start
 +        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, source.pos());
-+        org.bukkit.inventory.ItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(dispensed); // Paper - ignore stack size on damageable items
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(dispensed); // Paper - ignore stack size on damageable items
 +        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
 +        level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -34,6 +34,7 @@
 +            }
 +        }
 +        // CraftBukkit end
++
          if (!level.isClientSide()) {
              BlockPos pos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
 -            this.setSuccess(tryShearBeehive(level, dispensed, pos) || tryShearEntity(level, pos, dispensed));
@@ -41,12 +42,13 @@
              if (this.isSuccess()) {
                  dispensed.hurtAndBreak(1, level, null, item -> {});
              }
-@@ -47,14 +_,30 @@
+@@ -47,14 +_,16 @@
          return false;
      }
  
 -    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack tool) {
-+    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack tool, org.bukkit.block.Block bukkitBlock, org.bukkit.inventory.ItemStack craftItem) { // CraftBukkit - add args
++    // RoastMC TODO - paper patches
++    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack tool, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
          for (Entity entity : level.getEntitiesOfClass(Entity.class, new AABB(pos), EntitySelector.NO_SPECTATORS)) {
              if (entity.shearOffAllLeashConnections(null)) {
                  return true;
@@ -55,23 +57,8 @@
 -            if (entity.isAlive() && entity instanceof Shearable shearable && shearable.readyForShearing()) {
 -                shearable.shear(level, SoundSource.BLOCKS, tool);
 +            if (entity instanceof net.neoforged.neoforge.common.IShearable shearable && shearable.isShearable(null, tool, level, pos)) {
-+                // CraftBukkit start - fire BlockShearEntityEvent
-+                // Paper start - Add drops to shear events
-+                java.util.List<ItemStack> defaultDrops = entity instanceof net.minecraft.world.entity.Shearable vanillaShearable
-+                    ? vanillaShearable.generateDefaultDrops(level, tool)
-+                    : java.util.Collections.emptyList();
-+                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(entity, bukkitBlock, craftItem, defaultDrops);
-+                if (event.isCancelled()) {
-+                    continue;
-+                }
-+                if (entity instanceof net.minecraft.world.entity.Shearable vanillaShearable) {
-+                    vanillaShearable.shear(level, SoundSource.BLOCKS, tool, CraftItemStack.asNMSCopy(event.getDrops()));
-+                } else {
-+                    shearable.onSheared(null, tool, level, pos)
-+                            .forEach(drop -> shearable.spawnShearedDrop(level, pos, drop));
-+                }
-+                // Paper end - Add drops to shear events
-+                // CraftBukkit end
++                shearable.onSheared(null, tool, level, pos)
++                        .forEach(drop -> shearable.spawnShearedDrop(level, pos, drop));
                  level.gameEvent(null, GameEvent.SHEAR, pos);
                  return true;
              }

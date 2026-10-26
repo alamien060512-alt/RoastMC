@@ -1,0 +1,15 @@
+package com.roastmc.fabric.injected.world.entity.raid;
+
+import com.roastmc.fabric.util.ContextStateException;
+import net.minecraft.world.entity.raid.Raider;
+
+public interface ContextRaid {
+
+    default boolean isInProgress() {
+        throw new ContextStateException("Not implemented");
+    }
+
+    default java.util.Collection<Raider> getRaiders() {
+        throw new ContextStateException("Not implemented");
+    }
+}

@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,9 +18,7 @@ import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Prediction;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
@@ -35,8 +33,6 @@ import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -55,7 +51,6 @@ import org.bukkit.craftbukkit.inventory.CraftInventorySaddledMount;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
-import org.bukkit.craftbukkit.inventory.CraftInventorySaddledMount;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
@@ -63,7 +58,6 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
@@ -146,7 +140,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public ItemStack getItemOnCursor() {
-        return CraftItemStack.asBukkitMirror(this.getHandle().containerMenu.getCarried());
+        return CraftItemStack.asCraftMirror(this.getHandle().containerMenu.getCarried());
     }
 
     @Override
@@ -203,19 +197,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
 
         BlockPos pos = CraftLocation.toBlockPos(location);
-        Level level = this.getHandle().level();
-        BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof AbstractBedBlock bedBlock)) {
+        BlockState state = this.getHandle().level().getBlockState(pos);
+        if (!(state.getBlock() instanceof BedBlock)) {
             return false;
         }
 
-        final BedRule bedRule = bedBlock.getBedRule(level, pos);
-        if (this.getHandle().startSleepInBed(bedBlock, state, bedRule, pos, force).left().isPresent()) {
+        if (this.getHandle().startSleepInBed(pos, force).left().isPresent()) {
             return false;
         }
 
-        state = state.setValue(AbstractBedBlock.OCCUPIED, true);
-        level.setBlockAndUpdate(pos, state);
+        // From BlockBed
+        state = state.setValue(BedBlock.OCCUPIED, true);
+        this.getHandle().level().setBlock(pos, state, net.minecraft.world.level.block.Block.UPDATE_INVISIBLE);
 
         return true;
     }
@@ -233,13 +226,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(damage >= 0, "Damage must not be negative");
 
         this.getHandle().startAutoSpinAttack(duration, damage, CraftItemStack.asNMSCopy(attackItem));
-    }
-
-    @Override
-    public boolean canCriticalAttack(Entity entity) {
-        Preconditions.checkArgument(entity != null, "entity cannot be null");
-
-        return this.getHandle().canCriticalAttack(((CraftEntity) entity).getHandle()) && !this.getHandle().level().paperConfig().entities.behavior.disablePlayerCrits;
     }
 
     @Override
@@ -723,7 +709,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public int undiscoverRecipes(Collection<NamespacedKey> recipes) {
-        return ((ServerPlayer) this.getHandle()).resetRecipes(this.bukkitKeysToMinecraftRecipes(recipes));
+        return this.getHandle().resetRecipes(this.bukkitKeysToMinecraftRecipes(recipes));
     }
 
     @Override
@@ -786,8 +772,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public boolean dropItem(boolean dropAll) {
         if (!(this.getHandle() instanceof ServerPlayer player)) return false;
-        player.drop(dropAll);
-        boolean success = player.dropSuccess;
+        boolean success = player.drop(dropAll);
         if (!success) {
             return false;
         }
@@ -812,19 +797,21 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
     }
 
-    private @Nullable Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    private Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) return null;
 
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
         final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
 
         // This will return the itemstack back to its original amount in case events fail
-        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, true, Prediction.PREDICTED, throwRandomly, true, entityOperation);
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
         return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override
-    public @Nullable Item dropItem(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    public Item dropItem(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         // This method implementation differs from the previous dropItem implementations, as it does not source
         // its itemstack from the players inventory. As such, we cannot reuse #internalDropItemFromInventory.
         Preconditions.checkArgument(itemStack != null, "Cannot drop a null itemstack");
@@ -833,7 +820,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
 
         // Do *not* call the event here, the item is not in the player inventory, they are not dropping it / do not need recovering logic (which would be a dupe).
-        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, true, Prediction.PREDICTED, throwRandomly, false, entityOperation);
+        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, false, entityOperation);
         return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 

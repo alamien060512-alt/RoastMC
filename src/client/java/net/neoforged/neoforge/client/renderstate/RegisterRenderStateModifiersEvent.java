@@ -97,7 +97,6 @@ public class RegisterRenderStateModifiersEvent extends Event implements IModBusE
     ///     }
     /// });
     /// ```
-    /// 
     public void registerAvatarEntityModifier(AvatarRenderStateModifier modifier) {
         RenderStateExtensions.registerEntity(AvatarRenderer.class, coerce(modifier));
     }

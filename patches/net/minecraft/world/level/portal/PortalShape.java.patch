@@ -7,8 +7,8 @@
 +import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.NetherPortalBlock;
- import net.minecraft.world.level.block.state.BlockState;
-@@ -22,6 +_,11 @@
+ import net.minecraft.world.level.block.state.BlockBehaviour;
+@@ -23,12 +_,17 @@
  import org.apache.commons.lang3.mutable.MutableInt;
  import org.jspecify.annotations.Nullable;
  
@@ -20,7 +20,14 @@
  public class PortalShape {
      private static final int MIN_WIDTH = 2;
      public static final int MAX_WIDTH = 21;
-@@ -36,8 +_,12 @@
+     private static final int MIN_HEIGHT = 3;
+     public static final int MAX_HEIGHT = 21;
+-    private static final BlockBehaviour.StatePredicate FRAME = (state, level, pos) -> state.is(Blocks.OBSIDIAN);
++    private static final BlockBehaviour.StatePredicate FRAME = net.neoforged.neoforge.common.extensions.IBlockStateExtension::isPortalFrame;
+     private static final float SAFE_TRAVEL_MAX_ENTITY_XY = 4.0F;
+     private static final double SAFE_TRAVEL_MAX_VERTICAL_DELTA = 1.0;
+     private final Direction.Axis axis;
+@@ -37,8 +_,12 @@
      private final BlockPos bottomLeft;
      private final int height;
      private final int width;
@@ -34,7 +41,7 @@
          this.axis = axis;
          this.numPortalBlocks = portalBlockCount;
          this.rightDir = rightDir;
-@@ -54,30 +_,32 @@
+@@ -55,30 +_,32 @@
          Optional<PortalShape> firstAxis = Optional.of(findAnyShape(level, pos, preferredAxis)).filter(isValid);
          if (firstAxis.isPresent()) {
              return firstAxis;
@@ -77,7 +84,7 @@
          int minY = Math.max(level.getMinY(), pos.getY() - 21);
  
          while (pos.getY() > minY && isEmpty(level.getBlockState(pos.below()))) {
-@@ -85,16 +_,16 @@
+@@ -86,16 +_,16 @@
          }
  
          Direction leftDir = rightDir.getOpposite();
@@ -98,16 +105,16 @@
          BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
  
          for (int width = 0; width <= 21; width++) {
-@@ -102,6 +_,7 @@
+@@ -103,6 +_,7 @@
              BlockState blockState = level.getBlockState(blockPos);
              if (!isEmpty(blockState)) {
-                 if (FRAME.test(blockState)) {
-+                    blocks.setBlock(blockPos, blockState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE); // CraftBukkit - lower left / right
+                 if (FRAME.test(blockState, level, blockPos)) {
++                    blocks.setBlock(blockPos, blockState, 18); // CraftBukkit - lower left / right
                      return width;
                  }
                  break;
-@@ -111,30 +_,32 @@
-             if (!FRAME.test(belowState)) {
+@@ -112,30 +_,32 @@
+             if (!FRAME.test(belowState, level, blockPos)) {
                  break;
              }
 +            blocks.setBlock(blockPos, belowState, 18); // CraftBukkit - bottom row
@@ -129,7 +136,7 @@
 +    private static boolean hasTopFrame(BlockGetter level, BlockPos bottomLeft, Direction rightDir, BlockPos.MutableBlockPos pos, int width, int height, BlockStateListPopulator blocks) { // CraftBukkit
          for (int i = 0; i < width; i++) {
              BlockPos.MutableBlockPos framePos = pos.set(bottomLeft).move(Direction.UP, height).move(rightDir, i);
-             if (!FRAME.test(level.getBlockState(framePos))) {
+             if (!FRAME.test(level.getBlockState(framePos), level, framePos)) {
                  return false;
              }
 +            blocks.setBlock(framePos, level.getBlockState(framePos), 18); // CraftBukkit - upper row
@@ -144,7 +151,7 @@
      ) {
          for (int height = 0; height < 21; height++) {
              pos.set(bottomLeft).move(Direction.UP, height).move(rightDir, -1);
-@@ -158,6 +_,10 @@
+@@ -159,6 +_,10 @@
                      portalBlockCount.increment();
                  }
              }
@@ -155,7 +162,7 @@
          }
  
          return 21;
-@@ -171,10 +_,23 @@
+@@ -172,10 +_,23 @@
          return this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
      }
  

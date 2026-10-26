@@ -10,6 +10,7 @@ import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -17,6 +18,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface BlocksAttacks {
 

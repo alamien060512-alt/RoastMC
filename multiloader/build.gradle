@@ -1,0 +1,72 @@
+// Single RoastMC jar that embeds the NeoForge and Fabric editions and starts the one
+// selected in server.properties (see LoaderSelection). Build with: ./gradlew roastmcAllJar
+plugins {
+    id 'java'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.warnings = false
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.13.2'
+    testImplementation platform('org.junit:junit-bom:5.14.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+evaluationDependsOn(':neoforge')
+
+processResources {
+    def mcVersion = rootProject.minecraft_version
+    inputs.property 'minecraftVersion', mcVersion
+    filesMatching('roastmc-multiloader.properties') {
+        expand('minecraftVersion': mcVersion)
+    }
+}
+
+def fabricBuildLibs = rootProject.layout.projectDirectory.dir('fabric/build/libs')
+def neoforgeJar = project(':neoforge').tasks.named('roastmcJar')
+def runtimeCp = configurations.runtimeClasspath
+def mcVersion = rootProject.minecraft_version
+
+tasks.register('roastmcAllJar', Jar) {
+    group = 'build'
+    description = 'Builds the unified RoastMC server jar (NeoForge + Fabric editions)'
+    archiveBaseName = 'roastmc'
+    archiveClassifier = 'all'
+    archiveVersion = mcVersion
+    destinationDirectory = layout.buildDirectory.dir('libs')
+
+    dependsOn neoforgeJar, tasks.named('classes'), gradle.includedBuild('fabric').task(':jar')
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.roastmc.multiloader.RoastMCLauncher',
+                'Specification-Title': 'RoastMC',
+                'Specification-Vendor': 'RoastMC',
+                'Implementation-Title': 'RoastMC',
+                'Implementation-Version': mcVersion,
+                'Implementation-Vendor': 'RoastMC'
+        )
+    }
+
+    from(sourceSets.main.output)
+    from({ runtimeCp.collect { it.isDirectory() ? it : zipTree(it) } })
+    from(neoforgeJar.flatMap { it.archiveFile }) {
+        into 'META-INF/editions'
+        rename { 'neoforge.jar' }
+    }
+    from(fabricBuildLibs) {
+        include '*-server.jar'
+        into 'META-INF/editions'
+        rename { 'fabric.jar' }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

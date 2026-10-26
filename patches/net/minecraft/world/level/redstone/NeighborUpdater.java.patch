@@ -17,7 +17,7 @@
  import org.jspecify.annotations.Nullable;
  
  public interface NeighborUpdater {
-@@ -56,9 +_,29 @@
+@@ -56,9 +_,28 @@
          }
      }
  
@@ -28,11 +28,10 @@
 +    }
 +
      static void executeUpdate(Level level, BlockState state, BlockPos pos, Block changedBlock, @Nullable Orientation orientation, boolean movedByPiston) {
-+        // Paper start - Add source block to BlockPhysicsEvent
          try {
 +            // CraftBukkit start
 +            BlockPos sourcePos1 = sourcePos.get() == null ? pos : sourcePos.getAndSet(null);
-+            org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), state.asBlockData(), org.bukkit.craftbukkit.block.CraftBlock.at(level, sourcePos1)); // Paper - Add source block to BlockPhysicsEvent
++            BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(level, pos), state.asBlockData(), CraftBlock.at(level, sourcePos1));
 +            level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
@@ -42,7 +41,7 @@
              state.handleNeighborChanged(level, pos, changedBlock, orientation, movedByPiston);
 +            // Spigot start
 +        } catch (StackOverflowError ex) {
-+            level.lastPhysicsProblem = pos.immutable();
++            level.lastPhysicsProblem = new BlockPos(pos);
 +            // Spigot End
          } catch (Throwable t) {
              CrashReport report = CrashReport.forThrowable(t, "Exception while updating neighbours");

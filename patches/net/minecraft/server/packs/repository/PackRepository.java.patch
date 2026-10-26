@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/packs/repository/PackRepository.java
 +++ b/net/minecraft/server/packs/repository/PackRepository.java
-@@ -15,15 +_,25 @@
+@@ -15,15 +_,30 @@
  import net.minecraft.server.packs.PackResources;
  import net.minecraft.util.Util;
  import net.minecraft.world.flag.FeatureFlagSet;
@@ -11,19 +11,24 @@
      private final Set<RepositorySource> sources;
      private Map<String, Pack> available = ImmutableMap.of();
      private List<Pack> selected = ImmutableList.of();
-+    private final net.minecraft.world.level.validation.DirectoryValidator validator; // Paper - add validator
++    private net.minecraft.world.level.validation.DirectoryValidator validator; // Paper - add validator
  
      public PackRepository(RepositorySource... sources) {
 -        this.sources = ImmutableSet.copyOf(sources);
-+        this.validator = new DirectoryValidator(path -> true);
++        this.validator = new DirectoryValidator(_ -> true);
 +        this.sources = new java.util.LinkedHashSet<>(List.of(sources)); //Neo: This needs to be a mutable set, so that we can add to it later on.
 +    }
 +
 +    // Paper start - add validator
-+    public PackRepository(final net.minecraft.world.level.validation.DirectoryValidator validator, final RepositorySource... sources) {
++    public PackRepository(net.minecraft.world.level.validation.DirectoryValidator validator, RepositorySource... sources) {
 +        this.validator = validator;
 +        // Paper end - add validator
 +        this.sources = new java.util.LinkedHashSet<>(List.of(sources)); //Neo: This needs to be a mutable set, so that we can add to it later on.
++    }
++
++    public PackRepository validate(net.minecraft.world.level.validation.DirectoryValidator validator) {
++        this.validator = validator;
++        return this;
      }
  
      public static String displayPackList(Collection<Pack> packs) {
@@ -77,25 +82,24 @@
 +        this.selected = this.rebuildSelected(packs, true); // Paper - add pendingReload flag to determine required pack loading
 +    }
 +
-+    public void setSelected(Collection<String> packs, boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
++    public void setSelected(final Collection<String> packs, final boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
 +        this.selected = this.rebuildSelected(packs, pendingReload); // Paper - add pendingReload flag to determine required pack loading
      }
  
      public boolean addPack(String packId) {
-@@ -79,12 +_,14 @@
+@@ -79,12 +_,13 @@
          }
      }
  
 -    public List<Pack> rebuildSelected(Collection<String> selectedNames) {
 -        List<Pack> selectedAndPresent = this.getAvailablePacks(selectedNames).collect(Util.toMutableList());
-+    public List<Pack> rebuildSelected(Collection<String> selectedNames, boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
++    public List<Pack> rebuildSelected(Collection<String> selectedNames, final boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
 +        List<Pack> selectedAndPresent = net.neoforged.neoforge.resource.ResourcePackLoader.expandAndRemoveRootChildren(this.getAvailablePacks(selectedNames), this.available.values());
  
          for (Pack pack : this.available.values()) {
 -            if (pack.isRequired() && !selectedAndPresent.contains(pack)) {
 -                pack.getDefaultPosition().insert(selectedAndPresent, pack, Pack::selectionConfig, false);
-+            // Paper - compare IDs without converting plugin pack titles before registries are loaded
-+            if (pack.isRequired() && !selectedNames.contains(pack.getId()) && pendingReload) { // Paper - add pendingReload flag to determine required pack loading
++            if (pack.isRequired() && !selectedAndPresent.contains(pack) && pendingReload) { // Paper - add pendingReload flag to determine required pack loading
 +                int i = pack.getDefaultPosition().insert(selectedAndPresent, pack, Pack::selectionConfig, false);
 +                selectedAndPresent.addAll(i + 1, pack.getChildren());
              }
@@ -122,7 +126,7 @@
 @@ -125,5 +_,9 @@
  
      public List<PackResources> openAllSelected() {
-         return this.selected.stream().flatMap(Pack::open).collect(ImmutableList.toImmutableList());
+         return this.selected.stream().map(Pack::open).collect(ImmutableList.toImmutableList());
 +    }
 +
 +    public synchronized void addPackFinder(RepositorySource packFinder) {

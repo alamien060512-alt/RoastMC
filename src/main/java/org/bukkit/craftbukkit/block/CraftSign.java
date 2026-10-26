@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
-import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -26,8 +25,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     private @MonotonicNonNull CraftSignSide front;
     private @MonotonicNonNull CraftSignSide back;
 
-    public CraftSign(World world, T blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftSign(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSign(CraftSign<T> state, Location location) {
@@ -37,8 +36,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     protected void load(T blockEntity) {
         super.load(blockEntity);
-        this.front = new CraftSignSide(blockEntity.getText(SignTextSlot.FRONT));
-        this.back = new CraftSignSide(blockEntity.getText(SignTextSlot.BACK));
+        this.front = new CraftSignSide(blockEntity.getFrontText());
+        this.back = new CraftSignSide(blockEntity.getBackText());
     }
 
     // Paper start
@@ -123,7 +122,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         this.ensureNoWorldGeneration();
         Preconditions.checkArgument(player != null, "player cannot be null");
 
-        if (this.getSnapshot().getSlotPlayerIsFacing(((CraftPlayer) player).getHandle()) == SignTextSlot.FRONT) {
+        if (this.getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
             return this.front;
         }
 
@@ -151,8 +150,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     @Override
     public void applyTo(T blockEntity) {
-        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), SignTextSlot.FRONT);
-        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), SignTextSlot.BACK);
+        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), true);
+        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), false);
 
         super.applyTo(blockEntity);
     }
@@ -173,18 +172,20 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
-        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent(player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
+        // Paper start - Add PlayerOpenSignEvent
+        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent((Player) player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
         if (!event.callEvent()) return;
         if (PlayerSignOpenEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
-                return;
-            }
+            // Paper end - Add PlayerOpenSignEvent
+        if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
+            return;
         }
+        } // Paper - Add PlayerOpenSignEvent
 
         SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
         blockEntity.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, CraftSignSide.toVanilla(side));
+        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, Side.FRONT == side);
     }
 
     // Paper start
@@ -217,7 +218,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public Side getInteractableSideFor(final double x, final double z) {
         this.requirePlaced();
-        return CraftSignSide.fromVanilla(this.getSnapshot().getSlotPlayerIsFacing(x, z));
+        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
     }
     // Paper end - More Sign Block API
 

@@ -112,7 +112,7 @@
      }
  
      @Override
-@@ -175,12 +_,14 @@
+@@ -175,6 +_,7 @@
          super.readAdditionalSaveData(input);
          this.nextWeatheringTick = input.getLongOr("next_weather_age", -1L);
          this.setWeatherState(input.read("weather_state", WeatheringCopper.WeatherState.CODEC).orElse(WeatheringCopper.WeatherState.UNAFFECTED));
@@ -120,13 +120,6 @@
      }
  
      @Override
-     protected void customServerAiStep(ServerLevel level) {
-         ProfilerFiller profiler = Profiler.get();
-         profiler.push("copperGolemBrain");
-+        if (getRider() == null || !this.isControllable()) // Purpur - only use brain if no rider
-         this.getBrain().tick(level, this);
-         profiler.pop();
-         profiler.push("copperGolemActivityUpdate");
 @@ -216,7 +_,13 @@
          Level level = this.level();
          if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
@@ -135,42 +128,41 @@
 +                // Paper start - call PlayerShearEntityEvent
 +                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemStack);
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
-+                if (event.isCancelled()) return tryRide(player, hand); // Purpur - Ridables
++                if (event.isCancelled()) return InteractionResult.PASS;
 +                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
 +                this.shear(serverLevel, SoundSource.PLAYERS, itemStack, drops);
 +                // Paper end - call PlayerShearEntityEvent
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand);
              }
-@@ -256,6 +_,8 @@
-                 }
-             }
- 
-+            if (level().purpurConfig.villagerRidable && itemStack.isEmpty()) return tryRide(player, hand); // Purpur - Ridables
-+
-             return super.mobInteract(player, hand);
-         }
-     }
-@@ -287,8 +_,10 @@
+@@ -285,22 +_,29 @@
  
      private void turnToStatue(ServerLevel level) {
          BlockPos pos = this.blockPosition();
--        level.setBlockAndUpdate(
+-        level.setBlock(
 -            pos,
+-            Blocks.COPPER_GOLEM_STATUE
+-                .weathering()
+-                .oxidized()
+-                .defaultBlockState()
+-                .setValue(
+-                    CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
+-                )
+-                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot())),
+-            3
+-        );
 +        // Paper start - call EntityChangeBlockEvent
 +        // level.setBlock(
 +        //     pos,
 +        BlockState newState =
-             Blocks.COPPER_GOLEM_STATUE
-                 .weathering()
-                 .oxidized()
-@@ -296,12 +_,18 @@
-                 .setValue(
-                     CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
-                 )
--                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()))
--        );
-+                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
++                Blocks.COPPER_GOLEM_STATUE
++                        .weathering()
++                        .oxidized()
++                        .defaultBlockState()
++                        .setValue(
++                                CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
++                        )
++                        .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
 +        //     Block.UPDATE_ALL
 +        // );
 +        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, pos, newState)) {
@@ -186,7 +178,7 @@
              this.playSound(SoundEvents.COPPER_GOLEM_BECOME_STATUE);
              if (this.isLeashed()) {
                  if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
-@@ -431,12 +_,30 @@
+@@ -430,12 +_,30 @@
      }
  
      @Override

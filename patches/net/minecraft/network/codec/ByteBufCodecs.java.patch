@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/codec/ByteBufCodecs.java
 +++ b/net/minecraft/network/codec/ByteBufCodecs.java
-@@ -330,7 +_,13 @@
+@@ -291,7 +_,13 @@
      static StreamCodec<ByteBuf, Tag> tagCodec(Supplier<NbtAccounter> accounter) {
          return new StreamCodec<ByteBuf, Tag>() {
              public Tag decode(ByteBuf input) {
@@ -15,24 +15,7 @@
                  if (result == null) {
                      throw new DecoderException("Expected non-null compound tag");
                  } else {
-@@ -374,7 +_,7 @@
-             }
- 
-             public void encode(B output, V value) {
--                T payload = (T)codec.encodeStart(ops, value).getOrThrow(msg -> new EncoderException("Failed to encode: " + msg + " " + value));
-+                T payload = (T)codec.encodeStart(new io.papermc.paper.adventure.LocaleAwareOps.Delegating<>(ops, output instanceof FriendlyByteBuf friendlyByteBuf ? friendlyByteBuf.adventure$locale : null), value).getOrThrow(msg -> new EncoderException("Failed to encode: " + msg + " " + value)); // Paper - adventure
-                 original.encode(output, payload);
-             }
-         };
-@@ -402,13 +_,55 @@
-             }
- 
-             public void encode(RegistryFriendlyByteBuf output, T value) {
--                RegistryOps<Tag> ops = output.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-+                RegistryOps<Tag> ops = new io.papermc.paper.adventure.LocaleAwareOps.Registry<>(NbtOps.INSTANCE, output.registryAccess(), output.adventure$locale); // Paper - adventure
-                 Tag tag = codec.encodeStart(ops, value).getOrThrow(msg -> new EncoderException("Failed to encode: " + msg + " " + value));
-                 tagCodec.encode(output, tag);
-             }
+@@ -370,6 +_,48 @@
          };
      }
  
@@ -81,7 +64,16 @@
      static <B extends ByteBuf, V> StreamCodec<B, Optional<V>> optional(StreamCodec<? super B, V> original) {
          return new StreamCodec<B, Optional<V>>() {
              public Optional<V> decode(B input) {
-@@ -639,7 +_,7 @@
+@@ -538,7 +_,7 @@
+     }
+ 
+     static <V> StreamCodec.CodecOperation<RegistryFriendlyByteBuf, V, V> registryFriendlyLengthPrefixed(int maxSize) {
+-        return lengthPrefixed(maxSize, (parent, child) -> new RegistryFriendlyByteBuf(child, parent.registryAccess()));
++        return lengthPrefixed(maxSize, (parent, child) -> new RegistryFriendlyByteBuf(child, parent)); // Paper - Track codec depth
+     }
+ 
+     static <T> StreamCodec<ByteBuf, T> idMapper(IntFunction<T> byId, ToIntFunction<T> toId) {
+@@ -564,7 +_,7 @@
      ) {
          return new StreamCodec<RegistryFriendlyByteBuf, R>() {
              private IdMap<R> getRegistryOrThrow(RegistryFriendlyByteBuf input) {
@@ -90,7 +82,7 @@
              }
  
              public R decode(RegistryFriendlyByteBuf input) {
-@@ -669,7 +_,7 @@
+@@ -594,7 +_,7 @@
              private static final int DIRECT_HOLDER_ID = 0;
  
              private IdMap<Holder<T>> getRegistryOrThrow(RegistryFriendlyByteBuf input) {
@@ -99,7 +91,7 @@
              }
  
              public Holder<T> decode(RegistryFriendlyByteBuf input) {
-@@ -691,13 +_,38 @@
+@@ -616,13 +_,38 @@
          };
      }
  
@@ -138,7 +130,7 @@
                  if (count == -1) {
                      Registry<T> registry = input.registryAccess().lookupOrThrow(registryKey);
                      return registry.get(TagKey.create(registryKey, Identifier.STREAM_CODEC.decode(input))).orElseThrow();
-@@ -713,6 +_,15 @@
+@@ -638,6 +_,15 @@
              }
  
              public void encode(RegistryFriendlyByteBuf output, HolderSet<T> value) {

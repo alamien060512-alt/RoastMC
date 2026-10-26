@@ -1,7 +1,6 @@
 package org.bukkit.advancement;
 
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -67,20 +66,14 @@ public interface AdvancementDisplay {
      *
      * @return the X coordinate as float
      */
-    @Contract("-> fail")
-    default float getX() {
-        throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
-    }
+    float getX();
 
     /**
      * The Y position of the advancement in the advancement screen.
      *
      * @return the Y coordinate as float
      */
-    @Contract("-> fail")
-    default float getY() {
-        throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
-    }
+    float getY();
 
     /**
      * The display type of this advancement.

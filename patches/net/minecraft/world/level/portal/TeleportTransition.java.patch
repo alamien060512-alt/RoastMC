@@ -8,13 +8,12 @@
  
  public record TeleportTransition(
      ServerLevel newLevel,
-@@ -19,26 +_,131 @@
-     boolean missingRespawnBlock,
+@@ -20,25 +_,131 @@
      boolean asPassenger,
      Set<Relative> relatives,
--    TeleportTransition.PostTeleportTransition postTeleportTransition
-+    TeleportTransition.PostTeleportTransition postTeleportTransition,
-+    PlayerTeleportEvent.TeleportCause cause,
+     TeleportTransition.PostTeleportTransition postTeleportTransition
++    // Paper start - additional transition data
++    , org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
 +    PassengerTeleportationMode passengerTeleportationMode
  ) {
 +
@@ -153,10 +152,10 @@
              this.asPassenger(),
              this.relatives(),
              this.postTeleportTransition()
-+                // Paper start - keep additional data
-+                , this.cause(),
-+                this.passengerTeleportationMode()
-+                // Paper end - keep additional data
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  
@@ -164,10 +163,10 @@
              this.asPassenger(),
              this.relatives(),
              this.postTeleportTransition()
-+                // Paper start - keep additional data
-+                , this.cause(),
-+                this.passengerTeleportationMode()
-+                // Paper end - keep additional data
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  
@@ -175,10 +174,10 @@
              true,
              this.relatives(),
              this.postTeleportTransition()
-+                // Paper start - keep additional data
-+                , this.cause(),
-+                this.passengerTeleportationMode()
-+                // Paper end - keep additional data
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  

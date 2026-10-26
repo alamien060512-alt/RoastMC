@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "roastmc",
+	"version": "${version}",
+	"name": "RoastMC (Fabric)",
+	"description": "RoastMC: multiloader server software - Fabric edition (Spigot API)",
+	"authors": [
+		"RoastMC", "MohistMC (Silkard)"
+	],
+	"contact": {
+		"homepage": "https://github.com/alamien060512-alt/RoastMC",
+		"sources": "https://github.com/alamien060512-alt/RoastMC"
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/roastmc/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.roastmc.fabric.RoastMCMod"
+		]
+	},
+	"accessWidener" : "roastmc.classtweaker",
+	"mixins": [
+		"roastmc.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": ">=26.2-pre.1 <26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

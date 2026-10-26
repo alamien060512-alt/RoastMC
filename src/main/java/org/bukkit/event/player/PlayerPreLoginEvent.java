@@ -1,6 +1,6 @@
 package org.bukkit.event.player;
 
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import java.net.InetAddress;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  *     asynchronous.
  */
 @Deprecated(since = "1.3.2")
-@Warning(reason = "This event causes a login thread to synchronize with the main thread", value = true, propagate = false)
+@Warning(reason = "This event causes a login thread to synchronize with the main thread")
 public class PlayerPreLoginEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

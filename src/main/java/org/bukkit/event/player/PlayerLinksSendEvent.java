@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This event is called when the list of links is sent to the player.
  */
+@ApiStatus.Experimental
 public class PlayerLinksSendEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

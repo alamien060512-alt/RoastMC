@@ -119,7 +119,7 @@ class NeoDevConfigurations {
         neoFormData = dependencyScope(configurations, "neoFormData");
         neoFormDependencies = dependencyScope(configurations, "neoFormDependencies");
         libraries = dependencyScope(configurations, "libraries");
-        libraries.setCanBeResolved(true); // Youer
+        libraries.setCanBeResolved(true); // RoastMC
         userdevCompileOnly = dependencyScope(configurations, "userdevCompileOnly");
         userdevTestFixtures = dependencyScope(configurations, "userdevTestFixtures");
         minecraftDependencies = dependencyScope(configurations, "minecraftDependencies");

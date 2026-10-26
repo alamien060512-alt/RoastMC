@@ -3,7 +3,6 @@ package org.bukkit.inventory.meta;
 import org.bukkit.Color;
 import org.bukkit.UndefinedNullability;
 import org.bukkit.map.MapView;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,9 +99,7 @@ public interface MapMeta extends ItemMeta {
      * actually an alias for {@link ItemMeta#hasLocalizedName()}.
      */
     @Deprecated(since = "1.19.4")
-    default boolean hasLocationName() {
-        return this.hasLocalizedName(); // SPIGOT-6308
-    }
+    boolean hasLocationName();
 
     /**
      * Gets the location name that is set.
@@ -116,9 +113,7 @@ public interface MapMeta extends ItemMeta {
      */
     @Deprecated(since = "1.19.4")
     @Nullable
-    default String getLocationName() {
-        return this.getLocalizedName(); // SPIGOT-6308
-    }
+    String getLocationName();
 
     /**
      * Sets the location name.
@@ -128,21 +123,14 @@ public interface MapMeta extends ItemMeta {
      * actually an alias for {@link ItemMeta#setLocalizedName(String)}.
      */
     @Deprecated(since = "1.19.4")
-    default void setLocationName(@Nullable String name) {
-        this.setLocalizedName(name); // SPIGOT-6308
-    }
+    void setLocationName(@Nullable String name);
 
     /**
      * Checks for existence of a map color.
      *
      * @return true if this has a custom map color
-     * @deprecated maps no longer have a color
      */
-    @Deprecated(since = "26.3")
-    @Contract("-> false")
-    default boolean hasColor() {
-        return false;
-    }
+    boolean hasColor();
 
     /**
      * Gets the map color that is set. A custom map color will alter the display
@@ -152,24 +140,17 @@ public interface MapMeta extends ItemMeta {
      * calling this method.
      *
      * @return the map color that is set
-     * @deprecated maps no longer have a color
      */
-    @Deprecated(since = "26.3")
-    @Contract("-> null")
-    default @Nullable Color getColor() {
-        return null;
-    }
+    @Nullable
+    Color getColor();
 
     /**
      * Sets the map color. A custom map color will alter the display of the map
      * in an inventory slot.
      *
      * @param color the color to set
-     * @deprecated maps no longer have a color
      */
-    @Deprecated(since = "26.3")
-    default void setColor(@Nullable Color color) {
-    }
+    void setColor(@Nullable Color color);
 
     @Override
     @NotNull

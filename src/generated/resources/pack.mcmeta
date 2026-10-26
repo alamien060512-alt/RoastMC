@@ -4,9 +4,12 @@
       "translate": "pack.neoforge.description"
     },
     "max_format": [
-      121,
-      0
+      107,
+      1
     ],
-    "min_format": 121
+    "min_format": [
+      107,
+      1
+    ]
   }
 }

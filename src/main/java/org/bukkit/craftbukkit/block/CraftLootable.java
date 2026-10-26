@@ -10,8 +10,8 @@ import org.bukkit.loot.Lootable;
 
 public abstract class CraftLootable<T extends RandomizableContainerBlockEntity> extends CraftContainer<T> implements Nameable, Lootable, com.destroystokyo.paper.loottable.PaperLootableBlockInventory { // Paper
 
-    public CraftLootable(World world, T blockEntity, boolean useSnapshot) {
-        super(world, blockEntity, useSnapshot);
+    public CraftLootable(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftLootable(CraftLootable<T> state, Location location) {

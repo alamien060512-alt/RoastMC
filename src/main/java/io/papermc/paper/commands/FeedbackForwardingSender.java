@@ -1,6 +1,6 @@
 package io.papermc.paper.commands;
 
-import com.mohistmc.youer.api.ColorAPI;
+import com.roastmc.neoforge.api.ColorAPI;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
@@ -74,8 +74,10 @@ public final class FeedbackForwardingSender extends ServerCommandSender {
             Vec2.ZERO,
             respawnDimension,
             LevelBasedPermissionSet.OWNER,
+            this.getName(),
             net.minecraft.network.chat.Component.literal(this.getName()),
-            this.server.getServer()
+            this.server.getServer(),
+            null
         );
     }
 

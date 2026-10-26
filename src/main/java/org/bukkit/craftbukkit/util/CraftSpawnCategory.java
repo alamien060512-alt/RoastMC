@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
-import com.mohistmc.youer.neoforge.NeoForgeInjectBukkit;
+import com.roastmc.neoforge.neoforge.NeoForgeInjectBukkit;
 import net.minecraft.world.entity.MobCategory;
 import org.bukkit.entity.SpawnCategory;
 

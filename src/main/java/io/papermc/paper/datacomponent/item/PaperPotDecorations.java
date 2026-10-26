@@ -1,8 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import java.util.Optional;
-import java.util.function.Function;
-import net.minecraft.world.item.ItemStackTemplate;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.ItemType;
@@ -14,22 +12,22 @@ public record PaperPotDecorations(
 
     @Override
     public @Nullable ItemType back() {
-        return this.impl.back().map(template -> CraftItemType.minecraftHolderToBukkitNew(template.item())).orElse(null);
+        return this.impl.back().map(CraftItemType::minecraftToBukkitNew).orElse(null);
     }
 
     @Override
     public @Nullable ItemType left() {
-        return this.impl.left().map(template -> CraftItemType.minecraftHolderToBukkitNew(template.item())).orElse(null);
+        return this.impl.left().map(CraftItemType::minecraftToBukkitNew).orElse(null);
     }
 
     @Override
     public @Nullable ItemType right() {
-        return this.impl.right().map(template -> CraftItemType.minecraftHolderToBukkitNew(template.item())).orElse(null);
+        return this.impl.right().map(CraftItemType::minecraftToBukkitNew).orElse(null);
     }
 
     @Override
     public @Nullable ItemType front() {
-        return this.impl.front().map(template -> CraftItemType.minecraftHolderToBukkitNew(template.item())).orElse(null);
+        return this.impl.front().map(CraftItemType::minecraftToBukkitNew).orElse(null);
     }
 
     @Override
@@ -74,12 +72,11 @@ public record PaperPotDecorations(
                 return new PaperPotDecorations(net.minecraft.world.level.block.entity.PotDecorations.EMPTY);
             }
 
-            final Function<ItemType, ItemStackTemplate> toTemplate = itemType -> new ItemStackTemplate(CraftItemType.bukkitToMinecraftNew(itemType));
             return new PaperPotDecorations(new net.minecraft.world.level.block.entity.PotDecorations(
-                Optional.ofNullable(this.back).map(toTemplate),
-                Optional.ofNullable(this.left).map(toTemplate),
-                Optional.ofNullable(this.right).map(toTemplate),
-                Optional.ofNullable(this.front).map(toTemplate)
+                Optional.ofNullable(this.back).map(CraftItemType::bukkitToMinecraftNew),
+                Optional.ofNullable(this.left).map(CraftItemType::bukkitToMinecraftNew),
+                Optional.ofNullable(this.right).map(CraftItemType::bukkitToMinecraftNew),
+                Optional.ofNullable(this.front).map(CraftItemType::bukkitToMinecraftNew)
             ));
         }
     }

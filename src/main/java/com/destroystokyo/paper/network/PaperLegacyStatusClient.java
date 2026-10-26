@@ -6,33 +6,25 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.server.MinecraftServer;
 import org.apache.commons.lang3.StringUtils;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import javax.annotation.Nullable;
 
 public final class PaperLegacyStatusClient implements StatusClient {
 
-    private final SocketAddress address;
+    private final InetSocketAddress address;
     private final int protocolVersion;
     @Nullable private final InetSocketAddress virtualHost;
 
-    private PaperLegacyStatusClient(SocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
+    private PaperLegacyStatusClient(InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
         this.address = address;
         this.protocolVersion = protocolVersion;
         this.virtualHost = virtualHost;
     }
 
     @Override
-    public SocketAddress getSocketAddress() {
-        return this.address;
-    }
-
-    @Override
     public InetSocketAddress getAddress() {
-        if (this.address instanceof InetSocketAddress inet) return inet;
-        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        return this.address;
     }
 
     @Override
@@ -52,7 +44,7 @@ public final class PaperLegacyStatusClient implements StatusClient {
     }
 
     public static PaperServerListPingEvent processRequest(MinecraftServer server,
-            SocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
+            InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
 
         PaperServerListPingEvent event = new PaperServerListPingEventImpl(server,
                 new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null);

@@ -6,12 +6,14 @@ import org.bukkit.Color;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the custom model data.
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface CustomModelData {
 

@@ -6,10 +6,12 @@ import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.Services;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Information about the current server build.
  */
+@NullMarked
 @ApiStatus.NonExtendable
 public interface ServerBuildInfo {
     /**
@@ -34,7 +36,6 @@ public interface ServerBuildInfo {
             static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
         }
         //</editor-fold>
-
         return Holder.INSTANCE.orElseThrow();
     }
 
@@ -51,7 +52,7 @@ public interface ServerBuildInfo {
      * @param brandId the brand to check (e.g. "papermc:folia")
      * @return {@code true} if the server supports the specified brand
      */
-    boolean isBrandCompatible(Key brandId);
+    boolean isBrandCompatible(final Key brandId);
 
     /**
      * Gets the brand name of the server.
@@ -108,7 +109,7 @@ public interface ServerBuildInfo {
      * @param representation the type of representation
      * @return a string
      */
-    String asString(StringRepresentation representation);
+    String asString(final StringRepresentation representation);
 
     /**
      * String representation types.

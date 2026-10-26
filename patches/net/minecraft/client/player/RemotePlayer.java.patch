@@ -1,6 +1,6 @@
 --- a/net/minecraft/client/player/RemotePlayer.java
 +++ b/net/minecraft/client/player/RemotePlayer.java
-@@ -78,7 +_,7 @@
+@@ -79,7 +_,7 @@
      }
  
      @Override
@@ -9,11 +9,3 @@
      }
  
      @Override
-@@ -86,4 +_,7 @@
-         super.recreateFromPacket(packet);
-         this.setOldPosAndRot();
-     }
-+
-+    @Override
-+    public void resetLastActionTime() {} // Purpur - Ridables
- }

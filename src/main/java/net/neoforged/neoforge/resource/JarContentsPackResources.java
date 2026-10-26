@@ -12,10 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Stream;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.AbstractPackMetadataResources;
-import net.minecraft.server.packs.OverlayedPackResources;
+import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.CompositePackResources;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -33,7 +32,7 @@ import org.slf4j.Logger;
  * since it will try to create a more optimal implementation based on the actual underlying Jar storage.
  */
 @ApiStatus.Internal
-public class JarContentsPackResources extends AbstractPackMetadataResources implements PackResources {
+public class JarContentsPackResources extends AbstractPackResources {
     static final Logger LOGGER = LogUtils.getLogger();
     private final JarContents contents;
     private final String prefix;
@@ -136,16 +135,16 @@ public class JarContentsPackResources extends AbstractPackMetadataResources impl
         }
 
         @Override
-        public PackResources openMetadata(PackLocationInfo locationInfo) {
+        public PackResources openPrimary(PackLocationInfo locationInfo) {
             return new JarContentsPackResources(locationInfo, contents, prefix);
         }
 
         @Override
-        public Stream<PackResources> openResources(PackLocationInfo locationInfo, Pack.Metadata metadata) {
+        public PackResources openFull(PackLocationInfo locationInfo, Pack.Metadata metadata) {
             PackResources packresources = new JarContentsPackResources(locationInfo, contents, prefix);
             List<String> overlays = metadata.overlays();
             if (overlays.isEmpty()) {
-                return Stream.of(packresources);
+                return packresources;
             } else {
                 List<PackResources> effectiveOverlays = new ArrayList<>(overlays.size());
 
@@ -153,7 +152,7 @@ public class JarContentsPackResources extends AbstractPackMetadataResources impl
                     effectiveOverlays.add(new JarContentsPackResources(locationInfo, contents, s));
                 }
 
-                return Stream.of(new OverlayedPackResources(packresources, effectiveOverlays));
+                return new CompositePackResources(packresources, effectiveOverlays);
             }
         }
     }

@@ -3,9 +3,9 @@ package io.papermc.paper.plugin.manager;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerEventException;
 import com.google.common.collect.Sets;
-import com.mohistmc.youer.YouerConfig;
-import com.mohistmc.youer.bukkit.entity.CraftFakePlayer;
-import com.mohistmc.youer.feature.YouerPlugin;
+import com.roastmc.neoforge.RoastMCConfig;
+import com.roastmc.neoforge.bukkit.entity.CraftFakePlayer;
+import com.roastmc.neoforge.feature.RoastMCPlugin;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
@@ -39,8 +39,8 @@ class PaperEventManager {
 
     // SimplePluginManager
     public void callEvent(@NotNull Event event) {
-        if (!YouerConfig.fakeplayer_callbukkitevent && event instanceof PlayerEvent playerEvent && playerEvent.getPlayer() instanceof CraftFakePlayer) return; // Youer
-        YouerPlugin.registerListener(event); // Youer
+        if (!RoastMCConfig.fakeplayer_callbukkitevent && event instanceof PlayerEvent playerEvent && playerEvent.getPlayer() instanceof CraftFakePlayer) return; // RoastMC
+        RoastMCPlugin.registerListener(event); // RoastMC
         if (event.isAsynchronous() && this.server.isPrimaryThread()) {
             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
         } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
@@ -168,15 +168,10 @@ class PaperEventManager {
                 // This loop checks for extending deprecated events
                 if (clazz.getAnnotation(Deprecated.class) != null) {
                     Warning warning = clazz.getAnnotation(Warning.class);
-                    if (warning != null && !warning.propagate() && !clazz.equals(eventClass)) {
-                        break;
-                    }
-
                     Warning.WarningState warningState = this.server.getWarningState();
                     if (!warningState.printFor(warning)) {
                         break;
                     }
-
                     plugin.getLogger().log(
                         Level.WARNING,
                         String.format(
@@ -184,7 +179,7 @@ class PaperEventManager {
                             plugin.getPluginMeta().getDisplayName(),
                             clazz.getName(),
                             method.toGenericString(),
-                            (warning != null && !warning.reason().isEmpty()) ? warning.reason() : "Please see the deprecation notice on the event for more info",
+                            (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
                             Arrays.toString(plugin.getPluginMeta().getAuthors().toArray())),
                         warningState == Warning.WarningState.ON ? new AuthorNagException(null) : null);
                     break;

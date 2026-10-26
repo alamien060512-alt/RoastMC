@@ -3,12 +3,12 @@
 @@ -1,5 +_,7 @@
  package net.minecraft.commands;
  
-+import com.mohistmc.youer.commands.UnBanIpCommand;
-+import com.mohistmc.youer.commands.UnbanCommand;
++import com.roastmc.neoforge.commands.UnBanIpCommand;
++import com.roastmc.neoforge.commands.UnbanCommand;
  import com.mojang.brigadier.CommandDispatcher;
  import com.mojang.brigadier.ParseResults;
  import com.mojang.brigadier.StringReader;
-@@ -159,6 +_,7 @@
+@@ -157,6 +_,7 @@
  import org.slf4j.Logger;
  
  public class Commands {
@@ -16,7 +16,7 @@
      public static final String COMMAND_PREFIX = "/";
      private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -183,6 +_,7 @@
+@@ -181,6 +_,7 @@
  
          @Override
          public boolean isRestricted(CommandNode<CommandSourceStack> node) {
@@ -24,7 +24,7 @@
              Predicate<CommandSourceStack> requirement = node.getRequirement();
              return !requirement.test(this.noPermissionSource);
          }
-@@ -190,6 +_,11 @@
+@@ -188,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection commandSelection, CommandBuildContext context) {
@@ -36,7 +36,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -265,11 +_,11 @@
+@@ -261,11 +_,11 @@
              JfrCommand.register(this.dispatcher);
          }
  
@@ -50,7 +50,7 @@
              RaidCommand.register(this.dispatcher, context);
              DebugPathCommand.register(this.dispatcher);
              DebugMobSpawningCommand.register(this.dispatcher);
-@@ -289,6 +_,8 @@
+@@ -285,6 +_,8 @@
              OpCommand.register(this.dispatcher);
              PardonCommand.register(this.dispatcher);
              PardonIpCommand.register(this.dispatcher);
@@ -59,7 +59,7 @@
              PerfCommand.register(this.dispatcher);
              SaveAllCommand.register(this.dispatcher);
              SaveOffCommand.register(this.dispatcher);
-@@ -297,13 +_,59 @@
+@@ -293,13 +_,59 @@
              StopCommand.register(this.dispatcher);
              TransferCommand.register(this.dispatcher);
              WhitelistCommand.register(this.dispatcher);
@@ -71,6 +71,7 @@
 +            org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur - Add compass command
 +            org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur - Add rambar command
 +            org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur - Add ram command
++            org.purpurmc.purpur.command.PacketBarCommand.register(this.dispatcher); // RoastMC - Add packetbar command
          }
  
          if (commandSelection.includeIntegrated) {
@@ -96,10 +97,10 @@
 +                // Modern behaviour that simply creates a full copy of the commands node.
 +                // Avoids plenty of issues around registering redirects *to* these nodes from the API
 +                this.dispatcher.getRoot().addChild(
-+                    io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
-+                        "minecraft:" + node.getName(),
-+                        (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
-+                    )
++                        io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
++                                "minecraft:" + node.getName(),
++                                (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
++                        )
 +                );
 +                continue;
 +            }
@@ -107,20 +108,19 @@
 +            // Legacy behaviour of creating a flattened redirecting node.
 +            // Used by CommandArgumentUpgrader
 +            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
-+            while (flattenedAliasTarget.getRedirect() != null)
-+                flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
 +
 +            this.dispatcher.register(
-+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
-+                    .executes(flattenedAliasTarget.getCommand())
-+                    .requires(flattenedAliasTarget.getRequirement())
-+                    .redirect(flattenedAliasTarget));
++                    com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
++                            .executes(flattenedAliasTarget.getCommand())
++                            .requires(flattenedAliasTarget.getRequirement())
++                            .redirect(flattenedAliasTarget));
 +        }
 +        // Paper end - Brigadier Command API
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -323,7 +_,24 @@
+@@ -319,7 +_,24 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> command, String commandString) {
@@ -145,7 +145,7 @@
          Profiler.get().push(() -> "/" + commandString);
          ContextChain<CommandSourceStack> commandChain = finishParsing(command, commandString, sender);
  
-@@ -336,10 +_,12 @@
+@@ -332,10 +_,12 @@
                      )
                  );
              }
@@ -161,7 +161,7 @@
                  StackTraceElement[] stackTrace = e.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -370,7 +_,11 @@
+@@ -366,12 +_,16 @@
              return ContextChain.tryFlatten(command.getContext().build(commandString))
                  .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(command.getReader()));
          } catch (CommandSyntaxException e) {
@@ -174,7 +174,13 @@
              if (e.getInput() != null && e.getCursor() >= 0) {
                  int cursor = Math.min(e.getInput().length(), e.getCursor());
                  MutableComponent context = Component.empty()
-@@ -387,7 +_,17 @@
+                     .withStyle(ChatFormatting.GRAY)
+-                    .withStyle(s -> s.withClickEvent(new ClickEvent.SuggestCommand("/" + commandString)));
++                    .withStyle(s -> s.withClickEvent(new ClickEvent.SuggestCommand("/" + net.minecraft.util.StringUtil.filterText(commandString)))); // Paper - Filter out disallowed control chars
+                 if (cursor > 10) {
+                     context.append(CommonComponents.ELLIPSIS);
+                 }
+@@ -383,7 +_,17 @@
                  }
  
                  context.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -182,8 +188,8 @@
 +                // Paper start - Add UnknownCommandEvent
 +                // sender.sendFailure(context);
 +                builder
-+                    .append(net.kyori.adventure.text.Component.newline())
-+                    .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(context));
++                        .append(net.kyori.adventure.text.Component.newline())
++                        .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(context));
 +            }
 +            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandString, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
 +            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
@@ -193,7 +199,7 @@
              }
  
              return null;
-@@ -415,17 +_,110 @@
+@@ -411,17 +_,110 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -206,34 +212,31 @@
 +        // CraftBukkit start
 +        // Register Vanilla commands into builtRoot as before
 +        // Paper start - Perf: Async command map building
-+        // Copy root node to avoid concurrent modification during building
-+        final RootCommandNode<CommandSourceStack> rootNode = new RootCommandNode<>();
-+        this.dispatcher.getRoot().getChildren().forEach(rootNode::addChild);
-+        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, rootNode));
++        // Copy root children to avoid concurrent modification during building
++        final java.util.Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
++        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, commandNodes));
 +    }
 +
 +    // Fixed pool, but with discard policy
 +    public static final java.util.concurrent.ExecutorService COMMAND_SENDING_POOL = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
 +
-+    private void sendAsync(ServerPlayer player, RootCommandNode<CommandSourceStack> dispatcherRoot) {
++    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<CommandSourceStack>> playerCommands = new HashMap<>();
          RootCommandNode<CommandSourceStack> root = new RootCommandNode<>();
--        playerCommands.put(this.dispatcher.getRoot(), root);
+         playerCommands.put(this.dispatcher.getRoot(), root);
 -        fillUsableCommands(this.dispatcher.getRoot(), root, player.createCommandSourceStack(), playerCommands);
-+        // Paper start - Perf: Async command map building; pass copy of root
-+        playerCommands.put(dispatcherRoot, root);
-+        fillUsableCommands(dispatcherRoot, root, player.createCommandSourceStack(), playerCommands);
-+        // Paper end - Perf: Async command map building; pass copy of root
++        // RoastMC TODO
++        fillUsableCommands(dispatcherRootChildren, root, player.createCommandSourceStack(), playerCommands); // Paper - Perf: Async command map building; pass copy of children
 +        // Neo: Use our own command node merging method to handle redirect nodes properly, see issue Forge-7551
 +        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.dispatcher.getRoot(), root, playerCommands, player.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.cast((com.mojang.brigadier.suggestion.SuggestionProvider<SharedSuggestionProvider>) (com.mojang.brigadier.suggestion.SuggestionProvider<?>) suggest));
 +
 +        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
-+        for (CommandNode<?> node : root.getChildren()) {
++        for (CommandNode node : root.getChildren()) {
 +            bukkit.add(node.getName());
 +        }
 +        // Paper start - Perf: Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<>(player.getBukkitEntity(), root, false).callEvent(); // Paper - Brigadier API
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) root, false).callEvent(); // Paper - Brigadier API
 +        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
 +            runSync(player, bukkit, root);
 +        });
@@ -241,7 +244,7 @@
 +
 +    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<CommandSourceStack> root) {
 +        // Paper end - Perf: Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<>(player.getBukkitEntity(), root, true).callEvent(); // Paper - Brigadier API
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) root, true).callEvent(); // Paper - Brigadier API
 +        if (org.bukkit.event.player.PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Purpur - Skip events if there's no listeners
 +        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
 +        event.getPlayer().getServer().getPluginManager().callEvent(event);
@@ -257,9 +260,13 @@
          player.connection.send(new ClientboundCommandsPacket(root, COMMAND_NODE_INSPECTOR));
      }
  
+-    private static <S> void fillUsableCommands(CommandNode<S> source, CommandNode<S> target, S commandFilter, Map<CommandNode<S>, CommandNode<S>> converted) {
+-        for (CommandNode<S> child : source.getChildren()) {
 +    // Neo: Replaced by our own command merging logic
-     private static <S> void fillUsableCommands(CommandNode<S> source, CommandNode<S> target, S commandFilter, Map<CommandNode<S>, CommandNode<S>> converted) {
-         for (CommandNode<S> child : source.getChildren()) {
++    private static <S> void fillUsableCommands(
++            java.util.Collection<CommandNode<S>> children, CommandNode<S> target, S commandFilter, Map<CommandNode<S>, CommandNode<S>> converted // Paper - Perf: Async command map building; pass copy of children
++    ) {
++        for (CommandNode<S> child : children) { // Paper - Perf: Async command map building; pass copy of children
 +            // Paper start - Brigadier API
 +            if (child.clientNode != null) {
 +                child = child.clientNode;
@@ -306,3 +313,17 @@
                  if (builder.getRedirect() != null) {
                      builder.redirect(converted.get(builder.getRedirect()));
                  }
+@@ -430,12 +_,11 @@
+                 converted.put(child, node);
+                 target.addChild(node);
+                 if (!child.getChildren().isEmpty()) {
+-                    fillUsableCommands(child, node, commandFilter, converted);
++                    fillUsableCommands(child.getChildren(), node, commandFilter, converted); // Paper - Perf: Async command map building; pass copy of children
+                 }
+             }
+         }
+     }
+-
+     public static LiteralArgumentBuilder<CommandSourceStack> literal(String literal) {
+         return LiteralArgumentBuilder.literal(literal);
+     }

@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -374,11 +373,11 @@ public final class CraftLegacy {
                     Dynamic blockTag = BlockStateData.getTag(material.getId() << 4 | data);
                     blockTag = DataFixers.getDataFixer().update(References.BLOCK_STATE, blockTag, 100, CraftMagicNumbers.INSTANCE.getDataVersion());
                     // TODO: better skull conversion, chests
-                    if (blockTag.get(StateHolder.ID_TAG).asString("").contains("%%FILTER_ME%%")) {
+                    if (blockTag.get("Name").asString("").contains("%%FILTER_ME%%")) {
                         continue;
                     }
 
-                    String name = blockTag.get(StateHolder.ID_TAG).asString("");
+                    String name = blockTag.get("Name").asString("");
                     Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(name));
                     if (block == null) {
                         continue;
@@ -386,7 +385,7 @@ public final class CraftLegacy {
                     BlockState state = block.defaultBlockState();
                     StateDefinition<?, ?> def = block.getStateDefinition();
 
-                    Optional<CompoundTag> propertiesTag = blockTag.getElement(StateHolder.PROPERTIES_TAG).result();
+                    Optional<CompoundTag> propertiesTag = blockTag.getElement("Properties").result();
                     if (propertiesTag.isPresent()) {
                         CompoundTag properties = propertiesTag.get();
                         for (String propertyName : properties.keySet()) {

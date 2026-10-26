@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated This event is no longer fired due to client changes
  */
 @Deprecated(since = "1.13")
-@Warning(reason = "This event is no longer fired due to client changes", value = true, propagate = false)
+@Warning(reason = "This event is no longer fired due to client changes")
 public class PlayerChatTabCompleteEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

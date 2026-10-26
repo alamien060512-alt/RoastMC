@@ -92,9 +92,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.stats.RecipeBookSettings;
 import net.minecraft.stats.Stats;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.CrudeIncrementalIntIdentityHashBiMap;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Prediction;
 import net.minecraft.util.Util;
 import net.minecraft.util.datafix.fixes.StructuresBecomeConfiguredFix;
 import net.minecraft.world.Container;
@@ -117,7 +117,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Enderman;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -132,6 +132,7 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.TippedArrowItem;
@@ -148,7 +149,6 @@ import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
@@ -165,8 +165,6 @@ import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.LevelStorageSource;
@@ -175,6 +173,7 @@ import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.ModLoader;
@@ -182,7 +181,7 @@ import net.neoforged.fml.i18n.MavenVersionTranslator;
 import net.neoforged.fml.loading.toposort.CyclePresentException;
 import net.neoforged.fml.loading.toposort.TopologicalSort;
 import net.neoforged.neoforge.common.conditions.ConditionalOps;
-import net.neoforged.neoforge.common.config.NeoForgeSyncedConfig;
+import net.neoforged.neoforge.common.config.NeoForgeServerConfig;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.extensions.IBlockExtension;
 import net.neoforged.neoforge.common.extensions.IEntityExtension;
@@ -190,6 +189,7 @@ import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.common.loot.LootModifierManager;
 import net.neoforged.neoforge.common.loot.LootTableIdCondition;
 import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
 import net.neoforged.neoforge.event.DifficultyChangeEvent;
@@ -208,7 +208,7 @@ import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
-import net.neoforged.neoforge.event.entity.living.EndermanAngerEvent;
+import net.neoforged.neoforge.event.entity.living.EnderManAngerEvent;
 import net.neoforged.neoforge.event.entity.living.LivingBreatheEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -252,6 +252,9 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.transformer.meta.MixinMerged;
@@ -402,7 +405,35 @@ public class CommonHooks {
     }
 
     public static boolean onLivingDrops(LivingEntity entity, DamageSource source, Collection<ItemEntity> drops, boolean recentlyHit) {
-        return NeoForge.EVENT_BUS.post(new LivingDropsEvent(entity, source, drops, recentlyHit)).isCanceled();
+        // Paper start - Integrate with Paper's deathDropItems mechanism
+        // When deathDropItems is active during death, spawnAtLocation returns null
+        // in the deathDropItems path, causing NeoForge's captureDrops to remain empty.
+        // Pre-populate drops from deathDropItems so LivingDropsEvent has the actual items.
+        boolean hasDeathDrops = false;
+        if (entity.deathDropItems != null && !entity.deathDropItems.isEmpty()) {
+            hasDeathDrops = true;
+            for (Entity.DefaultDrop dd : entity.deathDropItems) {
+                net.minecraft.world.item.ItemStack stack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(dd.stack());
+                if (!stack.isEmpty()) {
+                    ItemEntity itemEntity = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
+                    itemEntity.setDefaultPickUpDelay();
+                    drops.add(itemEntity);
+                }
+            }
+        }
+        // Paper end
+
+        boolean cancelled = NeoForge.EVENT_BUS.post(new LivingDropsEvent(entity, source, drops, recentlyHit)).isCanceled();
+
+        // Paper start - If items were pre-released (event not cancelled), clear deathDropItems
+        // to prevent the Paper death mechanism from creating duplicates in postDeathEventTasks.
+        // If the event was cancelled, keep deathDropItems intact for EntityDeathEvent fallback.
+        if (hasDeathDrops && !cancelled) {
+            entity.deathDropItems.clear();
+        }
+        // Paper end
+
+        return cancelled;
     }
 
     public static LivingFallEvent onLivingFall(LivingEntity entity, double distance, float damageMultiplier) {
@@ -410,7 +441,7 @@ public class CommonHooks {
         return NeoForge.EVENT_BUS.post(event);
     }
 
-    public static double getEntityVisibilityMultiplier(LivingEntity entity, @Nullable Entity lookingEntity, double originalMultiplier) {
+    public static double getEntityVisibilityMultiplier(LivingEntity entity, Entity lookingEntity, double originalMultiplier) {
         LivingEvent.LivingVisibilityEvent event = new LivingEvent.LivingVisibilityEvent(entity, lookingEntity, originalMultiplier);
         NeoForge.EVENT_BUS.post(event);
         return Math.max(0, event.getVisibilityModifier());
@@ -420,7 +451,7 @@ public class CommonHooks {
         boolean isSpectator = (entity instanceof Player && entity.isSpectator());
         if (isSpectator)
             return Optional.empty();
-        if (!NeoForgeSyncedConfig.INSTANCE.fullBoundingBoxLadders.get()) {
+        if (!NeoForgeServerConfig.INSTANCE.fullBoundingBoxLadders.get()) {
             return state.isLadder(level, pos, entity) ? Optional.of(pos) : Optional.empty();
         } else {
             AABB bb = entity.getBoundingBox();
@@ -447,23 +478,20 @@ public class CommonHooks {
     }
 
     @Nullable
-    public static ItemEntity onPlayerTossEvent(Player player, ItemStack item, boolean thrownFromHand, Prediction prediction) {
+    public static ItemEntity onPlayerTossEvent(Player player, ItemStack item, boolean dropAround, boolean includeName) {
         player.captureDrops(Lists.newArrayList());
-        ItemEntity ret = player.dropWithoutEvent(item, thrownFromHand, prediction);
+        ItemEntity ret = player.drop(item, dropAround, includeName);
         player.captureDrops(null);
 
-        if (ret == null) {
+        if (ret == null)
             return null;
-        }
 
         ItemTossEvent event = new ItemTossEvent(ret, player);
-        if (NeoForge.EVENT_BUS.post(event).isCanceled()) {
+        if (NeoForge.EVENT_BUS.post(event).isCanceled())
             return null;
-        }
 
-        if (!player.level().isClientSide()) {
+        if (!player.level().isClientSide())
             player.level().addFreshEntity(event.getEntity());
-        }
         return event.getEntity();
     }
 
@@ -482,7 +510,7 @@ public class CommonHooks {
     }
 
     public static ChatDecorator getServerChatSubmittedDecorator() {
-        return (sender, message) ->  CompletableFuture.supplyAsync(() -> {
+        return (sender, message) -> CompletableFuture.supplyAsync(() -> {
             if (sender == null)
                 return message; // Vanilla should never get here with the patches we use, but let's be safe with dumb mods
 
@@ -623,7 +651,22 @@ public class CommonHooks {
         var event = new BreakBlockEvent(level, pos, state, player);
         event.setCanceled(preCancelEvent);
         NeoForge.EVENT_BUS.post(event);
-
+        // CraftBukkit start - fire BlockBreakEvent
+        org.bukkit.block.Block bblock = CraftBlock.at(level, pos);
+        if (player instanceof ServerPlayer serverPlayer && !(player instanceof FakePlayer)) {
+            if (level instanceof ServerLevel) {
+                BlockBreakEvent bukkitEvent = new BlockBreakEvent(bblock, serverPlayer.getBukkitEntity());
+                // event.setDropItems(bukkitEvent.isDropItems()); // TODO
+                Bukkit.getPluginManager().callEvent(bukkitEvent);
+                if (event.isCanceled() && !bukkitEvent.isCancelled()) {
+                    bukkitEvent.setCancelled(event.isCanceled());
+                }
+                if (!event.isCanceled() && bukkitEvent.isCancelled()) {
+                    event.setCanceled(bukkitEvent.isCancelled());
+                }
+            }
+        }
+        // CraftBukkit end
         // If the event is canceled on the server, let the client know the block still exists
         if (event.isCanceled() && event.shouldNotifyClient() && player instanceof ServerPlayer sp) {
             sp.connection.send(new ClientboundBlockUpdatePacket(pos, state));
@@ -688,6 +731,7 @@ public class CommonHooks {
                     level.restoringBlockSnapshots = true;
                     blocksnapshot.restore(blocksnapshot.getFlags() | Block.UPDATE_CLIENTS);
                     level.restoringBlockSnapshots = false;
+                    blocksnapshot.getState().getBlock().forgetPlacer(); // Purpur - Store placer on Block when placed
                 }
                 // inform the client that the item was not consumed
                 if (player instanceof ServerPlayer serverPlayer) {
@@ -704,7 +748,7 @@ public class CommonHooks {
                     BlockState oldBlock = snap.getState();
                     BlockState newBlock = level.getBlockState(snap.getPos());
                     newBlock.onPlace(level, snap.getPos(), oldBlock, false);
-
+                    newBlock.getBlock().forgetPlacer(); // Purpur - Store placer on Block when placed
                     level.markAndNotifyBlock(snap.getPos(), level.getChunkAt(snap.getPos()), oldBlock, newBlock, updateFlag, 512);
                 }
                 if (player != null)
@@ -838,7 +882,7 @@ public class CommonHooks {
     public static boolean onPlayerAttackTarget(Player player, Entity target) {
         if (NeoForge.EVENT_BUS.post(new AttackEntityEvent(player, target)).isCanceled())
             return false;
-        ItemStack stack = player.getWeaponItem();
+        ItemStack stack = player.getMainHandItem();
         return stack.isEmpty() || !stack.getItem().onLeftClickEntity(stack, player, target);
     }
 
@@ -1356,8 +1400,8 @@ public class CommonHooks {
         }
     }
 
-    public static boolean shouldSuppressEnderManAnger(Enderman enderMan, Player player) {
-        return NeoForge.EVENT_BUS.post(new EndermanAngerEvent(enderMan, player)).isCanceled();
+    public static boolean shouldSuppressEnderManAnger(EnderMan enderMan, Player player) {
+        return NeoForge.EVENT_BUS.post(new EnderManAngerEvent(enderMan, player)).isCanceled();
     }
 
     private static final Lazy<Map<String, StructuresBecomeConfiguredFix.Conversion>> FORGE_CONVERSION_MAP = Lazy.of(() -> {
@@ -1412,6 +1456,26 @@ public class CommonHooks {
             return PermissionAPI.getPermission(player, NeoForgeMod.USE_SELECTORS_PERMISSION);
         }
         return false;
+    }
+
+    @ApiStatus.Internal
+    public static <T> HolderLookup.RegistryLookup<T> wrapRegistryLookup(final HolderLookup.RegistryLookup<T> lookup) {
+        return new HolderLookup.RegistryLookup.Delegate<>() {
+            @Override
+            public RegistryLookup<T> parent() {
+                return lookup;
+            }
+
+            @Override
+            public Stream<HolderSet.Named<T>> listTags() {
+                return Stream.empty();
+            }
+
+            @Override
+            public Optional<HolderSet.Named<T>> get(TagKey<T> key) {
+                return Optional.of(HolderSet.emptyNamed(lookup, key));
+            }
+        };
     }
 
     /**
@@ -1881,7 +1945,7 @@ public class CommonHooks {
                 if (output.getConnectionType().isOther()) {
                     List<ItemAttributeModifiers.Entry> filteredModifiers = new ArrayList<>(modifiers.size());
                     for (ItemAttributeModifiers.Entry entry : modifiers) {
-                        if (entry.attribute().is(key -> key.identifier().getNamespace().equals(Identifier.DEFAULT_NAMESPACE))) {
+                        if (entry.attribute().getKey().identifier().getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) {
                             filteredModifiers.add(entry);
                         }
                     }
@@ -1890,46 +1954,5 @@ public class CommonHooks {
                 entriesStreamCodec.encode(output, modifiers);
             }
         };
-    }
-
-    /// {@return the translation key for this dimension}.
-    /// Used when looking up the matching translation.
-    ///
-    /// @see Level#TRANSLATION_PREFIX
-    /// @see Level#getDescriptionKey()
-    public static String getDimensionDescriptionKey(ResourceKey<Level> dimensionKey) {
-        return dimensionKey.identifier().toLanguageKey(Level.TRANSLATION_PREFIX);
-    }
-
-    /// {@return the translated description of this dimension, with a fallback to the registry name}
-    ///
-    /// @see CommonHooks#getDimensionDescriptionKey(ResourceKey)
-    /// @see Level#getDescription()
-    public static Component getDimensionDescription(ResourceKey<Level> dimensionKey) {
-        return Component.translatableWithFallback(getDimensionDescriptionKey(dimensionKey), dimensionKey.identifier().toString());
-    }
-
-    public static List<StructureTemplate.StructureEntityInfo> processStructureEntityInfos(
-            @Nullable StructureTemplate template,
-            LevelAccessor level,
-            BlockPos position,
-            StructurePlaceSettings settings,
-            List<StructureTemplate.StructureEntityInfo> entityInfoList) {
-        List<StructureTemplate.StructureEntityInfo> list = new ArrayList<>();
-        for (StructureTemplate.StructureEntityInfo entityInfo : entityInfoList) {
-            Vec3 pos = StructureTemplate.transformedVec3d(settings, entityInfo.pos).add(Vec3.atLowerCornerOf(position));
-            BlockPos blockpos = StructureTemplate.calculateRelativePosition(settings, entityInfo.blockPos).offset(position);
-            StructureTemplate.StructureEntityInfo info = new StructureTemplate.StructureEntityInfo(pos, blockpos, entityInfo.nbt);
-            for (StructureProcessor proc : settings.getProcessors()) {
-                info = proc.processEntity(level, position, entityInfo, info, settings, template);
-                if (info == null) {
-                    break;
-                }
-            }
-            if (info != null) {
-                list.add(info);
-            }
-        }
-        return list;
     }
 }

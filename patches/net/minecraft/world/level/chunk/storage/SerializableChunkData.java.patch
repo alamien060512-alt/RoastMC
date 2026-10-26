@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -32,6 +_,7 @@
+@@ -31,6 +_,7 @@
  import net.minecraft.nbt.NbtOps;
  import net.minecraft.nbt.NbtUtils;
  import net.minecraft.nbt.ShortTag;
@@ -8,7 +8,7 @@
  import net.minecraft.resources.Identifier;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.ProblemReporter;
-@@ -90,7 +_,10 @@
+@@ -91,7 +_,10 @@
      List<SerializableChunkData.SectionData> sectionData,
      List<CompoundTag> entities,
      List<CompoundTag> blockEntities,
@@ -20,7 +20,7 @@
  ) {
      private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
      private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
-@@ -106,17 +_,70 @@
+@@ -107,11 +_,77 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -36,6 +36,18 @@
 +        }
 +    }
 +    // Paper end - guard against serializing mismatching coordinates
++    // Paper start - Attempt to recalculate regionfile header if it is corrupt
++    // TODO: Check on update
++    public static long getLastWorldSaveTime(final CompoundTag chunkData) {
++        final int dataVersion = NbtUtils.getDataVersion(chunkData);
++        if (dataVersion < 2842) { // Level tag is removed after this version
++            final CompoundTag levelData = chunkData.getCompoundOrEmpty("Level");
++            return levelData.getLongOr("LastUpdate", 0L);
++        } else {
++            return chunkData.getLongOr("LastUpdate", 0L);
++        }
++    }
++    // Paper end - Attempt to recalculate regionfile header if it is corrupt
 +
 +    // Paper start - Do not let the server load chunks from newer versions
 +    private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
@@ -56,6 +68,7 @@
 +            BlendingData.@Nullable Packed blendingData,
 +            @Nullable BelowZeroRetrogen belowZeroRetrogen,
 +            UpgradeData upgradeData,
++            long @Nullable [] carvingMask,
 +            Map<Heightmap.Types, long[]> heightmaps,
 +            ChunkAccess.PackedTicks packedTicks,
 +            ShortList[] postProcessingSections,
@@ -65,7 +78,7 @@
 +            List<CompoundTag> blockEntities,
 +            CompoundTag structureData
 +    ) {
-+        this(containerFactory, chunkPos, minSectionY, lastUpdateTime, inhabitedTime, chunkStatus, blendingData, belowZeroRetrogen, upgradeData, heightmaps, packedTicks, postProcessingSections, lightCorrect, sectionData, entities, blockEntities, structureData, null, null, null); // Youer
++        this(containerFactory, chunkPos, minSectionY, lastUpdateTime, inhabitedTime, chunkStatus, blendingData, belowZeroRetrogen, upgradeData, carvingMask, heightmaps, packedTicks, postProcessingSections, lightCorrect, sectionData, entities, blockEntities, structureData, null, null, null); // CraftBukkit
 +    }
 +
      public static SerializableChunkData parse(LevelHeightAccessor levelHeight, PalettedContainerFactory containerFactory, CompoundTag chunkData) {
@@ -85,14 +98,16 @@
          ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0));
          long lastUpdateTime = chunkData.getLongOr("LastUpdate", 0L);
          long inhabitedTime = chunkData.getLongOr("InhabitedTime", 0L);
-         ChunkStatus status = chunkData.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-         UpgradeData upgradeData = chunkData.getCompound("UpgradeData").map(tag -> new UpgradeData(tag, levelHeight)).orElse(UpgradeData.EMPTY);
--        boolean lightCorrect = chunkData.getBooleanOr("isLightOn", false);
-+        boolean lightCorrect = status.isOrAfter(ChunkStatus.LIGHT) && (chunkData.get("isLightOn") != null && chunkData.getIntOr(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_VERSION_TAG, -1) == ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_LIGHT_VERSION); // Paper - starlight
-         BlendingData.Packed blendingData = chunkData.read("blending_data", BlendingData.Packed.CODEC).orElse(null);
-         BelowZeroRetrogen belowZeroRetrogen = chunkData.read("below_zero_retrogen", BelowZeroRetrogen.CODEC).orElse(null);
+@@ -123,7 +_,7 @@
+         long[] carvingMask = chunkData.getLongArray("carving_mask").orElse(null);
          Map<Heightmap.Types, long[]> heightmaps = new EnumMap<>(Heightmap.Types.class);
-@@ -149,7 +_,7 @@
+         chunkData.getCompound("Heightmaps").ifPresent(heightmapsTag -> {
+-            for (Heightmap.Types type : status.heightmapsAfter()) {
++            for (Heightmap.Types type : status.getChunkSaveHeightmaps()) {
+                 heightmapsTag.getLongArray(type.getSerializationKey()).ifPresent(longs -> heightmaps.put(type, longs));
+             }
+         });
+@@ -151,7 +_,7 @@
          CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
          ListTag sectionTags = chunkData.getListOrEmpty("sections");
          List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
@@ -101,7 +116,7 @@
          Codec<PalettedContainer<BlockState>> blockStatesCodec = containerFactory.blockStatesContainerCodec();
  
          for (int i = 0; i < sectionTags.size(); i++) {
-@@ -159,14 +_,16 @@
+@@ -161,14 +_,16 @@
                  int y = sectionTag.getByteOr("Y", (byte)0);
                  LevelChunkSection section;
                  if (y >= levelHeight.getMinSectionY() && y <= levelHeight.getMaxSectionY()) {
@@ -120,7 +135,7 @@
                          .map(
                              container -> biomesCodec.parse(NbtOps.INSTANCE, container)
                                  .promotePartial(msg -> logErrors(chunkPos, y, msg))
-@@ -180,9 +_,22 @@
+@@ -182,9 +_,22 @@
  
                  DataLayer blockLight = sectionTag.getByteArray("BlockLight").map(DataLayer::new).orElse(null);
                  DataLayer skyLight = sectionTag.getByteArray("SkyLight").map(DataLayer::new).orElse(null);
@@ -144,7 +159,7 @@
  
          return new SerializableChunkData(
              containerFactory,
-@@ -201,9 +_,65 @@
+@@ -204,9 +_,65 @@
              sectionData,
              entities,
              blockEntities,
@@ -211,7 +226,7 @@
  
      public ProtoChunk read(ServerLevel level, PoiManager poiManager, RegionStorageInfo regionInfo, ChunkPos pos) {
          if (!Objects.equals(pos, this.chunkPos)) {
-@@ -223,7 +_,7 @@
+@@ -226,7 +_,7 @@
              SectionPos sectionPos = SectionPos.of(pos, section.y);
              if (section.chunkSection != null) {
                  sections[level.getSectionIndexFromSectionY(section.y)] = section.chunkSection;
@@ -220,7 +235,7 @@
              }
  
              boolean hasBlockLight = section.blockLight != null;
-@@ -260,6 +_,9 @@
+@@ -263,6 +_,9 @@
                  postLoadChunk(level, this.entities, this.blockEntities),
                  BlendingData.unpack(this.blendingData)
              );
@@ -230,7 +245,7 @@
          } else {
              ProtoChunkTicks<Block> blockTicks = ProtoChunkTicks.load(this.packedTicks.blocks());
              ProtoChunkTicks<Fluid> fluidTicks = ProtoChunkTicks.load(this.packedTicks.fluids());
-@@ -278,6 +_,12 @@
+@@ -281,10 +_,16 @@
              }
          }
  
@@ -241,9 +256,14 @@
 +        // CraftBukkit end
 +
          chunk.setLightCorrect(this.lightCorrect);
-         Set<Heightmap.Types> toPrime = EnumSet.copyOf(chunk.getPersistedStatus().heightmapsAfter());
+         EnumSet<Heightmap.Types> toPrime = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -297,8 +_,12 @@
+-        for (Heightmap.Types type : chunk.getPersistedStatus().heightmapsAfter()) {
++        for (Heightmap.Types type : chunk.getPersistedStatus().getChunkSaveHeightmaps()) {
+             long[] heightmap = this.heightmaps.get(type);
+             if (heightmap != null) {
+                 chunk.setHeightmap(type, heightmap);
+@@ -304,6 +_,10 @@
              }
          }
  
@@ -252,13 +272,10 @@
 +        }
 +
          if (chunkType == ChunkType.LEVELCHUNK) {
--            return new ImposterProtoChunk((LevelChunk)chunk, false);
-+            return this.loadStarlightLightData(level, new ImposterProtoChunk((LevelChunk)chunk, false)); // Paper - starlight
+             return new ImposterProtoChunk((LevelChunk)chunk, false);
          }
- 
-         ProtoChunk protoChunk = (ProtoChunk)chunk;
-@@ -311,11 +_,11 @@
-             protoChunk.setBlockEntityNbt(blockEntity);
+@@ -322,11 +_,11 @@
+             protoChunk.setCarvingMask(new CarvingMask(this.carvingMask, chunk.getMinY()));
          }
  
 -        return protoChunk;
@@ -271,7 +288,7 @@
      }
  
      public static SerializableChunkData copyOf(ServerLevel level, ChunkAccess chunk) {
-@@ -325,21 +_,46 @@
+@@ -336,21 +_,44 @@
  
          ChunkPos pos = chunk.getPos();
          List<SerializableChunkData.SectionData> sectionData = new ArrayList<>();
@@ -294,17 +311,15 @@
 +        final int maxLightSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxLightSection(level);
 +        final int minBlockSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level);
 +
-+        final boolean copy = !ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.DO_NOT_COPY_SAVED_DATA.get().booleanValue();
-+
 +        final LevelChunkSection[] chunkSections = chunk.getSections();
-+        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
-+        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
++        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk) chunk).starlight$getBlockNibbles();
++        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk) chunk).starlight$getSkyNibbles();
 +
 +        for (int lightSection = minLightSection; lightSection <= maxLightSection; ++lightSection) {
 +            final int lightSectionIdx = lightSection - minLightSection;
 +            final int blockSectionIdx = lightSection - minBlockSection;
 +
-+            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? (copy ? chunkSections[blockSectionIdx].copy() : chunkSections[blockSectionIdx]) : null;
++            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? chunkSections[blockSectionIdx].copy() : null;
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState blockNibble = blockNibbles[lightSectionIdx].getSaveState();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState skyNibble = skyNibbles[lightSectionIdx].getSaveState();
 +
@@ -313,17 +328,17 @@
 +            }
 +
 +            final SerializableChunkData.SectionData section = new SerializableChunkData.SectionData(
-+                lightSection, chunkSection,
-+                blockNibble == null ? null : (blockNibble.data == null ? null : new DataLayer(blockNibble.data)),
-+                skyNibble == null ? null : (skyNibble.data == null ? null : new DataLayer(skyNibble.data))
++                    lightSection, chunkSection,
++                    blockNibble == null ? null : (blockNibble.data == null ? null : new DataLayer(blockNibble.data)),
++                    skyNibble == null ? null : (skyNibble.data == null ? null : new DataLayer(skyNibble.data))
 +            );
 +
 +            if (blockNibble != null) {
-+                ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)section).starlight$setBlockLightState(blockNibble.state);
++                ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData) (Object) section).starlight$setBlockLightState(blockNibble.state);
 +            }
 +
 +            if (skyNibble != null) {
-+                ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)section).starlight$setSkyLightState(skyNibble.state);
++                ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData) (Object) section).starlight$setSkyLightState(skyNibble.state);
 +            }
 +
 +            sectionData.add(section);
@@ -332,9 +347,33 @@
  
          List<CompoundTag> blockEntities = new ArrayList<>(chunk.getBlockEntitiesPos().size());
  
-@@ -368,6 +_,25 @@
-             .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
-             .toArray(ShortList[]::new);
+@@ -364,7 +_,7 @@
+         List<CompoundTag> entities = new ArrayList<>();
+         long[] carvingMask = null;
+         if (chunk.getPersistedStatus().getChunkType() == ChunkType.PROTOCHUNK) {
+-            ProtoChunk protoChunk = (ProtoChunk)chunk;
++            ProtoChunk protoChunk = (ProtoChunk) chunk;
+             entities.addAll(protoChunk.getEntities());
+             CarvingMask existingMask = protoChunk.getCarvingMask();
+             if (existingMask != null) {
+@@ -375,36 +_,58 @@
+         Map<Heightmap.Types, long[]> heightmaps = new EnumMap<>(Heightmap.Types.class);
+ 
+         for (Entry<Heightmap.Types, Heightmap> entry : chunk.getHeightmaps()) {
+-            if (chunk.getPersistedStatus().heightmapsAfter().contains(entry.getKey())) {
++            if (chunk.getPersistedStatus().getChunkSaveHeightmaps().contains(entry.getKey())) {
+                 long[] data = entry.getValue().getRawData();
+-                heightmaps.put(entry.getKey(), (long[])data.clone());
++                heightmaps.put(entry.getKey(), (long[]) data.clone());
+             }
+         }
+ 
+         ChunkAccess.PackedTicks ticksForSerialization = chunk.getTicksForSerialization(level.getGameTime());
+         ShortList[] postProcessingSections = Arrays.stream(chunk.getPostProcessing())
+-            .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
+-            .toArray(ShortList[]::new);
++                .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
++                .toArray(ShortList[]::new);
          CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
 +
 +        CompoundTag attachmentData = null;
@@ -356,21 +395,49 @@
 +        // CraftBukkit end
 +
          return new SerializableChunkData(
-             level.palettedContainerFactory(),
-             pos,
-@@ -385,7 +_,10 @@
-             sectionData,
-             entities,
-             blockEntities,
+-            level.palettedContainerFactory(),
+-            pos,
+-            chunk.getMinSectionY(),
+-            level.getGameTime(),
+-            chunk.getInhabitedTime(),
+-            chunk.getPersistedStatus(),
+-            Optionull.map(chunk.getBlendingData(), BlendingData::pack),
+-            chunk.getBelowZeroRetrogen(),
+-            chunk.getUpgradeData().copy(),
+-            carvingMask,
+-            heightmaps,
+-            ticksForSerialization,
+-            postProcessingSections,
+-            chunk.isLightCorrect(),
+-            sectionData,
+-            entities,
+-            blockEntities,
 -            structureData
-+            structureData,
-+            attachmentData,
++                level.palettedContainerFactory(),
++                pos,
++                chunk.getMinSectionY(),
++                level.getGameTime(),
++                chunk.getInhabitedTime(),
++                chunk.getPersistedStatus(),
++                Optionull.map(chunk.getBlendingData(), BlendingData::pack),
++                chunk.getBelowZeroRetrogen(),
++                chunk.getUpgradeData().copy(),
++                carvingMask,
++                heightmaps,
++                ticksForSerialization,
++                postProcessingSections,
++                chunk.isLightCorrect(),
++                sectionData,
++                entities,
++                blockEntities,
++                structureData,
++                attachmentData,
 +                auxLightData,
 +                persistentDataContainer
          );
      }
  
-@@ -423,6 +_,19 @@
+@@ -442,6 +_,19 @@
                  sectionTag.putByteArray("SkyLight", section.skyLight.getData());
              }
  
@@ -390,7 +457,7 @@
              if (!sectionTag.isEmpty()) {
                  sectionTag.putByte("Y", (byte)section.y);
                  sectionTags.add(sectionTag);
-@@ -449,6 +_,26 @@
+@@ -471,6 +_,26 @@
          this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
          tag.put("Heightmaps", heightmapsTag);
          tag.put("structures", this.structureData);
@@ -417,7 +484,7 @@
          return tag;
      }
  
-@@ -527,6 +_,12 @@
+@@ -549,6 +_,12 @@
              } else {
                  StructureStart start = StructureStart.loadStaticStart(context, startsTag.getCompoundOrEmpty(key), seed);
                  if (start != null) {
@@ -430,7 +497,7 @@
                      outmap.put(startFeature, start);
                  }
              }
-@@ -585,6 +_,60 @@
+@@ -607,6 +_,60 @@
          }
      }
  

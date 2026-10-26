@@ -16,7 +16,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
-import org.jspecify.annotations.Nullable;
 
 /**
  * FluidIngredient that matches if all child ingredients match
@@ -93,7 +92,7 @@ public final class IntersectionFluidIngredient extends FluidIngredient {
     }
 
     @Override
-    public boolean equals(@Nullable Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         return obj instanceof IntersectionFluidIngredient other && children.equals(other.children);
     }

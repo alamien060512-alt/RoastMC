@@ -308,13 +308,13 @@ public class NeoDevPlugin implements Plugin<Project> {
                 manifest.attributes(Map.of("FML-System-Mods", "neoforge"));
                 manifest.attributes(Map.of("Build-Time", timestamp));
                 manifest.attributes(Map.of("Git-Commit", abbreviatedId));
-                manifest.attributes(Map.of("Brand-Id", "mohistmc:youer"));
-                manifest.attributes(Map.of("Specification-Title", "Youer"));
-                manifest.attributes(Map.of("Specification-Vendor", "MohistMC"));
+                manifest.attributes(Map.of("Brand-Id", "roastmc:neoforge"));
+                manifest.attributes(Map.of("Specification-Title", "RoastMC"));
+                manifest.attributes(Map.of("Specification-Vendor", "RoastMC"));
                 manifest.attributes(Map.of("Specification-Version", minecraftVersion));
-                manifest.attributes(Map.of("Implementation-Title", "Youer"));
+                manifest.attributes(Map.of("Implementation-Title", "RoastMC"));
                 manifest.attributes(Map.of("Implementation-Version", minecraftVersion));
-                manifest.attributes(Map.of("Implementation-Vendor", "MohistMC"));
+                manifest.attributes(Map.of("Implementation-Vendor", "RoastMC"));
             });
 
             task.from(project.zipTree(joinedJar.flatMap(AbstractArchiveTask::getArchiveFile)));
@@ -415,7 +415,7 @@ public class NeoDevPlugin implements Plugin<Project> {
                 spec.rename(s -> "install_profile.json");
             });
             task.from(project.getRootProject().file("src/main/resources/url.png"));
-            task.from(project.getRootProject().file("src/main/resources/neoforge_logo.png"), spec -> {
+            task.from(project.getRootProject().file("src/main/resources/neoforged_logo.png"), spec -> {
                 spec.rename(s -> "big_logo.png");
             });
             task.from(createUnixServerArgsFile.flatMap(CreateArgsFile::getArgsFile), spec -> {
@@ -450,7 +450,7 @@ public class NeoDevPlugin implements Plugin<Project> {
             }
         });
 
-        var youerJar0 = tasks.register("youerJar0", Jar.class, task -> {
+        var roastmcJar0 = tasks.register("roastmcJar0", Jar.class, task -> {
             task.from(createUnixServerArgsFile.flatMap(CreateArgsFile::getArgsFile), spec -> {
                 spec.into("data");
                 spec.rename(s -> "unix_args.txt");
@@ -478,7 +478,7 @@ public class NeoDevPlugin implements Plugin<Project> {
             if (project.getProviders().gradleProperty(installerDebugProperty).map(Boolean::parseBoolean).getOrElse(false)) {
                 task.from(universalJar.flatMap(AbstractArchiveTask::getArchiveFile), spec -> {
                     spec.into("data");
-                    spec.rename(_ -> String.format("neoforge-%s-universal.jar", neoForgeVersion.get()));
+                    spec.rename(name -> String.format("neoforge-%s-universal.jar", neoForgeVersion.get()));
                 });
             }
         });

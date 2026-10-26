@@ -19,7 +19,7 @@ public record PaperChargedProjectiles(
 
     @Override
     public List<ItemStack> projectiles() {
-        return MCUtil.transformUnmodifiable(this.impl.items(), CraftItemStack::asBukkitCopy);
+        return MCUtil.transformUnmodifiable(this.impl.itemCopies(), CraftItemStack::asCraftMirror);
     }
 
     static final class BuilderImpl implements ChargedProjectiles.Builder {

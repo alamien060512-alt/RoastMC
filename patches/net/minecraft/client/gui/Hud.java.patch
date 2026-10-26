@@ -1,6 +1,6 @@
 --- a/net/minecraft/client/gui/Hud.java
 +++ b/net/minecraft/client/gui/Hud.java
-@@ -86,6 +_,8 @@
+@@ -85,6 +_,8 @@
  import org.jspecify.annotations.Nullable;
  
  import net.neoforged.fml.common.asm.enumextension.IExtensibleEnum;
@@ -9,7 +9,7 @@
  
  @OnlyIn(Dist.CLIENT)
  public class Hud {
-@@ -181,6 +_,11 @@
+@@ -180,6 +_,11 @@
      private Pair<Hud.ContextualInfo, ContextualBar> contextualInfoBar = Pair.of(Hud.ContextualInfo.EMPTY, ContextualBar.EMPTY);
      private final Map<Hud.ContextualInfo, Supplier<ContextualBar>> contextualInfoBars;
      private float scopeScale;
@@ -21,7 +21,7 @@
  
      public Hud(Minecraft minecraft) {
          this.minecraft = minecraft;
-@@ -201,6 +_,7 @@
+@@ -200,6 +_,7 @@
              () -> new JumpableVehicleBar(minecraft)
          );
          this.resetTitleTimes();
@@ -29,7 +29,7 @@
      }
  
      public void registerReloadListeners(ReloadableResourceManager resourceManager) {
-@@ -224,28 +_,48 @@
+@@ -223,28 +_,48 @@
      public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
          this.minecraft.gameRenderer.gameRenderState().guiRenderState.isHudHidden = this.isHidden;
          if (!(this.minecraft.gui.screen() instanceof LevelLoadingScreen)) {
@@ -96,7 +96,7 @@
      }
  
      private void extractBossOverlay(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
-@@ -289,8 +_,12 @@
+@@ -288,8 +_,12 @@
                  for (EquipmentSlot slot : EquipmentSlot.values()) {
                      ItemStack item = player.getItemBySlot(slot);
                      Equippable equippable = item.get(DataComponents.EQUIPPABLE);
@@ -110,7 +110,7 @@
                      }
                  }
              }
-@@ -343,7 +_,11 @@
+@@ -342,7 +_,11 @@
              if (alpha > 0) {
                  graphics.nextStratum();
                  graphics.pose().pushMatrix();
@@ -123,7 +123,7 @@
                  int color;
                  if (this.animateOverlayMessageColor) {
                      color = Mth.hsvToArgb(t / 50.0F, 0.7F, 0.6F, alpha);
-@@ -404,10 +_,19 @@
+@@ -403,10 +_,19 @@
      private void extractChat(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
          if (this.minecraft.player != null && !this.chat.isChatFocused()) {
              Window window = this.minecraft.getWindow();
@@ -143,7 +143,7 @@
          }
      }
  
-@@ -501,6 +_,8 @@
+@@ -498,6 +_,8 @@
              int harmfulCount = 0;
  
              for (MobEffectInstance instance : Ordering.natural().reverse().sortedCopy(activeEffects)) {
@@ -152,7 +152,7 @@
                  Holder<MobEffect> effect = instance.getEffect();
                  if (instance.showIcon()) {
                      int x = graphics.guiWidth();
-@@ -532,6 +_,7 @@
+@@ -529,6 +_,7 @@
                          }
                      }
  
@@ -160,7 +160,7 @@
                      graphics.blitSprite(RenderPipelines.GUI_TEXTURED, getMobEffectSprite(effect), x + 3, y + 3, 18, 18, ARGB.white(alpha));
                  }
              }
-@@ -542,32 +_,51 @@
+@@ -539,32 +_,51 @@
          return effect.unwrapKey().map(ResourceKey::identifier).map(id -> id.withPrefix("mob_effect/")).orElseGet(MissingTextureAtlasSprite::getLocation);
      }
  
@@ -221,7 +221,7 @@
              this.spectatorGui.extractAction(graphics);
          }
      }
-@@ -634,15 +_,20 @@
+@@ -631,15 +_,20 @@
      }
  
      private void extractSelectedItemName(GuiGraphicsExtractor graphics) {
@@ -245,7 +245,7 @@
              if (!this.minecraft.gameMode.canHurtPlayer()) {
                  y += 14;
              }
-@@ -653,7 +_,13 @@
+@@ -650,7 +_,13 @@
              }
  
              if (alpha > 0) {
@@ -260,7 +260,7 @@
              }
          }
      }
-@@ -770,7 +_,15 @@
+@@ -767,7 +_,15 @@
          return (int)Math.ceil(hearts / 10.0);
      }
  
@@ -276,7 +276,7 @@
          Player player = this.getCameraPlayer();
          if (player != null) {
              int currentHealth = Mth.ceil(player.getHealth());
-@@ -794,33 +_,62 @@
+@@ -791,33 +_,62 @@
              this.random.setSeed(this.tickCount * 312871);
              int xLeft = graphics.guiWidth() / 2 - 91;
              int xRight = graphics.guiWidth() / 2 + 91;
@@ -347,7 +347,7 @@
              Profiler.get().pop();
          }
      }
-@@ -909,7 +_,7 @@
+@@ -906,7 +_,7 @@
      private void extractAirBubbles(GuiGraphicsExtractor graphics, Player player, int vehicleHearts, int yLineAir, int xRight) {
          int maxAirSupplyTicks = player.getMaxAirSupply();
          int currentAirSupplyTicks = Math.clamp(player.getAirSupply(), 0, maxAirSupplyTicks);
@@ -356,7 +356,7 @@
          if (isUnderWater || currentAirSupplyTicks < maxAirSupplyTicks) {
              yLineAir = this.getAirBubbleYLine(vehicleHearts, yLineAir);
              int fullAirBubbles = getCurrentAirSupplyBubble(currentAirSupplyTicks, maxAirSupplyTicks, -2);
-@@ -933,6 +_,8 @@
+@@ -930,6 +_,8 @@
                      graphics.blitSprite(RenderPipelines.GUI_TEXTURED, AIR_EMPTY_SPRITE, airBubbleXPos, yLineAir + wobbleYOffset, 9, 9);
                  }
              }
@@ -365,7 +365,7 @@
          }
      }
  
-@@ -1000,7 +_,7 @@
+@@ -997,7 +_,7 @@
              if (hearts != 0) {
                  int currentHealth = (int)Math.ceil(vehicleWithHearts.getHealth());
                  Profiler.get().popPush("mountHealth");
@@ -374,7 +374,7 @@
                  int xRight = graphics.guiWidth() / 2 + 91;
                  int yo = yLine1;
  
-@@ -1021,6 +_,7 @@
+@@ -1018,6 +_,7 @@
                      }
  
                      yo -= 10;
@@ -382,7 +382,7 @@
                  }
              }
          }
-@@ -1053,7 +_,9 @@
+@@ -1050,7 +_,9 @@
          int top = (graphics.guiHeight() - height) / 2;
          int right = left + width;
          int bottom = top + height;
@@ -393,7 +393,7 @@
          graphics.fill(RenderPipelines.GUI, 0, bottom, graphics.guiWidth(), graphics.guiHeight(), -16777216);
          graphics.fill(RenderPipelines.GUI, 0, 0, graphics.guiWidth(), top, -16777216);
          graphics.fill(RenderPipelines.GUI, 0, top, left, bottom, -16777216);
-@@ -1202,7 +_,7 @@
+@@ -1199,7 +_,7 @@
                  this.toolHighlightTimer = 0;
              } else if (this.lastToolHighlight.isEmpty()
                  || !selected.is(this.lastToolHighlight.getItem())
@@ -402,7 +402,7 @@
                  this.toolHighlightTimer = (int)(40.0 * this.minecraft.options.notificationDisplayTime().get());
              } else if (this.toolHighlightTimer > 0) {
                  this.toolHighlightTimer--;
-@@ -1479,7 +_,18 @@
+@@ -1476,7 +_,18 @@
                  type = NORMAL;
              }
  

@@ -1,10 +1,12 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
-import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @ApiStatus.NonExtendable
 public interface SwingAnimation {
 
@@ -17,7 +19,7 @@ public interface SwingAnimation {
     Animation type();
 
     @Contract(pure = true)
-    @NonNegative int duration();
+    @Positive int duration();
 
     enum Animation {
         // Start generate - SwingAnimationType
@@ -51,6 +53,6 @@ public interface SwingAnimation {
          * @see #duration()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder duration(@NonNegative int duration);
+        Builder duration(@Positive int duration);
     }
 }

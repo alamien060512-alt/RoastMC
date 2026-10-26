@@ -79,7 +79,7 @@
      @Override
      public SoundEvent getAmbientSound() {
          return SoundEvents.CAMEL_AMBIENT;
-@@ -421,12 +_,12 @@
+@@ -424,12 +_,12 @@
  
          boolean couldHeal = this.getHealth() < this.getMaxHealth();
          if (couldHeal) {
@@ -94,7 +94,7 @@
          }
  
          boolean couldAgeUp = this.canAgeUp();
-@@ -582,7 +_,7 @@
+@@ -585,7 +_,7 @@
      }
  
      public void sitDown() {
@@ -103,7 +103,7 @@
              this.makeSound(this.getSitDownSound());
              this.setPose(Pose.SITTING);
              this.gameEvent(GameEvent.ENTITY_ACTION);
-@@ -591,7 +_,7 @@
+@@ -594,7 +_,7 @@
      }
  
      public void standUp() {
@@ -112,7 +112,7 @@
              this.makeSound(this.getStandUpSound());
              this.setPose(Pose.STANDING);
              this.gameEvent(GameEvent.ENTITY_ACTION);
-@@ -608,6 +_,7 @@
+@@ -611,6 +_,7 @@
      }
  
      public void standUpInstantly() {

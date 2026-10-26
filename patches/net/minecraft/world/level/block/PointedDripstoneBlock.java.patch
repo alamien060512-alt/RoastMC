@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
 +++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
-@@ -53,7 +_,7 @@
+@@ -63,7 +_,7 @@
      @Override
      public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
          if (state.getValue(TIP_DIRECTION) == Direction.UP && state.getValue(THICKNESS) == SpeleothemThickness.TIP) {
@@ -9,7 +9,7 @@
          } else {
              super.fallOn(level, state, pos, entity, fallDistance);
          }
-@@ -79,31 +_,35 @@
+@@ -89,7 +_,7 @@
  
      @VisibleForTesting
      public static void maybeTransferFluid(BlockState state, ServerLevel level, BlockPos pos, float randomValue) {
@@ -18,29 +18,20 @@
              if (isStalactiteStartPos(state, level, pos)) {
                  Optional<PointedDripstoneBlock.FluidInfo> fluidInfo = getFluidAboveStalactite(level, pos, state);
                  if (!fluidInfo.isEmpty()) {
-                     Fluid fluid = fluidInfo.get().fluid;
-+                    // Purpur start - Cauldron fill chances
-                     float transferProbability;
-+                    net.neoforged.neoforge.fluids.FluidType.DripstoneDripInfo dripInfo = fluid.getFluidType().getDripInfo();
+@@ -98,22 +_,21 @@
                      if (fluid == Fluids.WATER) {
--                        transferProbability = 0.17578125F;
-+                        transferProbability = level.purpurConfig.cauldronDripstoneWaterFillChance;
-+                    } else if (fluid == Fluids.LAVA) {
-+                        transferProbability = level.purpurConfig.cauldronDripstoneLavaFillChance;
-+                    } else if (dripInfo != null) {
-+                        transferProbability = dripInfo.chance();
+                         transferProbability = 0.17578125F;
                      } else {
 -                        if (fluid != Fluids.LAVA) {
 -                            return;
 -                        }
--
--                        transferProbability = 0.05859375F;
-+                        transferProbability = -1.0F;
+ 
+                         transferProbability = 0.05859375F;
                      }
  
 -                    if (!(randomValue >= transferProbability)) {
-+                    if (transferProbability >= 0.0F && !(randomValue >= transferProbability)) {
-+                    // Purpur end - Cauldron fill chances
++                    net.neoforged.neoforge.fluids.FluidType.DripstoneDripInfo dripInfo = fluid.getFluidType().getDripInfo();
++                    if (dripInfo != null && !(randomValue >= dripInfo.chance())) {
                          BlockPos stalactiteTipPos = findTip(state, level, pos, 11, false);
                          if (stalactiteTipPos != null) {
                              if (fluidInfo.get().sourceState.is(Blocks.MUD) && fluid == Fluids.WATER) {
@@ -54,7 +45,7 @@
                              } else {
                                  BlockPos cauldronPos = findFillableCauldronBelowStalactiteTip(level, stalactiteTipPos, fluid);
                                  if (cauldronPos != null) {
-@@ -180,7 +_,7 @@
+@@ -190,7 +_,7 @@
      }
  
      private static boolean canFillCauldron(Fluid fluidAbove) {
@@ -63,7 +54,7 @@
      }
  
      @Override
-@@ -193,7 +_,9 @@
+@@ -203,7 +_,9 @@
          if (fluidAbove.isSame(Fluids.EMPTY)) {
              return level.environmentAttributes().getValue(EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE, posAbove);
          } else {
